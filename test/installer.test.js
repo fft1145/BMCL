@@ -43,7 +43,7 @@ test('buildDownloadPlan 生成客户端、库、资源索引', () => {
   assert.strictEqual(plan.files.length, 3); // client + 官方库 + asset index，Windows 原生库被规则排除
   assert.ok(plan.files.some((f) => f.kind === 'client'));
   assert.ok(plan.files.some((f) => f.kind === 'asset-index'));
-  assert.ok(plan.files.every((f) => f.path.startsWith('/tmp/')));
+  assert.ok(plan.files.every((f) => f.path.replace(/\\/g, '/').startsWith('/tmp/')));
 });
 
 test('buildDownloadPlan 在 Windows 上包含 natives 库', () => {
