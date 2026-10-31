@@ -23,9 +23,11 @@
       "preload.js",
       "src/**/*",
       "renderer/**/*",
+      "build/icon.png",
       "package.json"
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": "portable",
       "artifactName": "fft1145-${version}-portable.exe"
     }

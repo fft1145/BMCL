@@ -3,7 +3,7 @@
 基于 PCL2 交互思路的 Minecraft 启动器，完全本地运行，不依赖任何自建服务器。
 
 - 官网：https://fgame12.netlify.app
-- 项目地址：https://github.com/fft1145/BMCL
+- 项目地址：https://github.com/fft1145/#bmcl
 - 国内下载：https://fgame12.netlify.app（本站下载区）
 
 ## 运行
