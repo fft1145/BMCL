@@ -55,6 +55,21 @@
     $('#btnStop').classList.toggle('hidden', !running);
   }
 
+  function updateAvatar(name) {
+    const av = $('#playerAvatar');
+    if (!av) return;
+    av.onerror = () => { av.onerror = null; av.src = '../build/icon.png'; };
+    av.src = 'https://mc-heads.net/avatar/' + encodeURIComponent(name || 'fft1145') + '/96';
+  }
+
+  function syncVersionLabel() {
+    const sel = $('#launchVersion');
+    const label = $('#launchVersionLabel');
+    if (!sel || !label) return;
+    const opt = sel.options[sel.selectedIndex];
+    label.textContent = sel.value && opt ? opt.textContent : '未选择版本';
+  }
+
   function applySettingsToForm(s) {
     $('#setPlayer').value = s.playerName || '';
     $('#launchPlayer').value = s.playerName || '';
@@ -67,6 +82,7 @@
     $('#setCheckDownloads').checked = Boolean(s.checkDownloads);
     $('#topAccount').textContent = s.playerName || 'fft1145';
     $('#topSource').textContent = s.source === 'official' ? '官方源' : 'BMCLAPI';
+    updateAvatar(s.playerName);
   }
 
   function renderInstalled() {
@@ -91,6 +107,7 @@
     }
 
     const list = $('#installedVersions');
+    syncVersionLabel();
     if (!state.installed.length) {
       list.innerHTML = '<p class="empty">还没有安装任何版本。</p>';
       return;
@@ -341,6 +358,17 @@
       btn.addEventListener('click', () => switchPage(btn.dataset.page));
     });
 
+    document.querySelectorAll('[data-goto]').forEach((btn) => {
+      btn.addEventListener('click', () => switchPage(btn.dataset.goto));
+    });
+
+    [['winMin', 'winMinimize'], ['winMax', 'winMaximize'], ['winClose', 'winClose']].forEach(([id, fn]) => {
+      const el = document.getElementById(id);
+      if (el && bmcl && typeof bmcl[fn] === 'function') {
+        el.addEventListener('click', () => bmcl[fn]());
+      }
+    });
+
     document.querySelectorAll('[data-open]').forEach((el) => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
@@ -350,7 +378,7 @@
 
     $('#btnLaunch').addEventListener('click', launchGame);
     $('#btnStop').addEventListener('click', stopGame);
-    ['#btnOpenDir', '#btnOpenDir2', '#btnOpenDir3'].forEach((sel) => {
+    ['#btnOpenDir', '#btnOpenDir2', '#btnOpenDir3', '#btnOpenDir4'].forEach((sel) => {
       $(sel).addEventListener('click', () => bmcl.openGameDir());
     });
     $('#btnClearLog').addEventListener('click', () => { $('#gameLog').textContent = ''; });
@@ -391,6 +419,7 @@
     });
     $('#launchVersion').addEventListener('change', async () => {
       state.settings = await bmcl.saveSettings({ versionId: $('#launchVersion').value });
+      syncVersionLabel();
     });
   }
 

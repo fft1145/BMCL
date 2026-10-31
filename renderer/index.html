@@ -8,207 +8,259 @@
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-mark">B</div>
-      <div class="brand-text">
-        <span class="brand-name">fft1145</span>
-        <span class="brand-sub">BMCL Launcher</span>
-      </div>
+
+  <!-- ====== 标题栏（PCL 风格：品牌 + 居中导航 + 窗口按钮） ====== -->
+  <header class="titlebar">
+    <div class="tb-brand">
+      <img src="../build/icon.png" alt="BMCL">
+      <span class="tb-name">BMCL</span>
     </div>
 
-    <nav class="side-nav">
-      <button class="nav-btn active" data-page="launch"><span class="nav-ico">▶</span>启动</button>
-      <button class="nav-btn" data-page="download"><span class="nav-ico">↓</span>下载</button>
-      <button class="nav-btn" data-page="versions"><span class="nav-ico">▦</span>版本</button>
-      <button class="nav-btn" data-page="settings"><span class="nav-ico">⚙</span>设置</button>
+    <nav class="tb-nav">
+      <button class="nav-btn active" data-page="launch">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg>
+        <span>启动</span>
+      </button>
+      <button class="nav-btn" data-page="download">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0l-4-4m4 4l4-4M4 19h16"/></svg>
+        <span>下载</span>
+      </button>
+      <button class="nav-btn" data-page="versions">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+        <span>版本</span>
+      </button>
+      <button class="nav-btn" data-page="settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m3 0h4M4 17h4m3 0h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>
+        <span>设置</span>
+      </button>
     </nav>
 
-    <div class="side-foot">
-      <a href="#" data-open="https://fgame12.netlify.app">fgame12.netlify.app</a>
-      <a href="#" data-open="https://github.com/fft1145/BMCL">GitHub · BMCL</a>
-      <span class="side-ver" id="sideVersion">v1.0.0</span>
+    <div class="tb-window">
+      <button class="win-btn" id="winMin" title="最小化" aria-label="最小化">
+        <svg viewBox="0 0 12 12"><path d="M2 6h8"/></svg>
+      </button>
+      <button class="win-btn" id="winMax" title="最大化 / 还原" aria-label="最大化">
+        <svg viewBox="0 0 12 12"><rect x="2.5" y="2.5" width="7" height="7" rx=".5"/></svg>
+      </button>
+      <button class="win-btn win-close" id="winClose" title="关闭" aria-label="关闭">
+        <svg viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg>
+      </button>
     </div>
-  </aside>
+  </header>
 
-  <main class="main">
-    <header class="topbar">
-      <div class="topbar-left">
-        <span class="dot" id="stateDot"></span>
-        <span id="stateText">未启动</span>
-      </div>
-      <div class="topbar-right">
-        <span class="account" id="topAccount">fft1145</span>
+  <div class="workspace">
+
+    <!-- ====== 左侧栏（玩家 + 启动区） ====== -->
+    <aside class="sidebar">
+      <div class="side-top">
+        <span class="login-link">离线登录</span>
         <span class="badge" id="topSource">BMCLAPI</span>
       </div>
-    </header>
 
-    <div class="banner hidden" id="banner"></div>
-
-    <!-- 启动 -->
-    <section class="page active" id="page-launch">
-      <div class="hero-card">
-        <div class="hero-top">
-          <div>
-            <p class="eyebrow">MINECRAFT · 本地启动</p>
-            <h1>开始游戏</h1>
-            <p class="hero-sub">选择一个已安装的版本，然后点击启动。游戏数据保存在本机，不经过任何服务器。</p>
-          </div>
-          <div class="hero-logo">fft1145</div>
+      <div class="player-box">
+        <div class="avatar-ring">
+          <img class="avatar" id="playerAvatar" src="../build/icon.png" alt="玩家头像">
         </div>
-
-        <div class="hero-form">
-          <label class="field">
-            <span>游戏版本</span>
-            <select id="launchVersion"></select>
-          </label>
-          <label class="field">
-            <span>玩家名（离线）</span>
-            <input id="launchPlayer" type="text" maxlength="16" placeholder="fft1145">
-          </label>
-          <div class="hero-actions">
-            <button class="btn btn-primary btn-big" id="btnLaunch">启动游戏</button>
-            <button class="btn btn-big hidden" id="btnStop">结束游戏</button>
-            <button class="btn" id="btnOpenDir">打开游戏目录</button>
-          </div>
-          <p class="hint" id="launchHint"></p>
-        </div>
+        <span class="player-name" id="topAccount">fft1145</span>
+        <!-- 兼容旧逻辑：隐藏的玩家名输入 -->
+        <input class="ghost-input" id="launchPlayer" type="text" maxlength="16" placeholder="fft1145">
       </div>
 
-      <div class="panel" id="crashBox" hidden>
-        <div class="panel-head">
-          <h2>崩溃诊断</h2>
-          <button class="btn btn-sm" id="btnCloseCrash">关闭</button>
+      <div class="side-spacer"></div>
+
+      <div class="side-bottom">
+        <button class="launch-btn" id="btnLaunch">
+          <span class="lb-title">启动游戏</span>
+          <span class="lb-sub" id="launchVersionLabel">未选择版本</span>
+        </button>
+        <button class="launch-btn launch-stop hidden" id="btnStop">
+          <span class="lb-title">结束游戏</span>
+          <span class="lb-sub">游戏正在运行</span>
+        </button>
+
+        <div class="side-row">
+          <select class="side-select" id="launchVersion" aria-label="选择游戏版本"><option value="">（加载中…）</option></select>
+          <button class="side-btn" data-goto="settings">版本设置</button>
         </div>
-        <div id="crashResult" class="diag"></div>
+
+        <p class="side-hint" id="launchHint"></p>
+        <button class="side-link" id="btnOpenDir">打开游戏目录</button>
       </div>
 
-      <div class="panel log-panel">
-        <div class="panel-head">
-          <h2>运行日志</h2>
-          <button class="btn btn-sm" id="btnClearLog">清空</button>
-        </div>
-        <pre class="log" id="gameLog"></pre>
+      <div class="side-foot">
+        <span id="sideVersion">v1.0.0</span>
+        <a href="#" data-open="https://github.com/fft1145/BMCL">GitHub</a>
+        <a href="#" data-open="https://bmcl26.netlify.app">官网</a>
       </div>
-    </section>
+    </aside>
 
-    <!-- 下载 -->
-    <section class="page" id="page-download">
-      <div class="panel">
-        <div class="panel-head">
-          <div>
-            <h2>下载游戏</h2>
-            <p class="panel-desc">从官方或 BMCLAPI 镜像获取版本清单，安装到本机。</p>
-          </div>
-          <div class="row">
-            <input class="input" id="dlFilter" type="text" placeholder="搜索版本，例如 1.20">
-            <button class="btn btn-sm" id="btnRefreshVersions">刷新清单</button>
-          </div>
+    <!-- ====== 主内容 ====== -->
+    <main class="main">
+      <div class="banner hidden" id="banner"></div>
+
+      <!-- 启动 -->
+      <section class="page active" id="page-launch">
+        <div class="welcome-bar">
+          <span class="welcome-ico">▤</span>
+          <span class="welcome-text">欢迎使用 BMCL 启动器</span>
+          <span class="welcome-state"><span class="dot" id="stateDot"></span><span id="stateText">未启动</span></span>
         </div>
 
-        <div class="progress hidden" id="installProgress">
-          <div class="progress-head"><span id="installStage">准备中…</span><span id="installCount"></span></div>
-          <div class="bar"><i id="installBar"></i></div>
-        </div>
-
-        <div class="version-list" id="remoteVersions">
-          <p class="empty">点击「刷新清单」加载可下载版本。</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 版本 -->
-    <section class="page" id="page-versions">
-      <div class="panel">
-        <div class="panel-head">
-          <div>
-            <h2>已安装版本</h2>
-            <p class="panel-desc">所有版本都保存在本机游戏目录中。</p>
+        <div class="card hero-card">
+          <div class="hero-left">
+            <p class="hero-kicker">MINECRAFT · LOCAL LAUNCHER</p>
+            <h1 class="hero-title">BMCL</h1>
+            <p class="hero-desc">基于 PCL2 交互思路的本地启动器：完全本地运行，更新只覆盖启动器文件，绝不碰游戏文件。选择版本后点击左侧「启动游戏」。</p>
           </div>
-          <button class="btn btn-sm" id="btnOpenDir2">打开目录</button>
-        </div>
-        <div class="version-list" id="installedVersions"></div>
-      </div>
-    </section>
-
-    <!-- 设置 -->
-    <section class="page" id="page-settings">
-      <div class="settings-grid">
-
-        <div class="panel">
-          <div class="panel-head"><h2>启动设置</h2></div>
-          <div class="form-grid">
-            <label class="field"><span>玩家名</span><input id="setPlayer" maxlength="16"></label>
-            <label class="field"><span>内存（MB）</span><input id="setMemory" type="number" min="512" step="256"></label>
-            <label class="field field-wide"><span>Java 路径（留空自动寻找）</span><input id="setJava" placeholder="C:\Program Files\Java\jdk-21\bin\java.exe"></label>
-            <label class="field field-wide"><span>游戏目录</span><input id="setGameDir"></label>
-          </div>
-          <div class="row wrap">
-            <button class="btn btn-sm" id="btnProbeJava">检测 Java</button>
-            <button class="btn btn-sm" id="btnOpenDir3">打开游戏目录</button>
-            <span class="hint" id="javaHint"></span>
-          </div>
+          <img class="hero-icon" src="../build/icon.png" alt="BMCL 图标">
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><h2>下载源</h2></div>
-          <div class="form-grid">
-            <label class="field field-wide"><span>版本与资源下载</span>
-              <select id="setSource">
-                <option value="bmclapi">BMCLAPI 镜像（国内加速）</option>
-                <option value="official">官方源（Mojang）</option>
-              </select>
+        <div class="card log-card">
+          <div class="card-head">
+            <h2>运行日志</h2>
+            <button class="btn btn-sm" id="btnClearLog">清空</button>
+          </div>
+          <pre class="log" id="gameLog"></pre>
+        </div>
+
+        <div class="card crash-card" id="crashBox" hidden>
+          <div class="card-head">
+            <h2>崩溃诊断</h2>
+            <button class="btn btn-sm" id="btnCloseCrash">关闭</button>
+          </div>
+          <div class="diag" id="crashResult"></div>
+        </div>
+      </section>
+
+      <!-- 下载 -->
+      <section class="page" id="page-download">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>下载游戏</h2>
+              <p class="card-desc">从官方或 BMCLAPI 镜像获取版本清单，安装到本机。</p>
+            </div>
+          </div>
+
+          <div class="filter-grid">
+            <label class="field">
+              <span>版本名称</span>
+              <input class="input" id="dlFilter" type="text" placeholder="搜索版本，例如 1.20">
             </label>
+            <div class="field filter-actions">
+              <span>操作</span>
+              <div class="row">
+                <button class="btn btn-primary" id="btnRefreshVersions">刷新清单</button>
+                <button class="btn" id="btnOpenDir4">打开目录</button>
+              </div>
+            </div>
           </div>
-          <div class="row wrap">
-            <button class="btn btn-sm" id="btnCheckNet">检测下载是否被禁止</button>
-            <span class="hint" id="netHint">尚未检测</span>
+
+          <div class="progress hidden" id="installProgress">
+            <div class="progress-head"><span id="installStage">准备中…</span><span id="installCount"></span></div>
+            <div class="bar"><i id="installBar"></i></div>
+          </div>
+
+          <div class="version-list" id="remoteVersions">
+            <p class="empty">点击「刷新清单」加载可下载版本。</p>
           </div>
         </div>
+      </section>
 
-        <div class="panel">
-          <div class="panel-head"><h2>更新</h2><span class="tag" id="updVersion">v1.0.0</span></div>
-          <div class="switch-row">
-            <label class="switch"><input type="checkbox" id="setAutoUpdate"><span>自动检测更新</span></label>
-            <label class="switch"><input type="checkbox" id="setCheckDownloads"><span>启动时检测下载是否被禁止</span></label>
+      <!-- 版本 -->
+      <section class="page" id="page-versions">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>已安装版本</h2>
+              <p class="card-desc">所有版本都保存在本机游戏目录中。</p>
+            </div>
+            <button class="btn btn-sm" id="btnOpenDir2">打开目录</button>
           </div>
-          <div class="row wrap">
-            <button class="btn btn-sm" id="btnCheckUpdate">检查更新</button>
-            <button class="btn btn-sm btn-primary hidden" id="btnApplyUpdate">立即更新</button>
+          <div class="version-list" id="installedVersions"></div>
+        </div>
+      </section>
+
+      <!-- 设置 -->
+      <section class="page" id="page-settings">
+        <div class="settings-grid">
+
+          <div class="card">
+            <div class="card-head"><h2>启动设置</h2></div>
+            <div class="form-grid">
+              <label class="field"><span>玩家名</span><input id="setPlayer" maxlength="16"></label>
+              <label class="field"><span>内存（MB）</span><input id="setMemory" type="number" min="512" step="256"></label>
+              <label class="field field-wide"><span>Java 路径（留空自动寻找）</span><input id="setJava" placeholder="C:\Program Files\Java\jdk-21\bin\java.exe"></label>
+              <label class="field field-wide"><span>游戏目录</span><input id="setGameDir"></label>
+            </div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnProbeJava">检测 Java</button>
+              <button class="btn btn-sm" id="btnOpenDir3">打开游戏目录</button>
+              <span class="hint" id="javaHint"></span>
+            </div>
           </div>
-          <div class="diag small" id="updateResult"></div>
-          <p class="hint">更新只会覆盖启动器自身的程序文件，<b>不会覆盖任何游戏文件</b>。</p>
+
+          <div class="card">
+            <div class="card-head"><h2>下载源</h2></div>
+            <div class="form-grid">
+              <label class="field field-wide"><span>版本与资源下载</span>
+                <select id="setSource">
+                  <option value="bmclapi">BMCLAPI 镜像（国内加速）</option>
+                  <option value="official">官方源（Mojang）</option>
+                </select>
+              </label>
+            </div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnCheckNet">检测下载是否被禁止</button>
+              <span class="hint" id="netHint">尚未检测</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>更新</h2><span class="tag" id="updVersion">v1.0.0</span></div>
+            <div class="switch-row">
+              <label class="switch"><input type="checkbox" id="setAutoUpdate"><span>自动检测更新</span></label>
+              <label class="switch"><input type="checkbox" id="setCheckDownloads"><span>启动时检测下载是否被禁止</span></label>
+            </div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnCheckUpdate">检查更新</button>
+              <button class="btn btn-sm btn-primary hidden" id="btnApplyUpdate">立即更新</button>
+            </div>
+            <div class="diag small" id="updateResult"></div>
+            <p class="hint">更新只会覆盖启动器自身的程序文件，<b>不会覆盖任何游戏文件</b>。</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>崩溃自检</h2></div>
+            <div class="switch-row">
+              <label class="switch"><input type="checkbox" id="setCrashWatch"><span>启动时自动检测上次崩溃</span></label>
+            </div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnDiagnose">立即诊断</button>
+            </div>
+            <div class="diag small" id="crashSettingsResult"></div>
+            <p class="hint">检测启动器异常退出、游戏 crash-reports 与 latest.log，并给出修复建议。</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>关于</h2></div>
+            <p class="about">BMCL 是 fft1145 在爱发电发布的 Minecraft 启动器，完全本地运行，不依赖自建服务器。</p>
+            <div class="row wrap">
+              <button class="btn btn-sm" data-open="https://bmcl26.netlify.app">访问官网</button>
+              <button class="btn btn-sm" data-open="https://github.com/fft1145/BMCL">GitHub 仓库</button>
+            </div>
+          </div>
+
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><h2>崩溃自检</h2></div>
-          <div class="switch-row">
-            <label class="switch"><input type="checkbox" id="setCrashWatch"><span>启动时自动检测上次崩溃</span></label>
-          </div>
-          <div class="row wrap">
-            <button class="btn btn-sm" id="btnDiagnose">立即诊断</button>
-          </div>
-          <div class="diag small" id="crashSettingsResult"></div>
-          <p class="hint">检测启动器异常退出、游戏 crash-reports 与 latest.log，并给出修复建议。</p>
+        <div class="row save-row">
+          <button class="btn btn-primary" id="btnSaveSettings">保存设置</button>
+          <span class="hint" id="saveHint"></span>
         </div>
+      </section>
 
-        <div class="panel">
-          <div class="panel-head"><h2>关于</h2></div>
-          <p class="about">BMCL 是 fft1145 在爱发电发布的 Minecraft 启动器，完全本地运行，不依赖自建服务器。</p>
-          <div class="row wrap">
-            <button class="btn btn-sm" data-open="https://fgame12.netlify.app">访问官网</button>
-            <button class="btn btn-sm" data-open="https://github.com/fft1145/BMCL">GitHub 仓库</button>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="row save-row">
-        <button class="btn btn-primary" id="btnSaveSettings">保存设置</button>
-        <span class="hint" id="saveHint"></span>
-      </div>
-    </section>
-  </main>
+    </main>
+  </div>
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>

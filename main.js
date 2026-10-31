@@ -21,7 +21,7 @@ const javaCore = require('./src/core/java');
 
 const APP_NAME = 'fft1145';
 const APP_VERSION = require('./package.json').version;
-const WEBSITE = 'https://fgame12.netlify.app';
+const WEBSITE = 'https://bmcl26.netlify.app';
 
 let win = null;
 let gameProcess = null;
@@ -323,7 +323,8 @@ function createWindow() {
     minHeight: 640,
     title: APP_NAME,
     icon: path.join(__dirname, 'build', 'icon.png'),
-    backgroundColor: '#141414',
+    backgroundColor: '#f3f6fa',
+    frame: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -373,6 +374,13 @@ function registerIpc() {
     if (typeof url === 'string' && /^https?:\/\//.test(url)) return shell.openExternal(url);
     return null;
   });
+  ipcMain.handle('window:minimize', () => { if (win && !win.isDestroyed()) win.minimize(); });
+  ipcMain.handle('window:maximize', () => {
+    if (!win || win.isDestroyed()) return false;
+    if (win.isMaximized()) win.unmaximize(); else win.maximize();
+    return win.isMaximized();
+  });
+  ipcMain.handle('window:close', () => { if (win && !win.isDestroyed()) win.close(); });
 }
 
 app.whenReady().then(() => {
