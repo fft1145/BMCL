@@ -1,8 +1,7 @@
 'use strict';
 
 /**
- * 账号管理：离线账号（玩家名 + UUID）的增删改查与切换。
- * 暂不实现 Microsoft 设备码登录（需要后端配合），但预留接口。
+ * 账号管理：离线账号与微软正版账号的增删改查、切换。
  */
 
 const fs = require('node:fs');
@@ -64,6 +63,29 @@ function addOfflineAccount(userDataDir, playerName) {
   return getActiveAccount(userDataDir);
 }
 
+/** 保存/更新微软正版账号（同一 UUID 覆盖），并设为当前 */
+function upsertMicrosoftAccount(userDataDir, profile) {
+  if (!profile || !profile.uuid || !profile.name) throw new Error('正版账号信息不完整');
+  const data = loadAccounts(userDataDir);
+  const id = 'ms-' + profile.uuid;
+  const index = data.accounts.findIndex((a) => a.id === id || (a.type === 'microsoft' && a.uuid === profile.uuid));
+  const account = Object.assign({}, index >= 0 ? data.accounts[index] : {}, profile, {
+    id,
+    type: 'microsoft',
+    createdAt: index >= 0 ? data.accounts[index].createdAt : new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+  if (index >= 0) data.accounts[index] = account;
+  else data.accounts.push(account);
+  data.active = id;
+  saveAccounts(userDataDir, data);
+  return account;
+}
+
+function getAccountById(userDataDir, accountId) {
+  return loadAccounts(userDataDir).accounts.find((a) => a.id === accountId) || null;
+}
+
 function removeAccount(userDataDir, accountId) {
   const data = loadAccounts(userDataDir);
   data.accounts = data.accounts.filter((a) => a.id !== accountId);
@@ -98,6 +120,8 @@ module.exports = {
   loadAccounts,
   saveAccounts,
   addOfflineAccount,
+  upsertMicrosoftAccount,
+  getAccountById,
   removeAccount,
   setActiveAccount,
   getActiveAccount,

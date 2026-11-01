@@ -126,3 +126,102 @@ test('modrinthSearch 解析命中项并带上 filters', async () => {
   assert.ok(seenUrl.includes('project_type%3Amod'));
   assert.ok(seenUrl.includes('versions%3A1.20.1'));
 });
+
+test('curseForgeSearch 按下载量排序并带上 API Key', async () => {
+  let seenUrl = '';
+  let seenKey = '';
+  const fetchImpl = async (url, init) => {
+    seenUrl = String(url);
+    seenKey = (init.headers || {})['x-api-key'] || '';
+    return {
+      ok: true,
+      json: async () => ({
+        data: [{
+          id: 238222,
+          slug: 'jei',
+          name: 'Just Enough Items',
+          summary: '物品管理器',
+          downloadCount: 1200000000,
+          logo: { thumbnailUrl: 'https://x/jei.png' },
+          categories: [{ name: 'API and Library' }],
+          authors: [{ name: 'mezz' }],
+          links: { websiteUrl: 'https://www.curseforge.com/minecraft/mc-mods/jei' }
+        }]
+      })
+    };
+  };
+  const hits = await tools.curseForgeSearch('', {
+    gameVersion: '1.21.3',
+    sort: 'downloads',
+    projectType: 'mod',
+    apiKey: 'test-key',
+    fetchImpl
+  });
+  assert.strictEqual(hits.length, 1);
+  assert.strictEqual(hits[0].id, '238222');
+  assert.strictEqual(hits[0].downloads, 1200000000);
+  assert.strictEqual(hits[0].source, 'curseforge');
+  assert.strictEqual(hits[0].iconUrl, 'https://x/jei.png');
+  assert.strictEqual(seenKey, 'test-key');
+  assert.ok(seenUrl.includes('gameId=432'));
+  assert.ok(seenUrl.includes('classId=6'));
+  assert.ok(seenUrl.includes('sortField=6'));
+  assert.ok(seenUrl.includes('gameVersion=1.21.3'));
+});
+
+test('curseForgeFileUrl 在无 downloadUrl 时按 CDN 规则拼接', () => {
+  assert.strictEqual(
+    tools.curseForgeFileUrl({ id: 3800001, fileName: 'jei-1.21.3.jar' }),
+    'https://edge.forgecdn.net/files/3800/1/jei-1.21.3.jar'
+  );
+  assert.strictEqual(
+    tools.curseForgeFileUrl({ id: 1, fileName: 'x.jar' }),
+    ''
+  );
+  assert.strictEqual(
+    tools.curseForgeFileUrl({ id: 9999, fileName: 'a.jar', downloadUrl: 'https://mediafilez.forgecdn.net/files/1/1/a.jar' }),
+    'https://edge.forgecdn.net/files/1/1/a.jar'
+  );
+});
+
+test('curseForgeSearch 遇到 403 提示填写自己的 Key', async () => {
+  const fetchImpl = async () => ({ ok: false, status: 403 });
+  await assert.rejects(
+    () => tools.curseForgeSearch('', { fetchImpl }),
+    /API Key 无效/
+  );
+});
+
+test('searchProjects 默认使用 CurseForge，可切换 Modrinth', async () => {
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(String(url));
+    if (String(url).includes('api.curseforge.com')) {
+      return { ok: true, json: async () => ({ data: [{ id: 1, name: 'A', downloadCount: 5, slug: 'a' }] }) };
+    }
+    return { ok: true, json: async () => ({ hits: [{ project_id: 'p', title: 'P', downloads: 7 }] }) };
+  };
+  const cf = await tools.searchProjects('', { fetchImpl });
+  assert.strictEqual(cf[0].source, 'curseforge');
+  const mr = await tools.searchProjects('', { source: 'modrinth', fetchImpl });
+  assert.strictEqual(mr[0].source, 'modrinth');
+  assert.ok(calls.length >= 2);
+});
+
+test('installMod 按项目类型写入对应目录', async () => {
+  const root = makeGameDir(tmpDir('install'), ['1.20.1']);
+  const fetchImpl = async (url) => ({
+    ok: true,
+    headers: { get: () => '4' },
+    body: null,
+    arrayBuffer: async () => Buffer.from('data')
+  });
+  const result = await tools.installMod(
+    { fileUrl: 'https://x/a.zip', fileName: 'a.zip', projectType: 'resourcepack' },
+    root,
+    { fetchImpl }
+  );
+  assert.strictEqual(result.type, 'resourcepack');
+  assert.strictEqual(path.dirname(result.path), path.join(root, 'resourcepacks'));
+});
+

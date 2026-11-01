@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('bmcl', {
   listRemote: () => ipcRenderer.invoke('versions:list'),
   installVersion: (id) => ipcRenderer.invoke('versions:install', id),
   installFabric: (gameVersion, loaderVersion) => ipcRenderer.invoke('versions:installFabric', gameVersion, loaderVersion),
+  installForge: (gameVersion, loader, loaderVersion) => ipcRenderer.invoke('versions:installForge', gameVersion, loader, loaderVersion),
+  listForgeLoaders: (gameVersion, loader) => ipcRenderer.invoke('forge:loaders', gameVersion, loader),
   listFabricLoaders: (gameVersion) => ipcRenderer.invoke('fabric:loaders', gameVersion),
 
   // 游戏
@@ -51,13 +53,19 @@ contextBridge.exposeInMainWorld('bmcl', {
   addAccount: (name) => ipcRenderer.invoke('account:add', name),
   removeAccount: (id) => ipcRenderer.invoke('account:remove', id),
   setActiveAccount: (id) => ipcRenderer.invoke('account:setActive', id),
+  msLoginStart: () => ipcRenderer.invoke('account:msStart'),
+  msLoginPoll: (flowId) => ipcRenderer.invoke('account:msPoll', flowId),
+  msLoginCancel: (flowId) => ipcRenderer.invoke('account:msCancel', flowId),
+  refreshAccount: (id) => ipcRenderer.invoke('account:refresh', id),
+  uploadSkin: (variant) => ipcRenderer.invoke('account:skinUpload', variant),
+  resetSkin: () => ipcRenderer.invoke('account:skinReset'),
 
   // 模组
-  searchMods: (query, gameVersion) => ipcRenderer.invoke('mods:search', query, gameVersion),
-  getModVersions: (projectId, gameVersion) => ipcRenderer.invoke('mods:versions', projectId, gameVersion),
-  installMod: (modVersion) => ipcRenderer.invoke('mods:install', modVersion),
-  listInstalledMods: () => ipcRenderer.invoke('mods:list'),
-  openModsDir: () => ipcRenderer.invoke('mods:openDir'),
+  searchMods: (query, options) => ipcRenderer.invoke('mods:search', query, options),
+  getModVersions: (source, projectId, gameVersion) => ipcRenderer.invoke('mods:versions', source, projectId, gameVersion),
+  installMod: (modVersion, projectType) => ipcRenderer.invoke('mods:install', modVersion, projectType),
+  listInstalledMods: (type) => ipcRenderer.invoke('mods:list', type),
+  openModsDir: (type) => ipcRenderer.invoke('mods:openDir', type),
 
   // 工具
   cleanJunk: () => ipcRenderer.invoke('tools:cleanJunk'),

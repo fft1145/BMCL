@@ -1,7 +1,7 @@
 {
   "name": "bmcl-launcher",
   "productName": "fft1145",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "BMCL — 基于 PCL2 交互思路的 Minecraft 启动器（fft1145 爱发电项目）",
   "main": "main.js",
   "author": "fft1145",

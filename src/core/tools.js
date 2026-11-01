@@ -264,7 +264,11 @@ async function modrinthSearch(query, options = {}) {
     query: query || '',
     facets: modrinthFacets(options.projectType, options.gameVersion),
     limit: String(options.limit || 20),
-    offset: String(options.offset || 0)
+    offset: String(options.offset || 0),
+    index: options.sort === 'downloads' ? 'downloads'
+      : options.sort === 'newest' ? 'newest'
+        : options.sort === 'updated' ? 'updated'
+          : 'relevance'
   });
   const res = await fetchImpl(MODRINTH_API + '/search?' + params.toString(), { headers: MODRINTH_HEADERS });
   if (!res.ok) throw new Error('Modrinth 搜索失败 HTTP ' + res.status);
@@ -278,7 +282,9 @@ async function modrinthSearch(query, options = {}) {
     downloads: h.downloads,
     iconUrl: h.icon_url,
     categories: h.categories || [],
-    versions: h.versions || []
+    versions: h.versions || [],
+    projectType: h.project_type || options.projectType || 'mod',
+    source: 'modrinth'
   }));
 }
 
@@ -309,24 +315,161 @@ async function modrinthVersions(projectId, gameVersion, options = {}) {
   });
 }
 
-/** 安装模组到 mods 目录 */
-async function installMod(modVersion, gameDir, options = {}) {
-  if (!modVersion || !modVersion.fileUrl || !modVersion.fileName) throw new Error('模组文件信息不完整');
-  const modsDir = path.join(gameDir, 'mods');
-  await ensureDir(modsDir);
-  const dest = path.join(modsDir, modVersion.fileName);
-  const result = await downloadFile(modVersion.fileUrl, dest, { onProgress: options.onProgress });
-  return { path: dest, size: result.bytes };
+// ===== CurseForge =====
+// PCL2 CE 的公开客户端 Key（源码中通过 Secrets 注入，这里作为默认值，可在设置里覆盖）
+const CURSEFORGE_DEFAULT_KEY = '$2a$10$TK3CR9laZ1oUb51B1rXZJ.UQ.bLHZGEZ8Y86nbMacMf1rorvdkBWG';
+const CURSEFORGE_API = 'https://api.curseforge.com/v1';
+const CURSEFORGE_GAME_ID = 432;
+const CURSEFORGE_CLASS = {
+  mod: 6,
+  modpack: 4471,
+  datapack: 6945,
+  shader: 6552,
+  resourcepack: 12,
+  world: 17
+};
+const CURSEFORGE_SORT = { relevance: 4, follows: 2, popularity: 2, downloads: 6, newest: 11, updated: 3 };
+const CURSEFORGE_LOADER = { forge: 1, liteloader: 3, fabric: 4, quilt: 5, neoforge: 6 };
+
+function curseForgeKey(options = {}) {
+  return String(options.apiKey || process.env.CURSEFORGE_API_KEY || CURSEFORGE_DEFAULT_KEY).trim();
 }
 
-/** 列出已安装模组 */
-function listInstalledMods(gameDir) {
-  const modsDir = path.join(gameDir, 'mods');
-  if (!isDirectory(modsDir)) return [];
-  return fs.readdirSync(modsDir)
+async function curseForgeGet(pathname, params, options = {}) {
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  const search = params ? '?' + new URLSearchParams(params).toString() : '';
+  const res = await fetchImpl(CURSEFORGE_API + pathname + search, {
+    headers: Object.assign({ 'x-api-key': curseForgeKey(options), Accept: 'application/json' }, options.headers || {})
+  });
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('CurseForge API Key 无效或额度已用完，请在设置里填写自己的 Key');
+    }
+    if (res.status === 404) throw new Error('CurseForge 上找不到该项目');
+    throw new Error('CurseForge 请求失败 HTTP ' + res.status);
+  }
+  return res.json();
+}
+
+/** CurseForge 文件下载地址（作者未开放 API 下载时按 PCL 的规则拼 CDN 链接） */
+function curseForgeFileUrl(file) {
+  if (!file) return '';
+  if (file.downloadUrl && /^https?:\/\//.test(file.downloadUrl)) {
+    return String(file.downloadUrl).replace('://mediafilez.', '://edge.');
+  }
+  const id = String(file.id || '');
+  if (id.length < 5 || !file.fileName) return '';
+  const head = String(parseInt(id.slice(0, 4), 10));
+  const tail = String(parseInt(id.slice(4), 10));
+  return 'https://edge.forgecdn.net/files/' + head + '/' + tail + '/' + encodeURIComponent(file.fileName);
+}
+
+function mapCurseForgeProject(project, projectType) {
+  const logo = project.logo || {};
+  const shot = (project.screenshots || [])[0] || {};
+  return {
+    id: String(project.id),
+    slug: project.slug,
+    title: project.name,
+    author: (project.authors || []).map((a) => a.name).filter(Boolean).join(', '),
+    description: project.summary || '',
+    downloads: project.downloadCount || 0,
+    iconUrl: logo.thumbnailUrl || logo.url || shot.thumbnailUrl || '',
+    categories: (project.categories || []).map((c) => c.name),
+    versions: [],
+    projectType: projectType || 'mod',
+    source: 'curseforge',
+    webUrl: (project.links || {}).websiteUrl || ''
+  };
+}
+
+async function curseForgeSearch(query, options = {}) {
+  const projectType = options.projectType || 'mod';
+  const params = {
+    gameId: String(CURSEFORGE_GAME_ID),
+    sortOrder: options.sortOrder || 'desc',
+    pageSize: String(Math.min(50, Number(options.limit) || 20)),
+    sortField: String(CURSEFORGE_SORT[options.sort || 'downloads'] || CURSEFORGE_SORT.popularity)
+  };
+  if (CURSEFORGE_CLASS[projectType]) params.classId = String(CURSEFORGE_CLASS[projectType]);
+  if (options.gameVersion) params.gameVersion = options.gameVersion;
+  if (options.categoryId) params.categoryId = String(options.categoryId);
+  if (options.loader && CURSEFORGE_LOADER[options.loader]) params.modLoaderType = String(CURSEFORGE_LOADER[options.loader]);
+  if (query) params.searchFilter = query;
+  if (options.offset) params.index = String(options.offset);
+  const data = await curseForgeGet('/mods/search', params, options);
+  return (data.data || []).map((p) => mapCurseForgeProject(p, projectType));
+}
+
+/** 获取 CurseForge 项目文件列表（按发布时间倒序） */
+async function curseForgeFiles(projectId, gameVersion, options = {}) {
+  if (!projectId) throw new Error('缺少项目 ID');
+  const params = { pageSize: '100' };
+  if (gameVersion) params.gameVersion = gameVersion;
+  if (options.loader && CURSEFORGE_LOADER[options.loader]) params.modLoaderType = String(CURSEFORGE_LOADER[options.loader]);
+  const data = await curseForgeGet('/mods/' + encodeURIComponent(projectId) + '/files', params, options);
+  return (data.data || []).map((f) => ({
+    id: String(f.id),
+    name: f.displayName || f.fileName,
+    versionNumber: f.displayName || f.fileName,
+    gameVersions: f.gameVersions || [],
+    loaders: f.modLoader ? [f.modLoader] : [],
+    fileName: f.fileName,
+    fileUrl: curseForgeFileUrl(f),
+    fileSize: f.fileSize || 0,
+    datePublished: f.fileDate,
+    releaseType: f.releaseType,
+    source: 'curseforge'
+  })).sort((a, b) => String(b.datePublished).localeCompare(String(a.datePublished)));
+}
+
+/** 按来源聚合搜索：Modrinth + CurseForge */
+async function searchProjects(query, options = {}) {
+  const source = options.source || 'curseforge';
+  if (source === 'modrinth') return modrinthSearch(query, options);
+  return curseForgeSearch(query, options);
+}
+
+/** 按来源取项目的可下载文件 */
+async function projectFiles(source, projectId, gameVersion, options = {}) {
+  if (source === 'modrinth') return modrinthVersions(projectId, gameVersion, options);
+  return curseForgeFiles(projectId, gameVersion, options);
+}
+
+
+const PROJECT_TYPE_DIRS = {
+  mod: 'mods',
+  resourcepack: 'resourcepacks',
+  shader: 'shaderpacks',
+  datapack: 'datapacks',
+  world: 'saves',
+  modpack: 'modpacks'
+};
+
+/** 安装项目文件到对应目录（模组 / 资源包 / 光影 / 数据包） */
+async function installMod(modVersion, gameDir, options = {}) {
+  if (!modVersion || !modVersion.fileUrl || !modVersion.fileName) throw new Error('文件信息不完整');
+  const type = options.projectType || modVersion.projectType || 'mod';
+  const dirName = PROJECT_TYPE_DIRS[type] || 'mods';
+  const targetDir = path.join(gameDir, dirName);
+  await ensureDir(targetDir);
+  const dest = path.join(targetDir, path.basename(modVersion.fileName));
+  const result = await downloadFile(modVersion.fileUrl, dest, {
+    onProgress: options.onProgress,
+    fetchImpl: options.fetchImpl
+  });
+  return { path: dest, size: result.bytes, type };
+}
+
+/** 列出已安装的模组 / 资源包 / 光影 / 数据包 */
+function listInstalledMods(gameDir, type) {
+  const dirName = PROJECT_TYPE_DIRS[type || 'mod'] || 'mods';
+  const targetDir = path.join(gameDir, dirName);
+  if (!isDirectory(targetDir)) return [];
+  return fs.readdirSync(targetDir)
     .filter((f) => /\.(jar|zip)$/i.test(f))
     .map((f) => {
-      const full = path.join(modsDir, f);
+      const full = path.join(targetDir, f);
       const st = fs.statSync(full);
       return { name: f, size: st.size, modifiedAt: st.mtime.toISOString() };
     })
@@ -347,6 +490,11 @@ module.exports = {
   downloadSkin,
   modrinthSearch,
   modrinthVersions,
+  curseForgeSearch,
+  curseForgeFiles,
+  curseForgeFileUrl,
+  searchProjects,
+  projectFiles,
   installMod,
   listInstalledMods
 };

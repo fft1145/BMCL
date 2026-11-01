@@ -9,6 +9,7 @@ const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const fsp = fs.promises;
+const crypto = require('node:crypto');
 const { spawn, execFile } = require('node:child_process');
 
 const settingsCore = require('./src/core/settings');
@@ -21,6 +22,7 @@ const javaCore = require('./src/core/java');
 const repairCore = require('./src/core/repair');
 const tools = require('./src/core/tools');
 const accounts = require('./src/core/accounts');
+const microsoft = require('./src/core/microsoft');
 
 const APP_NAME = 'fft1145';
 const APP_VERSION = require('./package.json').version;
@@ -28,6 +30,8 @@ const WEBSITE = 'https://bmcl26.netlify.app';
 
 let win = null;
 let gameProcess = null;
+/** 正在进行中的微软设备码登录：flowId → { deviceCode, clientId, interval, expiresAt } */
+const pendingMsFlows = new Map();
 
 function userData() {
   return app.getPath('userData');
@@ -139,6 +143,130 @@ function resolveVersionChain(versionsDir, versionId) {
     }
   }
   return { json: merged, levels, clientJar };
+}
+
+async function fetchText(url, timeoutMs) {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs || 20000) : null;
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'fft1145-bmcl-launcher' },
+      signal: controller ? controller.signal : undefined
+    });
+    if (!res.ok) throw new Error('请求失败 HTTP ' + res.status + ' · ' + url);
+    return await res.text();
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** NeoForge 版本号与 MC 版本对应：1.21.3 → 21.3.x */
+function neoForgePrefix(gameVersion) {
+  const m = /^1\.(\d+)(?:\.(\d+))?/.exec(String(gameVersion));
+  if (!m) return null;
+  const minor = m[1];
+  if (!m[2]) return null;
+  return minor + '.' + m[2] + '.';
+}
+
+async function listForgeLoaders(gameVersion, loader) {
+  const game = String(gameVersion || '').trim();
+  if (!game) throw new Error('请先选择游戏版本');
+  if (loader === 'neoforge') {
+    const xml = await fetchText('https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml');
+    const all = [];
+    const re = /<version>([^<]+)<\/version>/g;
+    let m;
+    while ((m = re.exec(xml))) all.push(m[1]);
+    const prefix = neoForgePrefix(game);
+    if (!prefix) return [];
+    return all.filter((v) => v.startsWith(prefix)).reverse().slice(0, 30).map((v) => ({ version: v }));
+  }
+  const promo = await fetchJson('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json');
+  const promos = (promo && promo.promos) || {};
+  const list = [];
+  if (promos[game + '-recommended']) list.push({ version: promos[game + '-recommended'], tag: 'recommended' });
+  if (promos[game + '-latest'] && promos[game + '-latest'] !== promos[game + '-recommended']) {
+    list.push({ version: promos[game + '-latest'], tag: 'latest' });
+  }
+  if (!list.length) throw new Error('Forge 没有为 Minecraft ' + game + ' 提供安装器');
+  return list;
+}
+
+function runProcess(command, args, options) {
+  const timeout = (options && options.timeout) || 15 * 60 * 1000;
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, {
+      cwd: options && options.cwd,
+      windowsHide: true,
+      env: Object.assign({}, process.env)
+    });
+    let output = '';
+    const timer = setTimeout(() => {
+      try { proc.kill(); } catch (e) { /* ignore */ }
+      reject(new Error('安装器执行超时（' + Math.round(timeout / 60000) + ' 分钟）'));
+    }, timeout);
+    proc.stdout.on('data', (d) => {
+      output += d.toString();
+      if (options && options.onOutput) options.onOutput(d.toString());
+    });
+    proc.stderr.on('data', (d) => {
+      output += d.toString();
+      if (options && options.onOutput) options.onOutput(d.toString());
+    });
+    proc.on('error', (err) => { clearTimeout(timer); reject(err); });
+    proc.on('exit', (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve(output);
+      else reject(new Error('安装器退出码 ' + code + '：' + output.slice(-600)));
+    });
+  });
+}
+
+/** 安装 Forge / NeoForge（下载官方 installer 并执行 --installClient） */
+async function installForge(gameVersion, loader, loaderVersion) {
+  const s = getSettings();
+  const dirs = dataDirs();
+  const game = String(gameVersion || '').trim();
+  if (!game) throw new Error('请先选择游戏版本');
+  const kind = loader === 'neoforge' ? 'neoforge' : 'forge';
+  if (!fs.existsSync(path.join(dirs.versionsDir, game, game + '.json'))) {
+    log(kind + ' 需要先安装原版 ' + game + '，正在安装…');
+    await installVersion(game);
+  }
+  let version = String(loaderVersion || '').trim();
+  if (!version) {
+    const list = await listForgeLoaders(game, kind);
+    version = list[0].version;
+  }
+  const javaProbe = await javaCore.probeJava(s.javaPath || 'java');
+  if (!javaProbe.ok) throw new Error('没有找到可用的 Java，无法运行安装器：' + javaProbe.message);
+
+  const jarUrl = kind === 'neoforge'
+    ? 'https://maven.neoforged.net/releases/net/neoforged/neoforge/' + version + '/neoforge-' + version + '-installer.jar'
+    : 'https://maven.minecraftforge.net/net/minecraftforge/forge/' + game + '-' + version + '/forge-' + game + '-' + version + '-installer.jar';
+  const tmpJar = path.join(app.getPath('temp'), 'bmcl-' + kind + '-installer-' + version + '.jar');
+  send('install:progress', { stage: '下载 ' + kind + ' 安装器', done: 0, total: 0 });
+  await tools.downloadFile(jarUrl, tmpJar);
+
+  const before = fs.existsSync(dirs.versionsDir) ? fs.readdirSync(dirs.versionsDir) : [];
+  send('install:progress', { stage: '运行 ' + kind + ' 安装器（可能需要几分钟）', done: 0, total: 0 });
+  log('运行 ' + kind + ' 安装器：' + version);
+  await runProcess(javaProbe.javaPath, ['-jar', tmpJar, '--installClient', dirs.gameDir], {
+    cwd: dirs.gameDir,
+    onOutput: (text) => send('game:log', { text })
+  });
+  try { fs.unlinkSync(tmpJar); } catch (e) { /* ignore */ }
+
+  const after = fs.readdirSync(dirs.versionsDir);
+  const created = after.filter((id) => !before.includes(id));
+  const matched = created.find((id) => new RegExp(kind, 'i').test(id)) ||
+    after.find((id) => new RegExp(game + '.*' + kind, 'i').test(id));
+  if (!matched) throw new Error(kind + ' 安装器运行完成，但没有找到生成的新版本，请查看日志');
+  settingsCore.save(settingsFile(), Object.assign(getSettings(), { versionId: matched }));
+  send('install:progress', { stage: '完成', done: 1, total: 1 });
+  log(kind + ' ' + version + ' 安装完成：' + matched, 'ok');
+  return { versionId: matched, loaderVersion: version };
 }
 
 async function fetchJson(url, timeoutMs) {
@@ -267,6 +395,21 @@ async function installVersion(versionId) {
   return { versionId, files: plan.files.length };
 }
 
+/** 微软账号令牌过期前自动续期；失败则提示重新登录 */
+async function ensureMicrosoftAccount(account) {
+  const expires = Date.parse(account.expiresAt || '');
+  const expired = !account.accessToken || !Number.isFinite(expires) || expires - Date.now() < 5 * 60 * 1000;
+  if (!expired) return account;
+  try {
+    const fresh = await microsoft.refreshAccount(account);
+    const saved = accounts.upsertMicrosoftAccount(userData(), fresh);
+    log('已刷新微软账号令牌：' + saved.name, 'ok');
+    return saved;
+  } catch (err) {
+    throw new Error('微软账号「' + account.name + '」登录状态已失效，请在账号面板重新登录：' + err.message);
+  }
+}
+
 async function launchGame(versionId) {
   if (gameProcess) throw new Error('游戏已经在运行中');
   const s = getSettings();
@@ -291,9 +434,14 @@ async function launchGame(versionId) {
   if (!javaProbe.ok) {
     throw new Error('没有找到可用的 Java。请在「设置」里填写 java.exe 的路径（' + javaProbe.message + '）');
   }
-  const activeAccount = accounts.getActiveAccount(userData());
+  let activeAccount = accounts.getActiveAccount(userData());
+  if (activeAccount && activeAccount.type === 'microsoft') {
+    activeAccount = await ensureMicrosoftAccount(activeAccount);
+  }
   const playerName = (activeAccount && activeAccount.name) || (s.playerName || '').trim() || 'Player';
   const uuid = (activeAccount && activeAccount.uuid) || launcherCore.offlineUuid(playerName);
+  const accessToken = activeAccount && activeAccount.type === 'microsoft' ? activeAccount.accessToken : '0';
+  const userType = activeAccount && activeAccount.type === 'microsoft' ? 'msa' : 'legacy';
   const ctx = { os: require('./src/core/rules').detectContext().os, features: {} };
   const libraryPaths = launcherCore.collectLibraryPaths(json, dirs.librariesDir, ctx);
   const clientJar = chain.clientJar || path.join(versionDir, versionId + '.jar');
@@ -316,7 +464,8 @@ async function launchGame(versionId) {
     versionId,
     playerName,
     uuid,
-    accessToken: '0',
+    accessToken,
+    userType,
     gameDir: dirs.gameDir,
     assetsDir: dirs.assetsDir,
     assetIndexId: json.assetIndex && json.assetIndex.id,
@@ -531,6 +680,8 @@ function registerIpc() {
   });
   ipcMain.handle('versions:install', (e, versionId) => installVersion(versionId));
   ipcMain.handle('versions:installFabric', (e, gameVersion, loaderVersion) => installFabric(gameVersion, loaderVersion));
+  ipcMain.handle('versions:installForge', (e, gameVersion, loader, loaderVersion) => installForge(gameVersion, loader, loaderVersion));
+  ipcMain.handle('forge:loaders', (e, gameVersion, loader) => listForgeLoaders(gameVersion, loader));
   ipcMain.handle('fabric:loaders', async (e, gameVersion) => {
     const game = String(gameVersion || '').trim();
     if (!game) return [];
@@ -583,18 +734,103 @@ function registerIpc() {
   ipcMain.handle('account:remove', (e, id) => accounts.removeAccount(userData(), id));
   ipcMain.handle('account:setActive', (e, id) => accounts.setActiveAccount(userData(), id));
 
+  // ===== 微软正版登录（设备代码流）=====
+  ipcMain.handle('account:msStart', async () => {
+    const s = getSettings();
+    const device = await microsoft.requestDeviceCode({ clientId: s.msClientId || '' });
+    const flowId = crypto.randomUUID();
+    pendingMsFlows.set(flowId, {
+      deviceCode: device.deviceCode,
+      clientId: device.clientId,
+      interval: device.interval,
+      expiresAt: Date.now() + device.expiresIn * 1000
+    });
+    log('微软登录：请在浏览器输入代码 ' + device.userCode);
+    return {
+      flowId,
+      userCode: device.userCode,
+      verificationUri: device.verificationUri,
+      expiresIn: device.expiresIn,
+      interval: device.interval,
+      message: device.message
+    };
+  });
+  ipcMain.handle('account:msPoll', async (e, flowId) => {
+    const flow = pendingMsFlows.get(flowId);
+    if (!flow) throw new Error('登录会话已失效，请重新发起微软登录');
+    if (Date.now() > flow.expiresAt) {
+      pendingMsFlows.delete(flowId);
+      throw new Error('设备代码已过期，请重新发起登录');
+    }
+    const result = await microsoft.pollDeviceCode({ clientId: flow.clientId, deviceCode: flow.deviceCode, interval: flow.interval });
+    if (result.pending) {
+      if (result.slowDown && result.interval) flow.interval = result.interval;
+      return { pending: true, slowDown: Boolean(result.slowDown) };
+    }
+    pendingMsFlows.delete(flowId);
+    const profile = await microsoft.completeLogin(result, { clientId: flow.clientId });
+    const account = accounts.upsertMicrosoftAccount(userData(), profile);
+    settingsCore.save(settingsFile(), Object.assign(getSettings(), { playerName: account.name }));
+    log('微软正版登录成功：' + account.name, 'ok');
+    return { pending: false, account };
+  });
+  ipcMain.handle('account:msCancel', (e, flowId) => {
+    pendingMsFlows.delete(flowId);
+    return true;
+  });
+  ipcMain.handle('account:refresh', async (e, accountId) => {
+    const account = accounts.getAccountById(userData(), accountId) || accounts.getActiveAccount(userData());
+    if (!account || account.type !== 'microsoft') throw new Error('只有微软正版账号需要刷新');
+    const fresh = await microsoft.refreshAccount(account);
+    return accounts.upsertMicrosoftAccount(userData(), fresh);
+  });
+  ipcMain.handle('account:skinUpload', async (e, variant) => {
+    const account = accounts.getActiveAccount(userData());
+    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    const picked = await dialog.showOpenDialog(win, {
+      title: '选择皮肤 PNG（64×64 或 64×32）',
+      filters: [{ name: '皮肤', extensions: ['png'] }],
+      properties: ['openFile']
+    });
+    if (picked.canceled || !picked.filePaths.length) return null;
+    await microsoft.uploadSkin(account.accessToken, account.uuid, picked.filePaths[0], variant);
+    log('皮肤已上传：' + account.name, 'ok');
+    return { ok: true, name: account.name };
+  });
+  ipcMain.handle('account:skinReset', async () => {
+    const account = accounts.getActiveAccount(userData());
+    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    await microsoft.resetSkin(account.accessToken);
+    return { ok: true };
+  });
+
   // ===== 游戏目录扫描 =====
   // （game:scanDirs / game:setDir / dialog:pick* 已在上面注册）
 
-  // ===== 模组（Modrinth）=====
-  ipcMain.handle('mods:search', (e, query, gameVersion) => tools.modrinthSearch(query, { gameVersion }));
-  ipcMain.handle('mods:versions', (e, projectId, gameVersion) => tools.modrinthVersions(projectId, gameVersion));
-  ipcMain.handle('mods:install', (e, modVersion) =>
-    tools.installMod(modVersion, dataDirs().gameDir, { onProgress: (p) => send('download:progress', p) })
+  // ===== 模组 / 资源包 / 光影（Modrinth + CurseForge）=====
+  ipcMain.handle('mods:search', (e, query, options) => {
+    const s = getSettings();
+    const opts = Object.assign({}, options || {});
+    if (!opts.gameVersion) opts.gameVersion = s.versionId || '';
+    if (!opts.apiKey) opts.apiKey = s.curseForgeApiKey || '';
+    return tools.searchProjects(query, opts);
+  });
+  ipcMain.handle('mods:versions', (e, source, projectId, gameVersion) => {
+    const s = getSettings();
+    return tools.projectFiles(source, projectId, gameVersion || s.versionId || '', {
+      apiKey: s.curseForgeApiKey || ''
+    });
+  });
+  ipcMain.handle('mods:install', (e, modVersion, projectType) =>
+    tools.installMod(modVersion, dataDirs().gameDir, {
+      projectType,
+      onProgress: (p) => send('download:progress', p)
+    })
   );
-  ipcMain.handle('mods:list', () => tools.listInstalledMods(dataDirs().gameDir));
-  ipcMain.handle('mods:openDir', () => {
-    const dir = path.join(dataDirs().gameDir, 'mods');
+  ipcMain.handle('mods:list', (e, type) => tools.listInstalledMods(dataDirs().gameDir, type));
+  ipcMain.handle('mods:openDir', (e, type) => {
+    const dirName = { resourcepack: 'resourcepacks', shader: 'shaderpacks', datapack: 'datapacks', modpack: 'modpacks' }[type] || 'mods';
+    const dir = path.join(dataDirs().gameDir, dirName);
     fs.mkdirSync(dir, { recursive: true });
     shell.openPath(dir);
     return dir;

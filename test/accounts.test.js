@@ -53,6 +53,39 @@ test('切换与删除账号会正确回退', () => {
   assert.strictEqual(accounts.listAccounts(dir).accounts.length, 1);
 });
 
+test('微软正版账号按 UUID 覆盖并自动设为活跃', () => {
+  const dir = tmp();
+  accounts.addOfflineAccount(dir, 'Offline');
+  const first = accounts.upsertMicrosoftAccount(dir, {
+    type: 'microsoft',
+    name: 'Steve',
+    uuid: 'uuid-1',
+    accessToken: 'A1',
+    refreshToken: 'R1',
+    expiresAt: '2024-01-01'
+  });
+  assert.strictEqual(first.id, 'ms-uuid-1');
+  assert.strictEqual(accounts.getActiveAccount(dir).name, 'Steve');
+
+  const updated = accounts.upsertMicrosoftAccount(dir, {
+    type: 'microsoft',
+    name: 'Steve',
+    uuid: 'uuid-1',
+    accessToken: 'A2',
+    refreshToken: 'R2',
+    expiresAt: '2024-02-01'
+  });
+  assert.strictEqual(updated.id, 'ms-uuid-1');
+  assert.strictEqual(updated.createdAt, first.createdAt);
+  assert.strictEqual(accounts.listAccounts(dir).accounts.filter((a) => a.type === 'microsoft').length, 1);
+  assert.strictEqual(accounts.listAccounts(dir).accounts.length, 2);
+});
+
+test('微软账号缺少必要字段会被拒绝', () => {
+  const dir = tmp();
+  assert.throws(() => accounts.upsertMicrosoftAccount(dir, { name: 'Steve' }), /信息不完整/);
+});
+
 test('accounts.json 损坏时安全回退为空列表', () => {
   const dir = tmp();
   fs.writeFileSync(path.join(dir, 'accounts.json'), '{not json', 'utf8');
