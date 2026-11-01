@@ -50,7 +50,8 @@ function addOfflineAccount(userDataDir, playerName) {
     data.active = existing.id;
   } else {
     const acc = {
-      id: 'offline-' + Date.now().toString(36),
+      // 同一毫秒内添加多个账号时也必须唯一
+      id: 'offline-' + Date.now().toString(36) + '-' + crypto.randomBytes(3).toString('hex'),
       type: 'offline',
       name,
       uuid: offlineUuid(name),

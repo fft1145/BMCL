@@ -52,6 +52,26 @@ test('buildDownloadPlan 在 Windows 上包含 natives 库', () => {
   assert.ok(plan.files.some((f) => f.path.includes('natives-windows')));
 });
 
+test('buildDownloadPlan 支持 Maven 布局（Fabric profile 只给 name + url）', () => {
+  const fabricProfile = {
+    id: '1.21.3-Fabric 0.17.3',
+    inheritsFrom: '1.21.3',
+    libraries: [
+      { name: 'net.fabricmc:fabric-loader:0.17.3', url: 'https://maven.fabricmc.net/' },
+      { name: 'org.ow2.asm:asm:9.6', url: 'https://maven.fabricmc.net' }
+    ]
+  };
+  const plan = installer.buildDownloadPlan(fabricProfile, options('linux'));
+  assert.strictEqual(plan.files.length, 2);
+  const loader = plan.files.find((f) => f.url.includes('fabric-loader'));
+  assert.strictEqual(
+    loader.url,
+    'https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.17.3/fabric-loader-0.17.3.jar'
+  );
+  assert.ok(loader.path.replace(/\\/g, '/').endsWith('net/fabricmc/fabric-loader/0.17.3/fabric-loader-0.17.3.jar'));
+  assert.strictEqual(loader.kind, 'library-maven');
+});
+
 test('buildAssetPlan 按哈希目录生成下载地址', () => {
   const index = {
     objects: {

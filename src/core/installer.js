@@ -43,7 +43,8 @@ function libraryPath(lib, suffix) {
   const file = suffix
     ? `${artifact}-${version}-${suffix}.${ext}`
     : `${artifact}-${version}.${ext}`;
-  return [group, artifact, version, file].join('/').replace(/\\/g, '/');
+  const groupDir = String(group || '').replace(/\./g, '/');
+  return [groupDir, artifact, version, file].join('/').replace(/\\/g, '/');
 }
 
 /**
@@ -99,6 +100,16 @@ function buildDownloadPlan(versionJson, options = {}) {
         sha1: artifact.sha1,
         size: artifact.size,
         kind: 'library'
+      });
+    }
+    // Maven 布局的库（Fabric / Quilt / 部分 Forge 元数据只给 name + url）
+    if (lib.name && lib.url && !artifact) {
+      const { classifier } = libraryKey(lib);
+      const rel = libraryPath(lib, classifier || '');
+      files.push({
+        url: String(lib.url).replace(/\/+$/, '') + '/' + rel,
+        path: path.join(librariesDir, rel),
+        kind: 'library-maven'
       });
     }
     // 旧版 natives（classifiers 形式）

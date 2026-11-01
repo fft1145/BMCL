@@ -5,7 +5,7 @@
  * 所有业务逻辑放在 src/core 下的纯模块，这里只负责窗口、IPC 与进程管理。
  */
 
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const fsp = fs.promises;
@@ -41,12 +41,12 @@ function sessionFile() {
 
 function getSettings() {
   const s = settingsCore.load(settingsFile());
-  if (!s.gameDir) {
-    // 自动检测已有的 Minecraft 安装目录
-    const found = tools.scanMinecraftDirs();
+  // 已保存的游戏目录若不再可用（被删除/移动/本身为空壳），重新检测
+  if (!s.gameDir || !tools.isValidGameDir(s.gameDir)) {
+    const found = tools.scanMinecraftDirs({ extra: s.extraGameDirs || [] });
     if (found.length) {
       s.gameDir = found[0].path;
-    } else {
+    } else if (!s.gameDir) {
       s.gameDir = path.join(userData(), 'game');
     }
   }
@@ -92,18 +92,120 @@ function extractZip(zipFile, destDir) {
 }
 
 async function installedVersions() {
-  const dir = dataDirs().versionsDir;
-  if (!fs.existsSync(dir)) return [];
-  const out = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const jsonPath = path.join(dir, entry.name, entry.name + '.json');
-    if (!fs.existsSync(jsonPath)) continue;
-    let type = 'release';
-    try { type = JSON.parse(fs.readFileSync(jsonPath, 'utf8')).type || type; } catch (e) {}
-    out.push({ id: entry.name, type, installedAt: fs.statSync(jsonPath).mtime.toISOString() });
+  const s = getSettings();
+  return gameDirState(s);
+}
+
+function gameDirState(s) {
+  const versions = tools.listVersionsIn(s.gameDir);
+  return {
+    gameDir: s.gameDir,
+    valid: tools.isValidGameDir(s.gameDir),
+    versions,
+    candidates: tools.scanMinecraftDirs({ extra: s.extraGameDirs || [] })
+  };
+}
+
+/**
+ * 递归解析 inheritsFrom 版本链，并合并成可直接启动的完整 version json。
+ * 返回 { json, levels, clientJar, nativesDir }
+ */
+function resolveVersionChain(versionsDir, versionId) {
+  const levels = [];
+  const seen = new Set();
+  let id = versionId;
+  let merged = null;
+  while (id) {
+    if (seen.has(id)) throw new Error('版本继承出现循环：' + id);
+    seen.add(id);
+    const dir = path.join(versionsDir, id);
+    const file = path.join(dir, id + '.json');
+    if (!fs.existsSync(file)) {
+      throw new Error(id === versionId
+        ? '版本 ' + id + ' 未安装，请先在「下载」页安装'
+        : '缺少父版本 ' + id + '，请先安装它');
+    }
+    const json = JSON.parse(fs.readFileSync(file, 'utf8'));
+    levels.push({ id, dir, json });
+    merged = merged ? launcherCore.mergeVersionJson(json, merged) : json;
+    id = typeof json.inheritsFrom === 'string' ? json.inheritsFrom.trim() : '';
   }
-  return out.sort((a, b) => b.installedAt.localeCompare(a.installedAt));
+  let clientJar = '';
+  for (const level of levels) {
+    const candidate = path.join(level.dir, level.id + '.jar');
+    if (fs.existsSync(candidate)) {
+      clientJar = candidate;
+      break;
+    }
+  }
+  return { json: merged, levels, clientJar };
+}
+
+async function fetchJson(url, timeoutMs) {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs || 20000) : null;
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'fft1145-bmcl-launcher' },
+      signal: controller ? controller.signal : undefined
+    });
+    if (!res.ok) throw new Error('请求失败 HTTP ' + res.status + ' · ' + url);
+    return await res.json();
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** 安装 Fabric（原版 + Loader 继承），对应 PCL 下载页的「安装包 → Fabric」 */
+async function installFabric(gameVersion, loaderVersion) {
+  const dirs = dataDirs();
+  const game = String(gameVersion || '').trim();
+  if (!game) throw new Error('请先选择要安装 Fabric 的游戏版本');
+  const baseFile = path.join(dirs.versionsDir, game, game + '.json');
+  if (!fs.existsSync(baseFile)) {
+    log('Fabric 需要先安装原版 ' + game + '，正在安装…');
+    await installVersion(game);
+  }
+  let loader = String(loaderVersion || '').trim();
+  if (!loader) {
+    send('install:progress', { stage: '获取 Fabric Loader 版本', done: 0, total: 0 });
+    const list = await fetchJson('https://meta.fabricmc.net/v2/versions/loader/' + encodeURIComponent(game));
+    if (!Array.isArray(list) || !list.length) throw new Error('Fabric 暂不支持游戏版本 ' + game);
+    const stable = list.find((item) => item && item.loader && item.loader.stable);
+    loader = ((stable || list[0]).loader || {}).version || '';
+  }
+  if (!loader) throw new Error('没有找到可用的 Fabric Loader 版本');
+  send('install:progress', { stage: '下载 Fabric 配置', done: 0, total: 0 });
+  const profile = await fetchJson(
+    'https://meta.fabricmc.net/v2/versions/loader/' + encodeURIComponent(game) + '/' + encodeURIComponent(loader) + '/profile/json'
+  );
+  const id = game + '-Fabric ' + loader;
+  profile.id = id;
+  profile.inheritsFrom = game;
+  const versionDir = path.join(dirs.versionsDir, id);
+  await fsp.mkdir(versionDir, { recursive: true });
+  await fsp.writeFile(path.join(versionDir, id + '.json'), JSON.stringify(profile, null, 2));
+
+  const plan = installer.buildDownloadPlan(profile, {
+    versionsDir: dirs.versionsDir,
+    librariesDir: dirs.librariesDir,
+    assetsDir: dirs.assetsDir,
+    source: getSettings().source,
+    versionId: id
+  });
+  send('install:progress', { stage: '下载 Fabric 运行库', done: 0, total: plan.files.length });
+  const result = await installer.runPlan(plan, {
+    concurrency: 6,
+    retry: 3,
+    onProgress: (p) => send('install:progress', { stage: '下载 Fabric 运行库', done: p.done, total: p.total, failed: p.failed })
+  });
+  if (result.failed > 0) {
+    throw new Error('有 ' + result.failed + ' 个 Fabric 运行库下载失败：' + ((result.errors[0] || {}).message || ''));
+  }
+  settingsCore.save(settingsFile(), Object.assign(getSettings(), { versionId: id }));
+  send('install:progress', { stage: '完成', done: 1, total: 1 });
+  log('Fabric ' + loader + ' 安装完成（基于 ' + game + '）', 'ok');
+  return { versionId: id, loaderVersion: loader, files: plan.files.length };
 }
 
 async function installVersion(versionId) {
@@ -159,6 +261,8 @@ async function installVersion(versionId) {
   }
 
   send('install:progress', { stage: '完成', done: 1, total: 1 });
+  // 安装成功后自动把该版本设为当前实例，避免「装好了却启动不了」
+  settingsCore.save(settingsFile(), Object.assign(getSettings(), { versionId }));
   log('版本 ' + versionId + ' 安装完成', 'ok');
   return { versionId, files: plan.files.length };
 }
@@ -167,10 +271,21 @@ async function launchGame(versionId) {
   if (gameProcess) throw new Error('游戏已经在运行中');
   const s = getSettings();
   const dirs = dataDirs();
-  const versionDir = path.join(dirs.versionsDir, versionId);
-  const jsonFile = path.join(versionDir, versionId + '.json');
-  if (!fs.existsSync(jsonFile)) throw new Error('版本未安装，请先在「版本 / 下载」页安装');
-  const json = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+  // 没有指定版本时，退回到设置里的版本；再退回到第一个已安装版本
+  let id = versionId || s.versionId;
+  if (!id || !fs.existsSync(path.join(dirs.versionsDir, id, id + '.json'))) {
+    const first = tools.listVersionsIn(dirs.gameDir)[0];
+    id = first ? first.id : '';
+  }
+  if (!id) throw new Error('没有可启动的游戏版本。请先到「下载」页安装，或在「管理」里指定已有的游戏目录');
+  if (id !== s.versionId) {
+    settingsCore.save(settingsFile(), Object.assign(s, { versionId: id }));
+  }
+  const versionDir = path.join(dirs.versionsDir, id);
+  versionId = id;
+  const chain = resolveVersionChain(dirs.versionsDir, id);
+  const json = chain.json;
+  if (!json.libraries || !json.libraries.length) throw new Error('版本 ' + id + ' 的 json 不完整，请重新安装');
 
   const javaProbe = await javaCore.probeJava(s.javaPath || 'java');
   if (!javaProbe.ok) {
@@ -181,9 +296,19 @@ async function launchGame(versionId) {
   const uuid = (activeAccount && activeAccount.uuid) || launcherCore.offlineUuid(playerName);
   const ctx = { os: require('./src/core/rules').detectContext().os, features: {} };
   const libraryPaths = launcherCore.collectLibraryPaths(json, dirs.librariesDir, ctx);
-  const clientJar = path.join(versionDir, versionId + '.jar');
-  const nativesDir = path.join(versionDir, 'natives');
-  fs.mkdirSync(nativesDir, { recursive: true });
+  const clientJar = chain.clientJar || path.join(versionDir, versionId + '.jar');
+  let nativesDir = '';
+  for (const level of chain.levels) {
+    const candidate = path.join(level.dir, 'natives');
+    if (fs.existsSync(candidate) && fs.readdirSync(candidate).length) { nativesDir = candidate; break; }
+  }
+  if (!nativesDir) {
+    nativesDir = path.join(versionDir, 'natives');
+    fs.mkdirSync(nativesDir, { recursive: true });
+  }
+  if (!fs.existsSync(clientJar)) {
+    throw new Error('找不到 ' + versionId + ' 的核心 jar（' + clientJar + '）。请重新安装该版本。');
+  }
 
   const classpath = launcherCore.buildClasspath(libraryPaths, clientJar);
   const cmd = launcherCore.buildCommand({
@@ -376,12 +501,45 @@ function registerIpc() {
     return saved;
   });
   ipcMain.handle('versions:installed', () => installedVersions());
+  ipcMain.handle('versions:rescan', () => gameDirState(getSettings()));
+  ipcMain.handle('game:scanDirs', () => tools.scanMinecraftDirs({ extra: getSettings().extraGameDirs || [] }));
+  ipcMain.handle('game:setDir', (e, dir) => {
+    const value = String(dir || '').trim();
+    if (!value) throw new Error('游戏目录不能为空');
+    if (!tools.isDirectory(value)) throw new Error('目录不存在：' + value);
+    const saved = settingsCore.save(settingsFile(), Object.assign(getSettings(), { gameDir: value }));
+    return gameDirState(saved);
+  });
+  ipcMain.handle('dialog:pickDir', async (e, title) => {
+    const result = await dialog.showOpenDialog(win, {
+      title: title || '选择文件夹',
+      properties: ['openDirectory']
+    });
+    return result.canceled ? '' : result.filePaths[0];
+  });
+  ipcMain.handle('dialog:pickFile', async (e, title) => {
+    const result = await dialog.showOpenDialog(win, {
+      title: title || '选择文件',
+      properties: ['openFile']
+    });
+    return result.canceled ? '' : result.filePaths[0];
+  });
   ipcMain.handle('versions:list', async () => {
     const s = getSettings();
     const manifest = await vm.fetchManifest({ source: s.source });
     return { source: manifest.source, latest: manifest.latest, versions: manifest.versions };
   });
   ipcMain.handle('versions:install', (e, versionId) => installVersion(versionId));
+  ipcMain.handle('versions:installFabric', (e, gameVersion, loaderVersion) => installFabric(gameVersion, loaderVersion));
+  ipcMain.handle('fabric:loaders', async (e, gameVersion) => {
+    const game = String(gameVersion || '').trim();
+    if (!game) return [];
+    const list = await fetchJson('https://meta.fabricmc.net/v2/versions/loader/' + encodeURIComponent(game));
+    return (Array.isArray(list) ? list : []).slice(0, 30).map((item) => ({
+      version: (item.loader || {}).version || '',
+      stable: Boolean((item.loader || {}).stable)
+    })).filter((item) => item.version);
+  });
   ipcMain.handle('game:launch', (e, versionId) => launchGame(versionId));
   ipcMain.handle('game:stop', () => stopGame());
   ipcMain.handle('game:openDir', () => {
@@ -406,6 +564,10 @@ function registerIpc() {
     if (typeof url === 'string' && /^https?:\/\//.test(url)) return shell.openExternal(url);
     return null;
   });
+  ipcMain.handle('shell:openPath', (e, target) => {
+    if (typeof target === 'string' && target) return shell.openPath(target);
+    return null;
+  });
   ipcMain.handle('window:minimize', () => { if (win && !win.isDestroyed()) win.minimize(); });
   ipcMain.handle('window:maximize', () => {
     if (!win || win.isDestroyed()) return false;
@@ -422,7 +584,7 @@ function registerIpc() {
   ipcMain.handle('account:setActive', (e, id) => accounts.setActiveAccount(userData(), id));
 
   // ===== 游戏目录扫描 =====
-  ipcMain.handle('game:scanDirs', () => tools.scanMinecraftDirs());
+  // （game:scanDirs / game:setDir / dialog:pick* 已在上面注册）
 
   // ===== 模组（Modrinth）=====
   ipcMain.handle('mods:search', (e, query, gameVersion) => tools.modrinthSearch(query, { gameVersion }));
@@ -431,6 +593,12 @@ function registerIpc() {
     tools.installMod(modVersion, dataDirs().gameDir, { onProgress: (p) => send('download:progress', p) })
   );
   ipcMain.handle('mods:list', () => tools.listInstalledMods(dataDirs().gameDir));
+  ipcMain.handle('mods:openDir', () => {
+    const dir = path.join(dataDirs().gameDir, 'mods');
+    fs.mkdirSync(dir, { recursive: true });
+    shell.openPath(dir);
+    return dir;
+  });
 
   // ===== 工具 =====
   ipcMain.handle('tools:cleanJunk', async () => tools.cleanJunk(dataDirs().gameDir));

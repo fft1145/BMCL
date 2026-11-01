@@ -104,6 +104,67 @@ test('兼容旧版 minecraftArguments', () => {
   assert.ok(cmd.args.includes('--session'));
 });
 
+test('mergeVersionJson 合并 inheritsFrom：库去重、参数拼接、子版本覆盖主类', () => {
+  const parent = {
+    id: '1.21.3',
+    mainClass: 'net.minecraft.client.main.Main',
+    assetIndex: { id: '21', url: 'https://x/21.json' },
+    downloads: { client: { url: 'https://x/client.jar', sha1: 'a', size: 1 } },
+    arguments: { jvm: ['-cp', '${classpath}'], game: ['--username', '${auth_player_name}'] },
+    libraries: [
+      { name: 'com.mojang:brigadier:1.0.18', downloads: { artifact: { path: 'com/mojang/brigadier/1.0.18/brigadier-1.0.18.jar' } } },
+      { name: 'org.ow2.asm:asm:9.5', downloads: { artifact: { path: 'org/ow2/asm/asm/9.5/asm-9.5.jar' } } }
+    ]
+  };
+  const child = {
+    id: '1.21.3-Fabric 0.17.3',
+    inheritsFrom: '1.21.3',
+    mainClass: 'net.fabricmc.loader.impl.launch.knot.KnotClient',
+    arguments: { jvm: ['-DFabricMcEmu=net.minecraft.client.main.Main'], game: [] },
+    libraries: [
+      { name: 'net.fabricmc:fabric-loader:0.17.3', url: 'https://maven.fabricmc.net/' },
+      { name: 'org.ow2.asm:asm:9.6', url: 'https://maven.fabricmc.net/' }
+    ]
+  };
+
+  const merged = launcher.mergeVersionJson(parent, child);
+  assert.strictEqual(merged.id, '1.21.3-Fabric 0.17.3');
+  assert.strictEqual(merged.mainClass, 'net.fabricmc.loader.impl.launch.knot.KnotClient');
+  assert.strictEqual(merged.inheritsFrom, undefined);
+  assert.deepStrictEqual(merged.assetIndex, parent.assetIndex);
+  assert.strictEqual(merged.downloads.client.url, 'https://x/client.jar');
+  // 库：父 2 + 子 2，同名（group:artifact:version）去重，不同版本保留
+  assert.strictEqual(merged.libraries.length, 4);
+  assert.ok(merged.libraries.some((l) => l.name === 'org.ow2.asm:asm:9.6'));
+  assert.ok(merged.libraries.some((l) => l.name === 'org.ow2.asm:asm:9.5'));
+  // 参数：父在前、子在后
+  assert.deepStrictEqual(merged.arguments.jvm, ['-cp', '${classpath}', '-DFabricMcEmu=net.minecraft.client.main.Main']);
+  assert.deepStrictEqual(merged.arguments.game, ['--username', '${auth_player_name}']);
+});
+
+test('mergeVersionJson 结果可直接构造启动命令', () => {
+  const merged = launcher.mergeVersionJson(
+    {
+      id: '1.21.3',
+      mainClass: 'net.minecraft.client.main.Main',
+      minecraftArguments: '--username ${auth_player_name} --gameDir ${game_directory}'
+    },
+    { id: '1.21.3-Fabric', inheritsFrom: '1.21.3', mainClass: 'KnotClient', libraries: [] }
+  );
+  const cmd = launcher.buildCommand({
+    versionJson: merged,
+    versionId: '1.21.3-Fabric',
+    playerName: 'Steve',
+    uuid: '0',
+    gameDir: '/g',
+    classpath: 'cp',
+    nativesDir: 'n',
+    ctx: detectContext('linux', 'x64')
+  });
+  assert.ok(cmd.args.includes('KnotClient'));
+  assert.ok(cmd.args.includes('Steve'));
+});
+
 test('collectLibraryPaths 只收集规则允许的库', () => {
   const json = {
     libraries: [

@@ -34,6 +34,54 @@ function applyTokens(str, values) {
   });
 }
 
+/**
+ * 合并 inheritsFrom 版本链（等价于 PCL 的版本继承）。
+ * 子版本覆盖父版本的同名库，参数按「父在前、子在后」拼接，
+ * 这样 Fabric / Quilt / 部分整合包写法才能正常启动。
+ */
+function mergeVersionJson(parent, child) {
+  const p = parent || {};
+  const c = child || {};
+  const libraries = [];
+  const indexByKey = new Map();
+
+  const addLibrary = (lib, fromChild) => {
+    const key = String((lib && lib.name) || '').toLowerCase().trim();
+    if (!key) {
+      libraries.push(lib);
+      return;
+    }
+    if (indexByKey.has(key)) {
+      if (fromChild) libraries[indexByKey.get(key)] = lib;
+      return;
+    }
+    indexByKey.set(key, libraries.length);
+    libraries.push(lib);
+  };
+  (Array.isArray(p.libraries) ? p.libraries : []).forEach((lib) => addLibrary(lib, false));
+  (Array.isArray(c.libraries) ? c.libraries : []).forEach((lib) => addLibrary(lib, true));
+
+  const pArgs = p.arguments || {};
+  const cArgs = c.arguments || {};
+  const merged = Object.assign({}, c);
+  delete merged.inheritsFrom;
+  merged.id = c.id || p.id || '';
+  merged.type = c.type || p.type || 'release';
+  merged.mainClass = c.mainClass || p.mainClass || '';
+  merged.assetIndex = c.assetIndex || p.assetIndex || null;
+  merged.assets = c.assets || p.assets || '';
+  merged.downloads = Object.assign({}, p.downloads || {}, c.downloads || {});
+  merged.javaVersion = c.javaVersion || p.javaVersion || null;
+  merged.logging = c.logging || p.logging || null;
+  merged.libraries = libraries;
+  merged.arguments = {
+    jvm: (Array.isArray(pArgs.jvm) ? pArgs.jvm : []).concat(Array.isArray(cArgs.jvm) ? cArgs.jvm : []),
+    game: (Array.isArray(pArgs.game) ? pArgs.game : []).concat(Array.isArray(cArgs.game) ? cArgs.game : [])
+  };
+  merged.minecraftArguments = c.minecraftArguments || p.minecraftArguments || null;
+  return merged;
+}
+
 function collectArgs(list, ctx, values) {
   const out = [];
   if (!Array.isArray(list)) return out;
@@ -155,10 +203,11 @@ function collectLibraryPaths(versionJson, librariesDir, ctx) {
     if (!lib.natives && lib.name) {
       const parts = String(lib.name).split(':');
       if (parts.length < 3) continue;
+      const groupDir = parts[0].replace(/\./g, '/');
       const file = parts[3]
         ? parts[1] + '-' + parts[2] + '-' + parts[3] + '.jar'
         : parts[1] + '-' + parts[2] + '.jar';
-      out.push(path.join(librariesDir, parts[0], parts[1], parts[2], file));
+      out.push(path.join(librariesDir, groupDir, parts[1], parts[2], file));
     }
   }
   return out;
@@ -181,6 +230,7 @@ function buildCommand(options) {
 
 module.exports = {
   offlineUuid,
+  mergeVersionJson,
   applyTokens,
   collectArgs,
   buildClasspath,

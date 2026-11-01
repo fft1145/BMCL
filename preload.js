@@ -21,12 +21,18 @@ contextBridge.exposeInMainWorld('bmcl', {
   listInstalled: () => ipcRenderer.invoke('versions:installed'),
   listRemote: () => ipcRenderer.invoke('versions:list'),
   installVersion: (id) => ipcRenderer.invoke('versions:install', id),
+  installFabric: (gameVersion, loaderVersion) => ipcRenderer.invoke('versions:installFabric', gameVersion, loaderVersion),
+  listFabricLoaders: (gameVersion) => ipcRenderer.invoke('fabric:loaders', gameVersion),
 
   // 游戏
   launch: (id) => ipcRenderer.invoke('game:launch', id),
   stop: () => ipcRenderer.invoke('game:stop'),
   openGameDir: () => ipcRenderer.invoke('game:openDir'),
   scanGameDirs: () => ipcRenderer.invoke('game:scanDirs'),
+  setGameDir: (dir) => ipcRenderer.invoke('game:setDir', dir),
+  rescanVersions: () => ipcRenderer.invoke('versions:rescan'),
+  pickDirectory: (title) => ipcRenderer.invoke('dialog:pickDir', title),
+  pickFile: (title) => ipcRenderer.invoke('dialog:pickFile', title),
 
   // 崩溃 / 网络 / 更新
   diagnoseCrash: () => ipcRenderer.invoke('crash:diagnose'),
@@ -51,6 +57,7 @@ contextBridge.exposeInMainWorld('bmcl', {
   getModVersions: (projectId, gameVersion) => ipcRenderer.invoke('mods:versions', projectId, gameVersion),
   installMod: (modVersion) => ipcRenderer.invoke('mods:install', modVersion),
   listInstalledMods: () => ipcRenderer.invoke('mods:list'),
+  openModsDir: () => ipcRenderer.invoke('mods:openDir'),
 
   // 工具
   cleanJunk: () => ipcRenderer.invoke('tools:cleanJunk'),
@@ -63,6 +70,7 @@ contextBridge.exposeInMainWorld('bmcl', {
 
   // 系统
   openExternal: (url) => ipcRenderer.invoke('shell:open', url),
+  openPath: (target) => ipcRenderer.invoke('shell:openPath', target),
   winMinimize: () => ipcRenderer.invoke('window:minimize'),
   winMaximize: () => ipcRenderer.invoke('window:maximize'),
   winClose: () => ipcRenderer.invoke('window:close'),

@@ -9,7 +9,8 @@ const DEFAULTS = {
   playerName: 'fft1145',    // 离线玩家名
   memoryMB: 2048,
   javaPath: '',             // 留空则自动寻找
-  gameDir: '',              // 留空则使用启动器数据目录下的 game
+  gameDir: '',              // 留空则自动扫描
+  extraGameDirs: [],        // 用户手动添加过的候选目录
   autoUpdate: true,         // 自动检测更新
   crashWatch: true,         // 崩溃自检
   checkDownloads: true      // 启动时检测下载是否被禁止
@@ -22,6 +23,9 @@ function normalize(input) {
   out.autoUpdate = Boolean(out.autoUpdate);
   out.crashWatch = Boolean(out.crashWatch);
   out.checkDownloads = Boolean(out.checkDownloads);
+  out.extraGameDirs = Array.isArray(out.extraGameDirs)
+    ? out.extraGameDirs.filter((d) => typeof d === 'string' && d.trim()).map((d) => d.trim())
+    : [];
   return out;
 }
 
