@@ -83,8 +83,19 @@ function parseRelease(json) {
   };
 }
 
+/** 固定产物名：配合 releases/latest 直链，网站与启动器都无需随版本改链接 */
+const UPDATE_ASSET_NAME = 'fft1145-portable.exe';
+
 function findUpdateAsset(assets) {
   if (!Array.isArray(assets)) return null;
+  // 优先固定名的便携版 exe
+  const fixed = assets.find((a) => a.name === UPDATE_ASSET_NAME);
+  if (fixed) return fixed;
+  // 兼容历史版本：任意 fft1145/bmcl 的 exe
+  const exes = assets.filter((a) => /\.exe$/i.test(a.name));
+  const winExe = exes.find((a) => /fft1145|bmcl/i.test(a.name)) || exes[0];
+  if (winExe) return winExe;
+  // 再退回 zip（旧版本产物）
   const zips = assets.filter((a) => /\.zip$/i.test(a.name));
   if (!zips.length) return null;
   const win = zips.find((a) => /win|fft1145|bmcl/i.test(a.name));
@@ -192,6 +203,7 @@ async function applyUpdateTree(sourceDir, appDir, options = {}) {
 
 module.exports = {
   REPO,
+  UPDATE_ASSET_NAME,
   LAUNCHER_UPDATE_WHITELIST,
   isPathAllowedForUpdate,
   compareVersions,

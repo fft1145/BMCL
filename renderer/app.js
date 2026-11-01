@@ -353,6 +353,71 @@
     }
   }
 
+  async function scanRepair() {
+    $('#repairResult').innerHTML = '<span class="tip">扫描中…</span>';
+    $('#repairState').textContent = '扫描中';
+    try {
+      const report = await bmcl.scanRepair();
+      state.repair = report;
+      renderRepair(report, 'scan');
+      toast(report.ok ? '启动器状态正常' : '发现 ' + countFixable(report) + ' 项可修复问题', report.ok ? 'ok' : 'error');
+    } catch (err) {
+      $('#repairResult').innerHTML = '<span class="cause">扫描失败：' + esc(err.message) + '</span>';
+      $('#repairState').textContent = '扫描失败';
+    }
+  }
+
+  async function runRepair() {
+    const btn = $('#btnRepairRun');
+    btn.disabled = true;
+    btn.textContent = '修复中…';
+    try {
+      const result = await bmcl.runRepair();
+      state.repair = result;
+      renderRepair(result, 'fixed');
+      state.settings = await bmcl.getSettings();
+      applySettingsToForm(state.settings);
+      await refreshInstalled();
+      syncVersionLabel();
+      if (result.failed > 0) {
+        toast('修复完成，' + result.failed + ' 项需要手动处理', 'error');
+      } else {
+        toast('修复完成，共修复 ' + result.fixed + ' 项', 'ok');
+      }
+    } catch (err) {
+      toast('修复失败：' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '一键修复';
+    }
+  }
+
+  function countFixable(report) {
+    return (report.issues || []).filter((i) => i.status === 'skip').length;
+  }
+
+  function renderRepair(report, mode) {
+    const rows = (report.issues || []).map((i) => {
+      if (i.status === 'ok') return '<div class="tip">✔ ' + esc(i.title) + '：正常</div>';
+      if (i.status === 'fixed') return '<div class="tip">✔ ' + esc(i.title) + '：已修复（' + esc(i.detail) + '）</div>';
+      if (i.status === 'fail') return '<div class="cause">✖ ' + esc(i.title) + '：无法修复（' + esc(i.detail) + '）</div>';
+      return '<div>· ' + esc(i.title) + '：待修复（' + esc(i.detail) + '）</div>';
+    }).join('');
+    $('#repairResult').innerHTML = rows || '<span class="tip">没有需要检查的项目。</span>';
+
+    const pending = countFixable(report);
+    const failed = (report.issues || []).filter((i) => i.status === 'fail').length;
+    if (mode === 'fixed') {
+      $('#repairState').textContent = failed > 0 ? failed + ' 项待手动处理' : '已修复 ' + report.fixed + ' 项';
+      $('#btnRepairRun').classList.add('hidden');
+    } else {
+      $('#repairState').textContent = failed > 0
+        ? failed + ' 项需手动处理'
+        : (pending ? pending + ' 项待修复' : '全部正常');
+      $('#btnRepairRun').classList.toggle('hidden', pending === 0);
+    }
+  }
+
   function bindEvents() {
     document.querySelectorAll('.nav-btn').forEach((btn) => {
       btn.addEventListener('click', () => switchPage(btn.dataset.page));
@@ -406,6 +471,8 @@
     $('#btnCheckUpdate').addEventListener('click', checkUpdate);
     $('#btnApplyUpdate').addEventListener('click', applyUpdate);
     $('#btnDiagnose').addEventListener('click', diagnoseNow);
+    $('#btnRepairScan').addEventListener('click', scanRepair);
+    $('#btnRepairRun').addEventListener('click', runRepair);
 
     $('#setSource').addEventListener('change', () => {
       state.remote = null;

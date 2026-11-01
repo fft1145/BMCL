@@ -18,6 +18,7 @@ const launcherCore = require('./src/core/launcher');
 const updater = require('./src/core/updater');
 const crashGuard = require('./src/core/crash-guard');
 const javaCore = require('./src/core/java');
+const repairCore = require('./src/core/repair');
 
 const APP_NAME = 'fft1145';
 const APP_VERSION = require('./package.json').version;
@@ -266,6 +267,18 @@ async function selfCheck() {
   return { ok: checks.every((c) => c.ok), checks };
 }
 
+function repairContext() {
+  const s = getSettings();
+  return {
+    userDataDir: userData(),
+    appDir: app.getAppPath(),
+    settingsFile: settingsFile(),
+    sessionFile: sessionFile(),
+    gameDir: s.gameDir,
+    appFiles: ['main.js', 'preload.js', 'src/core/launcher.js', 'renderer/index.html']
+  };
+}
+
 async function preflight() {
   const s = getSettings();
   const out = { settings: s, selfCheck: await selfCheck(), crash: null, download: null, update: null };
@@ -292,8 +305,8 @@ async function preflight() {
 
 async function applyUpdate(release) {
   if (!release || !release.asset) throw new Error('该版本没有可下载的更新包');
-  if (app.isPackaged) {
-    // 打包后的 exe 无法原地替换，直接引导到发布页下载新版
+  if (app.isPackaged || !/\.zip$/i.test(release.asset.name)) {
+    // 打包后的 exe 无法原地替换，直接引导到发布页下载新版（永远指向最新 Release）
     await shell.openExternal(release.htmlUrl);
     return { redirected: true, url: release.htmlUrl };
   }
@@ -370,6 +383,12 @@ function registerIpc() {
   ipcMain.handle('update:check', () => updater.checkForUpdate({ currentVersion: APP_VERSION }));
   ipcMain.handle('update:apply', (e, release) => applyUpdate(release));
   ipcMain.handle('java:probe', (e, javaPath) => javaCore.probeJava(javaPath || getSettings().javaPath || 'java'));
+  ipcMain.handle('repair:scan', () => repairCore.scan(repairContext()));
+  ipcMain.handle('repair:run', () => {
+    const result = repairCore.repair(repairContext());
+    log('一键修复完成：修复 ' + result.fixed + ' 项，失败 ' + result.failed + ' 项', result.failed ? 'warn' : 'ok');
+    return result;
+  });
   ipcMain.handle('shell:open', (e, url) => {
     if (typeof url === 'string' && /^https?:\/\//.test(url)) return shell.openExternal(url);
     return null;

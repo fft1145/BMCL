@@ -24,6 +24,8 @@ contextBridge.exposeInMainWorld('bmcl', {
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   applyUpdate: (release) => ipcRenderer.invoke('update:apply', release),
   probeJava: (javaPath) => ipcRenderer.invoke('java:probe', javaPath),
+  scanRepair: () => ipcRenderer.invoke('repair:scan'),
+  runRepair: () => ipcRenderer.invoke('repair:run'),
   openExternal: (url) => ipcRenderer.invoke('shell:open', url),
   winMinimize: () => ipcRenderer.invoke('window:minimize'),
   winMaximize: () => ipcRenderer.invoke('window:maximize'),

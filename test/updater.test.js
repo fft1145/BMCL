@@ -51,6 +51,24 @@ test('parseRelease 与 findUpdateAsset', () => {
   assert.strictEqual(updater.findUpdateAsset(release.assets).name, 'fft1145-1.2.0-win.zip');
 });
 
+test('findUpdateAsset 优先固定名 exe，其次兼容旧 exe / zip', () => {
+  const fixed = updater.findUpdateAsset([
+    { name: 'fft1145-1.2.0-portable.exe', url: 'https://x/old.exe' },
+    { name: 'fft1145-portable.exe', url: 'https://x/fixed.exe' }
+  ]);
+  assert.strictEqual(fixed.name, 'fft1145-portable.exe');
+
+  const legacyExe = updater.findUpdateAsset([
+    { name: 'fft1145-1.1.0-portable.exe', url: 'https://x/legacy.exe' }
+  ]);
+  assert.strictEqual(legacyExe.name, 'fft1145-1.1.0-portable.exe');
+
+  const zipOnly = updater.findUpdateAsset([
+    { name: 'fft1145-1.0.0-win.zip', url: 'https://x/old.zip' }
+  ]);
+  assert.strictEqual(zipOnly.name, 'fft1145-1.0.0-win.zip');
+});
+
 test('checkForUpdate 发现更高版本', async () => {
   const fetchImpl = async () => ({
     ok: true,

@@ -231,6 +231,16 @@
           </div>
 
           <div class="card">
+            <div class="card-head"><h2>一键修复启动器</h2><span class="tag" id="repairState">未扫描</span></div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnRepairScan">开始扫描</button>
+              <button class="btn btn-sm btn-primary hidden" id="btnRepairRun">一键修复</button>
+            </div>
+            <div class="diag small" id="repairResult"><span class="tip">点击「开始扫描」，检查启动器自身的配置、目录与残留文件。</span></div>
+            <p class="hint">只修复启动器自身的设置与临时文件，<b>不会进入或改动任何游戏文件</b>。</p>
+          </div>
+
+          <div class="card">
             <div class="card-head"><h2>崩溃自检</h2></div>
             <div class="switch-row">
               <label class="switch"><input type="checkbox" id="setCrashWatch"><span>启动时自动检测上次崩溃</span></label>
