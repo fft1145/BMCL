@@ -104,6 +104,57 @@
     updateAvatar(name);
   }
 
+  // ===== GUI 主题 =====
+  function applyTheme(theme) {
+    const bmcl = theme === 'bmcl';
+    document.body.classList.toggle('theme-bmcl', bmcl);
+    const dash = $('#bmclDashboard');
+    if (dash) dash.classList.toggle('hidden', !bmcl);
+    // 同步设置页里的单选
+    const radios = document.querySelectorAll('input[name="uiTheme"]');
+    radios.forEach((r) => { r.checked = (r.value === theme); });
+    if (bmcl) renderBmclDashboard();
+  }
+
+  // BMCL 模式专属仪表盘
+  async function renderBmclDashboard() {
+    const mem = $('#bmclMemory');
+    if (mem) mem.textContent = (state.settings.memoryMB || 2048) + ' MB';
+    const vEl = $('#bmclVersions');
+    if (vEl) vEl.textContent = String((state.gameState.versions || []).length);
+
+    // Java（异步探测，避免阻塞）
+    const jEl = $('#bmclJava');
+    if (jEl) {
+      try {
+        const j = await bmcl.probeJava(state.settings.javaPath || '');
+        jEl.textContent = j && j.ok ? (j.version || '已就绪') : (j && j.message ? j.message : '未找到');
+        jEl.style.color = j && j.ok ? '' : '';
+      } catch (e) { jEl.textContent = '探测失败'; }
+    }
+
+    // 启动计数
+    const lEl = $('#bmclLaunches');
+    if (lEl) {
+      try { lEl.textContent = String(await bmcl.getLaunchCount()); } catch (e) { lEl.textContent = '0'; }
+    }
+
+    // 快捷启动列表
+    const list = $('#bmclQuickList');
+    if (!list) return;
+    const versions = (state.gameState.versions || []).slice(0, 6);
+    if (!versions.length) {
+      list.innerHTML = '<div class="bmcl-quick-empty">还没有已安装的版本</div>';
+      return;
+    }
+    list.innerHTML = versions.map((v) =>
+      '<div class="bmcl-quick-item" data-quick="' + esc(v.id) + '">' +
+        '<span class="bmcl-quick-id">' + esc(v.id) + '</span>' +
+        '<span class="bmcl-quick-type">' + esc(v.type || 'release') + '</span>' +
+      '</div>'
+    ).join('');
+  }
+
   function applySettingsToForm(s) {
     $('#setPlayer').value = s.playerName || '';
     $('#setMemory').value = s.memoryMB || 2048;
@@ -115,6 +166,7 @@
     $('#setAutoUpdate').checked = Boolean(s.autoUpdate);
     $('#setCrashWatch').checked = Boolean(s.crashWatch);
     $('#setCheckDownloads').checked = Boolean(s.checkDownloads);
+    applyTheme(s.uiTheme || 'pcl');
     syncAccountCard();
     syncVersionLabel();
   }
@@ -193,6 +245,7 @@
     populateModGameVersions();
     populateFabricGames();
     populatePackGames();
+    if (document.body.classList.contains('theme-bmcl')) renderBmclDashboard();
   }
 
   function populateModGameVersions() {
@@ -629,6 +682,7 @@
       autoUpdate: $('#setAutoUpdate').checked,
       crashWatch: $('#setCrashWatch').checked,
       checkDownloads: $('#setCheckDownloads').checked,
+      uiTheme: (document.querySelector('input[name="uiTheme"]:checked') || {}).value || 'pcl',
       versionId: state.settings.versionId || ''
     };
     state.settings = await bmcl.saveSettings(payload);
@@ -1335,6 +1389,16 @@
         renderFavorites();
         return;
       }
+      const quick = e.target.closest('[data-quick]');
+      if (quick) {
+        const id = quick.dataset.quick;
+        bmcl.saveSettings({ ...state.settings, versionId: id }).then(() => {
+          state.settings = Object.assign(state.settings, { versionId: id });
+          syncVersionLabel();
+          launchGame(id);
+        }).catch((err) => toast('启动失败：' + err.message, 'error'));
+        return;
+      }
     });
 
     // 设置页
@@ -1347,6 +1411,14 @@
     $('#btnRepairScan').addEventListener('click', scanRepair);
     $('#btnRepairRun').addEventListener('click', runRepair);
     $('#setSource').addEventListener('change', () => { state.remote = null; });
+    document.querySelectorAll('input[name="uiTheme"]').forEach((r) => {
+      r.addEventListener('change', async () => {
+        applyTheme(r.value);
+        try {
+          state.settings = await bmcl.saveSettings({ ...state.settings, uiTheme: r.value });
+        } catch (e) { /* ignore */ }
+      });
+    });
 
     // 账号
     $('#btnSwitchAccount').addEventListener('click', () => $('#accountPanel').classList.toggle('hidden'));

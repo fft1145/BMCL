@@ -15,13 +15,15 @@ const DEFAULTS = {
   crashWatch: true,         // 崩溃自检
   checkDownloads: true,     // 启动时检测下载是否被禁止
   curseForgeApiKey: '',      // 留空则使用内置的公共 Key
-  msClientId: ''             // 留空则使用内置的微软应用 ID
+  msClientId: '',            // 留空则使用内置的微软应用 ID
+  uiTheme: 'pcl'             // pcl（PCL CE 经典白蓝）| bmcl（BMCL 官网暗色风格）
 };
 
 function normalize(input) {
   const out = Object.assign({}, DEFAULTS, input || {});
   out.memoryMB = Math.max(512, Math.min(32768, Number(out.memoryMB) || DEFAULTS.memoryMB));
   out.source = out.source === 'official' ? 'official' : 'bmclapi';
+  out.uiTheme = out.uiTheme === 'bmcl' ? 'bmcl' : 'pcl';
   out.autoUpdate = Boolean(out.autoUpdate);
   out.crashWatch = Boolean(out.crashWatch);
   out.checkDownloads = Boolean(out.checkDownloads);
