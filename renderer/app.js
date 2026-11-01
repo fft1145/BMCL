@@ -46,6 +46,19 @@
     document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.page === name));
     document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + name));
     if (name === 'download' && !state.remote) loadRemoteVersions();
+    // 设置/工具页：激活第一个子页
+    if (name === 'settings' || name === 'tools') {
+      const page = $('#page-' + name);
+      const firstCat = page.querySelector('.set-cat');
+      if (firstCat) switchSub(name, firstCat.dataset.sub);
+    }
+  }
+
+  function switchSub(page, sub) {
+    const scope = $('#page-' + page);
+    if (!scope) return;
+    scope.querySelectorAll('.set-cat').forEach((c) => c.classList.toggle('active', c.dataset.sub === sub));
+    scope.querySelectorAll('.set-sub').forEach((s) => s.classList.toggle('active', s.dataset.subbody === sub));
   }
 
   function setState(running, text) {
@@ -63,16 +76,14 @@
   }
 
   function syncVersionLabel() {
-    const sel = $('#launchVersion');
     const label = $('#launchVersionLabel');
-    if (!sel || !label) return;
-    const opt = sel.options[sel.selectedIndex];
-    label.textContent = sel.value && opt ? opt.textContent : '未选择版本';
+    if (!label) return;
+    const id = state.settings.versionId;
+    label.textContent = id || '未选择版本';
   }
 
   function applySettingsToForm(s) {
     $('#setPlayer').value = s.playerName || '';
-    $('#launchPlayer').value = s.playerName || '';
     $('#setMemory').value = s.memoryMB || 2048;
     $('#setJava').value = s.javaPath || '';
     $('#setGameDir').value = s.gameDir || '';
@@ -81,47 +92,28 @@
     $('#setCrashWatch').checked = Boolean(s.crashWatch);
     $('#setCheckDownloads').checked = Boolean(s.checkDownloads);
     $('#topAccount').textContent = s.playerName || 'fft1145';
-    $('#topSource').textContent = s.source === 'official' ? '官方源' : 'BMCLAPI';
     updateAvatar(s.playerName);
   }
 
   function renderInstalled() {
-    const select = $('#launchVersion');
-    const prev = select.value;
-    select.innerHTML = '';
-    if (!state.installed.length) {
-      select.innerHTML = '<option value="">（暂无已安装版本）</option>';
-      $('#launchHint').textContent = '还没有安装版本，请到「下载」页安装一个。';
-    } else {
-      for (const v of state.installed) {
-        const option = document.createElement('option');
-        option.value = v.id;
-        option.textContent = v.id + '（' + v.type + '）';
-        select.appendChild(option);
-      }
-      if (prev && state.installed.some((v) => v.id === prev)) select.value = prev;
-      else if (state.settings.versionId && state.installed.some((v) => v.id === state.settings.versionId)) {
-        select.value = state.settings.versionId;
-      }
-      $('#launchHint').textContent = '选择版本后点击「启动游戏」。首次启动前请确认 Java 路径。';
-    }
-
     const list = $('#installedVersions');
-    syncVersionLabel();
     if (!state.installed.length) {
       list.innerHTML = '<p class="empty">还没有安装任何版本。</p>';
-      return;
+      $('#launchHint').textContent = '还没有安装版本，请到「下载」页安装一个。';
+    } else {
+      $('#launchHint').textContent = '已选版本：' + (state.settings.versionId || '未选择') + '。点击「启动游戏」开始。';
+      list.innerHTML = state.installed.map((v) =>
+        '<div class="version-item">' +
+          '<div class="v-left">' +
+            '<span class="v-id">' + esc(v.id) + '</span>' +
+            '<span class="v-type ' + esc(v.type) + '">' + esc(v.type) + '</span>' +
+            '<span class="v-meta">' + esc((v.installedAt || '').slice(0, 10)) + '</span>' +
+          '</div>' +
+          '<button class="btn btn-sm btn-primary" data-launch="' + esc(v.id) + '">启动</button>' +
+        '</div>'
+      ).join('');
     }
-    list.innerHTML = state.installed.map((v) =>
-      '<div class="version-item">' +
-        '<div class="v-left">' +
-          '<span class="v-id">' + esc(v.id) + '</span>' +
-          '<span class="v-type ' + esc(v.type) + '">' + esc(v.type) + '</span>' +
-          '<span class="v-meta">' + esc((v.installedAt || '').slice(0, 10)) + '</span>' +
-        '</div>' +
-        '<button class="btn btn-sm btn-primary" data-launch="' + esc(v.id) + '">启动</button>' +
-      '</div>'
-    ).join('');
+    syncVersionLabel();
   }
 
   function renderRemote(filter) {
@@ -187,8 +179,9 @@
     try {
       await bmcl.installVersion(id);
       toast('版本 ' + id + ' 安装完成', 'ok');
+      state.settings = await bmcl.saveSettings({ versionId: id });
+      syncVersionLabel();
       await refreshInstalled();
-      $('#launchVersion').value = id;
     } catch (err) {
       toast('安装失败：' + err.message, 'error');
       $('#installStage').textContent = '安装失败：' + err.message;
@@ -198,19 +191,14 @@
     }
   }
 
-  async function launchGame() {
-    const id = $('#launchVersion').value;
+  async function launchGame(versionId) {
+    const id = versionId || state.settings.versionId;
     if (!id) {
-      toast('请先安装并选择一个版本', 'error');
+      toast('请先在「下载」页安装并选择一个版本', 'error');
       return;
     }
-    const player = $('#launchPlayer').value.trim();
-    if (player && player !== state.settings.playerName) {
-      state.settings = await bmcl.saveSettings({ playerName: player });
-      applySettingsToForm(state.settings);
-    }
     $('#gameLog').textContent = '';
-    $('#launchHint').textContent = '正在启动…';
+    $('#launchHint').textContent = '正在启动 ' + id + ' …';
     try {
       await bmcl.launch(id);
       setState(true, '游戏运行中');
@@ -234,6 +222,12 @@
     el.textContent += text;
     if (el.textContent.length > 400000) el.textContent = el.textContent.slice(-300000);
     el.scrollTop = el.scrollHeight;
+    // 同步到设置页日志
+    const el2 = $('#gameLog2');
+    if (el2) {
+      el2.textContent = el.textContent;
+      el2.scrollTop = el2.scrollHeight;
+    }
   }
 
   function renderDiagnosis(target, report) {
@@ -333,10 +327,11 @@
       autoUpdate: $('#setAutoUpdate').checked,
       crashWatch: $('#setCrashWatch').checked,
       checkDownloads: $('#setCheckDownloads').checked,
-      versionId: $('#launchVersion').value || state.settings.versionId || ''
+      versionId: state.settings.versionId || ''
     };
     state.settings = await bmcl.saveSettings(payload);
     applySettingsToForm(state.settings);
+    syncVersionLabel();
     $('#saveHint').textContent = '已保存';
     toast('设置已保存', 'ok');
     setTimeout(() => { $('#saveHint').textContent = ''; }, 2500);
@@ -418,6 +413,82 @@
     }
   }
 
+  // ===== 工具页占位功能 =====
+  async function lobbyJoin() {
+    const code = $('#lobbyCode').value.trim();
+    if (!code) { toast('请输入大厅编号', 'error'); return; }
+    toast('联机功能开发中（编号：' + code + '）', 'error');
+  }
+  async function lobbyCreate() {
+    const inst = $('#lobbyInstance').value;
+    if (!inst) { toast('请选择实例', 'error'); return; }
+    toast('创建大厅功能开发中', 'error');
+  }
+  async function refreshLobbyInstances() {
+    const sel = $('#lobbyInstance');
+    sel.innerHTML = '<option value="">（请选择实例）</option>';
+    for (const v of state.installed) {
+      const opt = document.createElement('option');
+      opt.value = v.id; opt.textContent = v.id;
+      sel.appendChild(opt);
+    }
+    toast('已刷新实例列表', 'ok');
+  }
+  async function cleanJunk() {
+    toast('清理游戏垃圾功能开发中', 'error');
+  }
+  function showFortune() {
+    const fortunes = ['大吉', '中吉', '小吉', '吉', '末吉', '凶'];
+    const f = fortunes[Math.floor(Math.random() * fortunes.length)];
+    toast('今日人品：' + f, 'ok');
+  }
+  async function createShortcut() {
+    toast('创建快捷方式功能开发中', 'error');
+  }
+  function showLaunchCount() {
+    toast('启动计数功能开发中', 'error');
+  }
+  async function customDownload() {
+    const url = $('#customUrl').value.trim();
+    if (!url) { toast('请输入下载地址', 'error'); return; }
+    toast('自定义下载功能开发中', 'error');
+  }
+  async function pickSaveDir() {
+    toast('选择保存目录功能开发中', 'error');
+  }
+  async function openCustomDir() {
+    if (bmcl && bmcl.openGameDir) bmcl.openGameDir();
+  }
+  async function downloadSkin() {
+    const name = $('#skinPlayer').value.trim();
+    if (!name) { toast('请输入玩家名', 'error'); return; }
+    toast('下载皮肤功能开发中（玩家：' + name + '）', 'error');
+  }
+  async function netTest() {
+    $('#netTestResult').innerHTML = '<span class="tip">测试中…</span>';
+    try {
+      const result = await bmcl.checkNetwork();
+      if (result.allowed) {
+        $('#netTestResult').innerHTML = '<span class="tip">网络正常（HTTP ' + result.status + '）</span>';
+        toast('网络测试通过', 'ok');
+      } else {
+        $('#netTestResult').innerHTML = '<span class="cause">网络不可用：' + esc(result.reason || '') + '</span>';
+        toast('网络测试失败', 'error');
+      }
+    } catch (err) {
+      $('#netTestResult').innerHTML = '<span class="cause">测试失败：' + esc(err.message) + '</span>';
+    }
+  }
+  async function editProfile() {
+    const name = prompt('请输入新的玩家名：', state.settings.playerName || 'fft1145');
+    if (name === null) return;
+    const trimmed = name.trim();
+    if (!trimmed) { toast('玩家名不能为空', 'error'); return; }
+    state.settings = await bmcl.saveSettings({ playerName: trimmed });
+    applySettingsToForm(state.settings);
+    toast('玩家名已更新为 ' + trimmed, 'ok');
+  }
+
   function bindEvents() {
     document.querySelectorAll('.nav-btn').forEach((btn) => {
       btn.addEventListener('click', () => switchPage(btn.dataset.page));
@@ -427,7 +498,36 @@
       btn.addEventListener('click', () => switchPage(btn.dataset.goto));
     });
 
-    [['winMin', 'winMinimize'], ['winMax', 'winMaximize'], ['winClose', 'winClose']].forEach(([id, fn]) => {
+    // 设置/工具子页切换
+    document.querySelectorAll('.set-cat').forEach((cat) => {
+      cat.addEventListener('click', () => {
+        const page = cat.closest('.page');
+        const pageName = page.id.replace('page-', '');
+        switchSub(pageName, cat.dataset.sub);
+      });
+    });
+
+    // 下载页分类高亮（仅 UI）
+    document.querySelectorAll('.dl-cat').forEach((cat) => {
+      cat.addEventListener('click', () => {
+        const parent = cat.parentElement;
+        parent.querySelectorAll('.dl-cat').forEach((c) => c.classList.remove('active'));
+        cat.classList.add('active');
+      });
+    });
+
+    // 下载页版本组折叠
+    document.querySelectorAll('.vg-toggle').forEach((tg) => {
+      tg.addEventListener('click', () => {
+        const group = tg.closest('.version-group');
+        const body = group.querySelector('.vg-body');
+        const collapsed = body.classList.toggle('collapsed');
+        group.classList.toggle('collapsed', collapsed);
+      });
+    });
+
+    // 窗口按钮（无最大化）
+    [['winMin', 'winMinimize'], ['winClose', 'winClose']].forEach(([id, fn]) => {
       const el = document.getElementById(id);
       if (el && bmcl && typeof bmcl[fn] === 'function') {
         el.addEventListener('click', () => bmcl[fn]());
@@ -441,13 +541,16 @@
       });
     });
 
-    $('#btnLaunch').addEventListener('click', launchGame);
+    $('#btnLaunch').addEventListener('click', () => launchGame());
     $('#btnStop').addEventListener('click', stopGame);
-    ['#btnOpenDir', '#btnOpenDir2', '#btnOpenDir3', '#btnOpenDir4'].forEach((sel) => {
-      $(sel).addEventListener('click', () => bmcl.openGameDir());
+    ['#btnOpenDir2', '#btnOpenDir3', '#btnOpenDir4'].forEach((sel) => {
+      const el = $(sel);
+      if (el) el.addEventListener('click', () => bmcl.openGameDir());
     });
     $('#btnClearLog').addEventListener('click', () => { $('#gameLog').textContent = ''; });
+    $('#btnClearLog2').addEventListener('click', () => { $('#gameLog2').textContent = ''; });
     $('#btnCloseCrash').addEventListener('click', () => { $('#crashBox').hidden = true; });
+    $('#btnNoticeClose').addEventListener('click', () => { $('#noticeCard').classList.add('hidden'); });
 
     $('#btnRefreshVersions').addEventListener('click', loadRemoteVersions);
     $('#dlFilter').addEventListener('input', (e) => renderRemote(e.target.value));
@@ -459,9 +562,10 @@
     $('#installedVersions').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-launch]');
       if (btn) {
-        $('#launchVersion').value = btn.dataset.launch;
+        state.settings.versionId = btn.dataset.launch;
+        syncVersionLabel();
         switchPage('launch');
-        launchGame();
+        launchGame(btn.dataset.launch);
       }
     });
 
@@ -478,16 +582,45 @@
       state.remote = null;
       renderRemote('');
     });
-    $('#launchPlayer').addEventListener('change', async () => {
-      const name = $('#launchPlayer').value.trim();
-      if (!name) return;
-      state.settings = await bmcl.saveSettings({ playerName: name });
-      applySettingsToForm(state.settings);
+
+    // 玩家账号操作
+    $('#btnSkin').addEventListener('click', () => toast('皮肤与披风功能开发中', 'error'));
+    $('#btnEditProfile').addEventListener('click', editProfile);
+    $('#btnSwitchAccount').addEventListener('click', () => toast('切换账号功能开发中', 'error'));
+
+    // 联机大厅
+    $('#btnLobbyClear').addEventListener('click', () => { $('#lobbyCode').value = ''; });
+    $('#btnLobbyPaste').addEventListener('click', async () => {
+      try {
+        if (navigator.clipboard) {
+          const text = await navigator.clipboard.readText();
+          $('#lobbyCode').value = text;
+        } else {
+          toast('无法读取剪贴板，请手动粘贴', 'error');
+        }
+      } catch { toast('无法读取剪贴板，请手动粘贴', 'error'); }
     });
-    $('#launchVersion').addEventListener('change', async () => {
-      state.settings = await bmcl.saveSettings({ versionId: $('#launchVersion').value });
-      syncVersionLabel();
-    });
+    $('#btnLobbyJoin').addEventListener('click', lobbyJoin);
+    $('#btnLobbyManual').addEventListener('click', () => toast('手动输入端口功能开发中', 'error'));
+    $('#btnLobbyRefresh').addEventListener('click', refreshLobbyInstances);
+    $('#btnLobbyCreate').addEventListener('click', lobbyCreate);
+
+    // 百宝箱
+    $('#btnCleanJunk').addEventListener('click', cleanJunk);
+    $('#btnFortune').addEventListener('click', showFortune);
+    $('#btnShortcut').addEventListener('click', createShortcut);
+    $('#btnLaunchCount').addEventListener('click', showLaunchCount);
+
+    // 下载自定义文件
+    $('#btnPickSaveDir').addEventListener('click', pickSaveDir);
+    $('#btnCustomDownload').addEventListener('click', customDownload);
+    $('#btnOpenCustomDir').addEventListener('click', openCustomDir);
+
+    // 下载皮肤
+    $('#btnDownloadSkin').addEventListener('click', downloadSkin);
+
+    // 网络测试
+    $('#btnNetTest').addEventListener('click', netTest);
   }
 
   function bindBridgeEvents() {
@@ -529,6 +662,8 @@
     state.settings = await bmcl.getSettings();
     $('#sideVersion').textContent = 'v' + state.info.version;
     $('#updVersion').textContent = 'v' + state.info.version;
+    const v2 = $('#updVersion2');
+    if (v2) v2.textContent = 'v' + state.info.version;
     applySettingsToForm(state.settings);
     setState(false, '未启动');
     bindEvents();
