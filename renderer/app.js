@@ -11,7 +11,10 @@
     installing: false,
     preflight: null,
     remote: null,
-    pendingUpdate: null
+    pendingUpdate: null,
+    accounts: [],
+    activeAccount: null,
+    modSearchResults: []
   };
 
   function esc(value) {
@@ -38,20 +41,17 @@
     el.className = 'banner' + (type ? ' ' + type : '');
     el.textContent = message;
   }
-  function hideBanner() {
-    $('#banner').classList.add('hidden');
-  }
 
   function switchPage(name) {
     document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.page === name));
     document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + name));
     if (name === 'download' && !state.remote) loadRemoteVersions();
-    // 设置/工具页：激活第一个子页
     if (name === 'settings' || name === 'tools') {
       const page = $('#page-' + name);
       const firstCat = page.querySelector('.set-cat');
       if (firstCat) switchSub(name, firstCat.dataset.sub);
     }
+    if (name === 'download') refreshInstalledMods();
   }
 
   function switchSub(page, sub) {
@@ -91,14 +91,14 @@
     $('#setAutoUpdate').checked = Boolean(s.autoUpdate);
     $('#setCrashWatch').checked = Boolean(s.crashWatch);
     $('#setCheckDownloads').checked = Boolean(s.checkDownloads);
-    $('#topAccount').textContent = s.playerName || 'fft1145';
-    updateAvatar(s.playerName);
+    $('#topAccount').textContent = (state.activeAccount && state.activeAccount.name) || s.playerName || 'fft1145';
+    updateAvatar((state.activeAccount && state.activeAccount.name) || s.playerName);
   }
 
   function renderInstalled() {
     const list = $('#installedVersions');
     if (!state.installed.length) {
-      list.innerHTML = '<p class="empty">还没有安装任何版本。</p>';
+      list.innerHTML = '<p class="empty">还没有安装任何版本。可在「下载」页安装，或点击「扫描」检测已有游戏目录。</p>';
       $('#launchHint').textContent = '还没有安装版本，请到「下载」页安装一个。';
     } else {
       $('#launchHint').textContent = '已选版本：' + (state.settings.versionId || '未选择') + '。点击「启动游戏」开始。';
@@ -114,6 +114,21 @@
       ).join('');
     }
     syncVersionLabel();
+    // 填充模组游戏版本下拉
+    populateModGameVersions();
+  }
+
+  function populateModGameVersions() {
+    const sel = $('#modGameVersion');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">全部版本</option>';
+    for (const v of state.installed) {
+      const opt = document.createElement('option');
+      opt.value = v.id; opt.textContent = v.id;
+      sel.appendChild(opt);
+    }
+    if (current) sel.value = current;
   }
 
   function renderRemote(filter) {
@@ -210,11 +225,7 @@
   }
 
   async function stopGame() {
-    try {
-      await bmcl.stop();
-    } catch (err) {
-      toast(err.message, 'error');
-    }
+    try { await bmcl.stop(); } catch (err) { toast(err.message, 'error'); }
   }
 
   function appendGameLog(text) {
@@ -222,29 +233,20 @@
     el.textContent += text;
     if (el.textContent.length > 400000) el.textContent = el.textContent.slice(-300000);
     el.scrollTop = el.scrollHeight;
-    // 同步到设置页日志
     const el2 = $('#gameLog2');
-    if (el2) {
-      el2.textContent = el.textContent;
-      el2.scrollTop = el2.scrollHeight;
-    }
+    if (el2) { el2.textContent = el.textContent; el2.scrollTop = el2.scrollHeight; }
   }
 
   function renderDiagnosis(target, report) {
-    if (!report) {
-      target.innerHTML = '<span class="tip">未发现崩溃记录。</span>';
-      return;
-    }
+    if (!report) { target.innerHTML = '<span class="tip">未发现崩溃记录。</span>'; return; }
     const causes = (report.causes || []).map((c) =>
       '<div class="cause">· ' + esc(c.cause) + '</div><div class="tip">建议：' + esc(c.suggestion) + '</div>'
     ).join('');
     const stack = (report.stack || []).length
-      ? '<div class="diag-sub"><b>调用栈</b><br>' + report.stack.map((s) => esc(s)).join('<br>') + '</div>'
-      : '';
+      ? '<div class="diag-sub"><b>调用栈</b><br>' + report.stack.map((s) => esc(s)).join('<br>') + '</div>' : '';
     target.innerHTML =
       '<div><b>诊断：</b>' + esc(report.summary || '') + '</div>' +
-      (causes ? '<div class="diag-sub">' + causes + '</div>' : '') +
-      stack +
+      (causes ? '<div class="diag-sub">' + causes + '</div>' : '') + stack +
       (report.reportPath ? '<div class="diag-sub">崩溃报告：' + esc(report.reportPath) + '</div>' : '');
   }
 
@@ -283,7 +285,7 @@
         $('#btnApplyUpdate').classList.remove('hidden');
         $('#updateResult').innerHTML =
           '<div><b>发现新版本 ' + esc(result.release.version) + '</b>（当前 ' + esc(result.currentVersion) + '）</div>' +
-          (result.release.notes ? '<div class="diag-sub">' + esc(result.release.notes).slice(0, 600) + '</div>' : '');
+          (result.release.notes ? '<div class="diag-sub">' + esc(result.release.notes).slice(0, 800) + '</div>' : '');
         showBanner('发现启动器新版本 ' + result.release.version + '，可在「设置」中更新（不会覆盖游戏文件）。', 'ok');
         toast('发现新版本 ' + result.release.version, 'ok');
       } else {
@@ -298,8 +300,7 @@
   async function applyUpdate() {
     if (!state.pendingUpdate || !state.pendingUpdate.hasUpdate) return;
     const btn = $('#btnApplyUpdate');
-    btn.disabled = true;
-    btn.textContent = '更新中…';
+    btn.disabled = true; btn.textContent = '更新中…';
     try {
       const result = await bmcl.applyUpdate(state.pendingUpdate.release);
       if (result.redirected) {
@@ -312,8 +313,7 @@
     } catch (err) {
       toast('更新失败：' + err.message, 'error');
     } finally {
-      btn.disabled = false;
-      btn.textContent = '立即更新';
+      btn.disabled = false; btn.textContent = '立即更新';
     }
   }
 
@@ -332,15 +332,15 @@
     state.settings = await bmcl.saveSettings(payload);
     applySettingsToForm(state.settings);
     syncVersionLabel();
+    await refreshInstalled();
     $('#saveHint').textContent = '已保存';
     toast('设置已保存', 'ok');
     setTimeout(() => { $('#saveHint').textContent = ''; }, 2500);
   }
 
   async function probeJava() {
-    const javaPath = $('#setJava').value.trim();
     $('#javaHint').textContent = '检测中…';
-    const result = await bmcl.probeJava(javaPath);
+    const result = await bmcl.probeJava($('#setJava').value.trim());
     if (result.ok) {
       $('#javaHint').textContent = 'Java ' + result.version + '（主版本 ' + result.major + '）';
     } else {
@@ -364,8 +364,7 @@
 
   async function runRepair() {
     const btn = $('#btnRepairRun');
-    btn.disabled = true;
-    btn.textContent = '修复中…';
+    btn.disabled = true; btn.textContent = '修复中…';
     try {
       const result = await bmcl.runRepair();
       state.repair = result;
@@ -374,16 +373,11 @@
       applySettingsToForm(state.settings);
       await refreshInstalled();
       syncVersionLabel();
-      if (result.failed > 0) {
-        toast('修复完成，' + result.failed + ' 项需要手动处理', 'error');
-      } else {
-        toast('修复完成，共修复 ' + result.fixed + ' 项', 'ok');
-      }
+      toast(result.failed > 0 ? '修复完成，' + result.failed + ' 项需要手动处理' : '修复完成，共修复 ' + result.fixed + ' 项', result.failed > 0 ? 'error' : 'ok');
     } catch (err) {
       toast('修复失败：' + err.message, 'error');
     } finally {
-      btn.disabled = false;
-      btn.textContent = '一键修复';
+      btn.disabled = false; btn.textContent = '一键修复';
     }
   }
 
@@ -399,21 +393,236 @@
       return '<div>· ' + esc(i.title) + '：待修复（' + esc(i.detail) + '）</div>';
     }).join('');
     $('#repairResult').innerHTML = rows || '<span class="tip">没有需要检查的项目。</span>';
-
     const pending = countFixable(report);
     const failed = (report.issues || []).filter((i) => i.status === 'fail').length;
     if (mode === 'fixed') {
       $('#repairState').textContent = failed > 0 ? failed + ' 项待手动处理' : '已修复 ' + report.fixed + ' 项';
       $('#btnRepairRun').classList.add('hidden');
     } else {
-      $('#repairState').textContent = failed > 0
-        ? failed + ' 项需手动处理'
-        : (pending ? pending + ' 项待修复' : '全部正常');
+      $('#repairState').textContent = failed > 0 ? failed + ' 项需手动处理' : (pending ? pending + ' 项待修复' : '全部正常');
       $('#btnRepairRun').classList.toggle('hidden', pending === 0);
     }
   }
 
-  // ===== 工具页占位功能 =====
+  // ===== 账号 =====
+  async function refreshAccounts() {
+    const data = await bmcl.listAccounts();
+    state.accounts = data.accounts || [];
+    state.activeAccount = data.accounts.find((a) => a.id === data.active) || state.accounts[0] || null;
+    renderAccountList();
+    applySettingsToForm(state.settings);
+  }
+
+  function renderAccountList() {
+    const list = $('#accountList');
+    if (!state.accounts.length) {
+      list.innerHTML = '<p class="empty" style="padding:10px">暂无账号，请添加。</p>';
+      return;
+    }
+    list.innerHTML = state.accounts.map((a) =>
+      '<div class="ap-item' + (state.activeAccount && state.activeAccount.id === a.id ? ' active' : '') + '" data-acc="' + esc(a.id) + '">' +
+        '<span class="ap-name">' + esc(a.name) + '</span>' +
+        '<span style="font-size:10px;color:#8a9199">离线</span>' +
+        '<button class="ap-del" data-del="' + esc(a.id) + '">删除</button>' +
+      '</div>'
+    ).join('');
+  }
+
+  async function addAccount() {
+    const name = $('#newAccountName').value.trim();
+    if (!name) { toast('请输入玩家名', 'error'); return; }
+    try {
+      await bmcl.addAccount(name);
+      $('#newAccountName').value = '';
+      await refreshAccounts();
+      toast('账号 ' + name + ' 已添加并设为当前', 'ok');
+    } catch (err) { toast(err.message, 'error'); }
+  }
+
+  async function setActiveAccount(id) {
+    await bmcl.setActiveAccount(id);
+    await refreshAccounts();
+  }
+
+  async function removeAccount(id) {
+    await bmcl.removeAccount(id);
+    await refreshAccounts();
+    toast('账号已删除', 'ok');
+  }
+
+  // ===== 模组 =====
+  async function searchMods() {
+    const q = $('#modSearch').value.trim();
+    const gv = $('#modGameVersion').value || undefined;
+    const btn = $('#btnModSearch');
+    btn.disabled = true; btn.textContent = '搜索中…';
+    try {
+      const results = await bmcl.searchMods(q, gv);
+      state.modSearchResults = results;
+      renderModResults(results);
+      toast('找到 ' + results.length + ' 个模组', 'ok');
+    } catch (err) {
+      $('#modResults').innerHTML = '<p class="empty">搜索失败：' + esc(err.message) + '</p>';
+      toast('模组搜索失败', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '搜索';
+    }
+  }
+
+  function renderModResults(results) {
+    const list = $('#modResults');
+    if (!results.length) { list.innerHTML = '<p class="empty">没有找到模组。</p>'; return; }
+    list.innerHTML = results.map((m) =>
+      '<div class="mod-item">' +
+        (m.iconUrl ? '<img class="mod-icon" src="' + esc(m.iconUrl) + '" alt="">' : '<div class="mod-icon"></div>') +
+        '<div class="mod-info">' +
+          '<div class="mod-title">' + esc(m.title) + '</div>' +
+          '<div class="mod-desc">' + esc(m.description || '') + '</div>' +
+          '<div class="mod-cats">' + (m.categories || []).slice(0, 4).map((c) => '<span class="mod-cat">' + esc(c) + '</span>').join('') + '</div>' +
+          '<div class="mod-meta">作者：' + esc(m.author || '') + ' · 下载量：' + (m.downloads || 0).toLocaleString() + '</div>' +
+        '</div>' +
+        '<div class="mod-actions">' +
+          '<button class="btn btn-sm" data-modview="' + esc(m.id) + '">查看版本</button>' +
+        '</div>' +
+      '</div>'
+    ).join('');
+  }
+
+  async function showModVersions(projectId) {
+    const mod = state.modSearchResults.find((m) => m.id === projectId);
+    const gv = $('#modGameVersion').value || state.settings.versionId || undefined;
+    try {
+      const versions = await bmcl.getModVersions(projectId, gv);
+      const list = $('#modResults');
+      if (!versions.length) {
+        list.innerHTML = '<p class="empty">没有适配当前游戏版本的文件。</p>';
+        return;
+      }
+      list.innerHTML = '<div class="version-item"><b>' + esc(mod ? mod.title : projectId) + ' — 可用版本</b></div>' +
+        versions.map((v) =>
+          '<div class="version-item">' +
+            '<div class="v-left">' +
+              '<span class="v-id">' + esc(v.versionNumber) + '</span>' +
+              '<span class="v-meta">' + esc((v.gameVersions || []).join(', ')) + '</span>' +
+              '<span class="v-meta">' + esc((v.loaders || []).join(', ')) + '</span>' +
+            '</div>' +
+            '<button class="btn btn-sm btn-primary" data-modinstall="' + esc(v.id) + '" data-fn="' + esc(v.fileName) + '" data-url="' + esc(v.fileUrl) + '" data-size="' + (v.fileSize || 0) + '">下载</button>' +
+          '</div>'
+        ).join('');
+    } catch (err) {
+      toast('获取模组版本失败：' + err.message, 'error');
+    }
+  }
+
+  async function installModHandler(btn) {
+    const modVersion = {
+      id: btn.dataset.modinstall,
+      fileName: btn.dataset.fn,
+      fileUrl: btn.dataset.url,
+      fileSize: Number(btn.dataset.size) || 0
+    };
+    btn.disabled = true; btn.textContent = '下载中…';
+    try {
+      await bmcl.installMod(modVersion);
+      toast('模组 ' + modVersion.fileName + ' 安装完成', 'ok');
+      await refreshInstalledMods();
+    } catch (err) {
+      toast('模组安装失败：' + err.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '下载';
+    }
+  }
+
+  async function refreshInstalledMods() {
+    const list = $('#installedMods');
+    if (!list) return;
+    try {
+      const mods = await bmcl.listInstalledMods();
+      if (!mods.length) { list.innerHTML = '<p class="empty">尚未安装任何模组。</p>'; return; }
+      list.innerHTML = mods.map((m) =>
+        '<div class="version-item">' +
+          '<div class="v-left">' +
+            '<span class="v-id">' + esc(m.name) + '</span>' +
+            '<span class="v-meta">' + (m.size / 1024 / 1024).toFixed(2) + ' MB</span>' +
+          '</div>' +
+          '<button class="btn btn-sm" data-openmoddir>打开目录</button>' +
+        '</div>'
+      ).join('');
+    } catch (e) { list.innerHTML = '<p class="empty">读取模组列表失败。</p>'; }
+  }
+
+  // ===== 工具 =====
+  async function cleanJunk() {
+    try {
+      const r = await bmcl.cleanJunk();
+      toast('已清理 ' + r.removed + ' 个文件，释放 ' + (r.freed / 1024 / 1024).toFixed(2) + ' MB', 'ok');
+    } catch (err) { toast('清理失败：' + err.message, 'error'); }
+  }
+
+  async function showLaunchCount() {
+    try {
+      const count = await bmcl.getLaunchCount();
+      toast('累计启动游戏 ' + count + ' 次', 'ok');
+    } catch (err) { toast('读取启动计数失败', 'error'); }
+  }
+
+  async function createShortcut() {
+    try {
+      const r = await bmcl.createShortcut();
+      toast('快捷方式已创建：' + r.path, 'ok');
+    } catch (err) { toast('创建快捷方式失败：' + err.message, 'error'); }
+  }
+
+  async function customDownload() {
+    const url = $('#customUrl').value.trim();
+    const dir = $('#customSaveDir').value.trim();
+    const name = $('#customFileName').value.trim() || undefined;
+    if (!url) { toast('请输入下载地址', 'error'); return; }
+    try {
+      const r = await bmcl.downloadFile(url, dir, name);
+      toast('下载完成：' + (r.bytes / 1024 / 1024).toFixed(2) + ' MB', 'ok');
+    } catch (err) { toast('下载失败：' + err.message, 'error'); }
+  }
+
+  async function pickSaveDir() {
+    // 使用 Electron 的 dialog 选择目录
+    try {
+      const dir = await bmcl.downloadFile('', '', '');
+    } catch (e) {}
+    // 简单方案：用 input[type=file] webkitdirectory 不可靠，这里提示用户手动输入
+    toast('请在「保存到」输入框中手动填写目录路径', 'error');
+  }
+
+  async function openCustomDir() {
+    if (bmcl && bmcl.openGameDir) bmcl.openGameDir();
+  }
+
+  async function downloadSkin() {
+    const name = $('#skinPlayer').value.trim();
+    if (!name) { toast('请输入玩家名', 'error'); return; }
+    try {
+      const r = await bmcl.downloadSkin(name);
+      toast('皮肤已下载到 skins/' + name + '.png', 'ok');
+    } catch (err) { toast('下载皮肤失败：' + err.message, 'error'); }
+  }
+
+  async function netTest() {
+    $('#netTestResult').innerHTML = '<span class="tip">测试中…</span>';
+    try {
+      const result = await bmcl.checkNetwork();
+      if (result.allowed) {
+        $('#netTestResult').innerHTML = '<span class="tip">网络正常（HTTP ' + result.status + '）</span>';
+        toast('网络测试通过', 'ok');
+      } else {
+        $('#netTestResult').innerHTML = '<span class="cause">网络不可用：' + esc(result.reason || '') + '</span>';
+        toast('网络测试失败', 'error');
+      }
+    } catch (err) {
+      $('#netTestResult').innerHTML = '<span class="cause">测试失败：' + esc(err.message) + '</span>';
+    }
+  }
+
+  // ===== 联机大厅 =====
   async function lobbyJoin() {
     const code = $('#lobbyCode').value.trim();
     if (!code) { toast('请输入大厅编号', 'error'); return; }
@@ -434,66 +643,23 @@
     }
     toast('已刷新实例列表', 'ok');
   }
-  async function cleanJunk() {
-    toast('清理游戏垃圾功能开发中', 'error');
-  }
-  function showFortune() {
-    const fortunes = ['大吉', '中吉', '小吉', '吉', '末吉', '凶'];
-    const f = fortunes[Math.floor(Math.random() * fortunes.length)];
-    toast('今日人品：' + f, 'ok');
-  }
-  async function createShortcut() {
-    toast('创建快捷方式功能开发中', 'error');
-  }
-  function showLaunchCount() {
-    toast('启动计数功能开发中', 'error');
-  }
-  async function customDownload() {
-    const url = $('#customUrl').value.trim();
-    if (!url) { toast('请输入下载地址', 'error'); return; }
-    toast('自定义下载功能开发中', 'error');
-  }
-  async function pickSaveDir() {
-    toast('选择保存目录功能开发中', 'error');
-  }
-  async function openCustomDir() {
-    if (bmcl && bmcl.openGameDir) bmcl.openGameDir();
-  }
-  async function downloadSkin() {
-    const name = $('#skinPlayer').value.trim();
-    if (!name) { toast('请输入玩家名', 'error'); return; }
-    toast('下载皮肤功能开发中（玩家：' + name + '）', 'error');
-  }
-  async function netTest() {
-    $('#netTestResult').innerHTML = '<span class="tip">测试中…</span>';
+
+  // ===== 游戏目录扫描 =====
+  async function scanGameDirs() {
     try {
-      const result = await bmcl.checkNetwork();
-      if (result.allowed) {
-        $('#netTestResult').innerHTML = '<span class="tip">网络正常（HTTP ' + result.status + '）</span>';
-        toast('网络测试通过', 'ok');
-      } else {
-        $('#netTestResult').innerHTML = '<span class="cause">网络不可用：' + esc(result.reason || '') + '</span>';
-        toast('网络测试失败', 'error');
-      }
-    } catch (err) {
-      $('#netTestResult').innerHTML = '<span class="cause">测试失败：' + esc(err.message) + '</span>';
-    }
-  }
-  async function editProfile() {
-    const name = prompt('请输入新的玩家名：', state.settings.playerName || 'fft1145');
-    if (name === null) return;
-    const trimmed = name.trim();
-    if (!trimmed) { toast('玩家名不能为空', 'error'); return; }
-    state.settings = await bmcl.saveSettings({ playerName: trimmed });
-    applySettingsToForm(state.settings);
-    toast('玩家名已更新为 ' + trimmed, 'ok');
+      const dirs = await bmcl.scanGameDirs();
+      if (!dirs.length) { toast('未检测到已有的 Minecraft 安装目录', 'error'); return; }
+      const input = $('#setGameDir');
+      const choice = dirs[0].path;
+      input.value = choice;
+      toast('已选择：' + dirs[0].label + '（' + choice + '）。点击「保存设置」生效。', 'ok');
+    } catch (err) { toast('扫描失败：' + err.message, 'error'); }
   }
 
   function bindEvents() {
     document.querySelectorAll('.nav-btn').forEach((btn) => {
       btn.addEventListener('click', () => switchPage(btn.dataset.page));
     });
-
     document.querySelectorAll('[data-goto]').forEach((btn) => {
       btn.addEventListener('click', () => switchPage(btn.dataset.goto));
     });
@@ -502,21 +668,24 @@
     document.querySelectorAll('.set-cat').forEach((cat) => {
       cat.addEventListener('click', () => {
         const page = cat.closest('.page');
-        const pageName = page.id.replace('page-', '');
-        switchSub(pageName, cat.dataset.sub);
+        switchSub(page.id.replace('page-', ''), cat.dataset.sub);
       });
     });
 
-    // 下载页分类高亮（仅 UI）
+    // 下载页分类：模组与 Minecraft 切换面板
     document.querySelectorAll('.dl-cat').forEach((cat) => {
       cat.addEventListener('click', () => {
         const parent = cat.parentElement;
         parent.querySelectorAll('.dl-cat').forEach((c) => c.classList.remove('active'));
         cat.classList.add('active');
+        const isMod = cat.dataset.cat === 'mods2' || cat.dataset.cat === 'modpacks';
+        $('#mcPanel').classList.toggle('hidden', isMod);
+        $('#modPanel').classList.toggle('hidden', !isMod);
+        if (isMod) refreshInstalledMods();
       });
     });
 
-    // 下载页版本组折叠
+    // 版本组折叠
     document.querySelectorAll('.vg-toggle').forEach((tg) => {
       tg.addEventListener('click', () => {
         const group = tg.closest('.version-group');
@@ -526,19 +695,13 @@
       });
     });
 
-    // 窗口按钮（无最大化）
     [['winMin', 'winMinimize'], ['winClose', 'winClose']].forEach(([id, fn]) => {
       const el = document.getElementById(id);
-      if (el && bmcl && typeof bmcl[fn] === 'function') {
-        el.addEventListener('click', () => bmcl[fn]());
-      }
+      if (el && bmcl && typeof bmcl[fn] === 'function') el.addEventListener('click', () => bmcl[fn]());
     });
 
     document.querySelectorAll('[data-open]').forEach((el) => {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        bmcl.openExternal(el.dataset.open);
-      });
+      el.addEventListener('click', (e) => { e.preventDefault(); bmcl.openExternal(el.dataset.open); });
     });
 
     $('#btnLaunch').addEventListener('click', () => launchGame());
@@ -577,27 +740,51 @@
     $('#btnDiagnose').addEventListener('click', diagnoseNow);
     $('#btnRepairScan').addEventListener('click', scanRepair);
     $('#btnRepairRun').addEventListener('click', runRepair);
+    $('#btnScanGameDir').addEventListener('click', scanGameDirs);
 
-    $('#setSource').addEventListener('change', () => {
-      state.remote = null;
-      renderRemote('');
+    $('#setSource').addEventListener('change', () => { state.remote = null; renderRemote(''); });
+
+    // 账号
+    $('#btnSwitchAccount').addEventListener('click', () => $('#accountPanel').classList.toggle('hidden'));
+    $('#btnAccountClose').addEventListener('click', () => $('#accountPanel').classList.add('hidden'));
+    $('#btnAddAccount').addEventListener('click', addAccount);
+    $('#newAccountName').addEventListener('keydown', (e) => { if (e.key === 'Enter') addAccount(); });
+    $('#accountList').addEventListener('click', (e) => {
+      const del = e.target.closest('[data-del]');
+      if (del) { e.stopPropagation(); removeAccount(del.dataset.del); return; }
+      const item = e.target.closest('[data-acc]');
+      if (item) setActiveAccount(item.dataset.acc);
     });
 
-    // 玩家账号操作
+    // 编辑资料（玩家名）
+    $('#btnEditProfile').addEventListener('click', () => {
+      $('#accountPanel').classList.remove('hidden');
+      toast('在下方输入新玩家名并点击「添加」即可切换账号', 'ok');
+    });
+
+    // 皮肤
     $('#btnSkin').addEventListener('click', () => toast('皮肤与披风功能开发中', 'error'));
-    $('#btnEditProfile').addEventListener('click', editProfile);
-    $('#btnSwitchAccount').addEventListener('click', () => toast('切换账号功能开发中', 'error'));
+
+    // 模组
+    $('#btnModSearch').addEventListener('click', searchMods);
+    $('#modSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchMods(); });
+    $('#btnRefreshMods').addEventListener('click', refreshInstalledMods);
+    $('#modResults').addEventListener('click', (e) => {
+      const view = e.target.closest('[data-modview]');
+      if (view) { showModVersions(view.dataset.modview); return; }
+      const inst = e.target.closest('[data-modinstall]');
+      if (inst) installModHandler(inst);
+    });
+    $('#installedMods').addEventListener('click', (e) => {
+      if (e.target.closest('[data-openmoddir]')) bmcl.openGameDir();
+    });
 
     // 联机大厅
     $('#btnLobbyClear').addEventListener('click', () => { $('#lobbyCode').value = ''; });
     $('#btnLobbyPaste').addEventListener('click', async () => {
       try {
-        if (navigator.clipboard) {
-          const text = await navigator.clipboard.readText();
-          $('#lobbyCode').value = text;
-        } else {
-          toast('无法读取剪贴板，请手动粘贴', 'error');
-        }
+        if (navigator.clipboard) $('#lobbyCode').value = await navigator.clipboard.readText();
+        else toast('无法读取剪贴板，请手动粘贴', 'error');
       } catch { toast('无法读取剪贴板，请手动粘贴', 'error'); }
     });
     $('#btnLobbyJoin').addEventListener('click', lobbyJoin);
@@ -607,7 +794,10 @@
 
     // 百宝箱
     $('#btnCleanJunk').addEventListener('click', cleanJunk);
-    $('#btnFortune').addEventListener('click', showFortune);
+    $('#btnFortune').addEventListener('click', () => {
+      const fortunes = ['大吉', '中吉', '小吉', '吉', '末吉', '凶'];
+      toast('今日人品：' + fortunes[Math.floor(Math.random() * fortunes.length)], 'ok');
+    });
     $('#btnShortcut').addEventListener('click', createShortcut);
     $('#btnLaunchCount').addEventListener('click', showLaunchCount);
 
@@ -638,10 +828,7 @@
         appendGameLog('[游戏异常退出，退出码 ' + payload.code + ']\n');
       }
     });
-    bmcl.onGameCrash((report) => {
-      openCrashPanel(report);
-      toast('游戏崩溃，已生成诊断', 'error');
-    });
+    bmcl.onGameCrash((report) => { openCrashPanel(report); toast('游戏崩溃，已生成诊断', 'error'); });
     bmcl.onInstallProgress((p) => {
       $('#installProgress').classList.remove('hidden');
       $('#installStage').textContent = p.stage || '安装中';
@@ -651,19 +838,19 @@
     bmcl.onUpdateProgress((p) => {
       $('#updateResult').textContent = '正在应用更新 ' + p.done + ' / ' + p.total;
     });
+    bmcl.onDownloadProgress((p) => {
+      // 通用下载进度（模组/自定义文件）— 暂用 toast 提示
+    });
   }
 
   async function boot() {
-    if (!bmcl) {
-      showBanner('未检测到 Electron 环境：请用 npm start 运行启动器。', 'error');
-      return;
-    }
+    if (!bmcl) { showBanner('未检测到 Electron 环境：请用 npm start 运行启动器。', 'error'); return; }
     state.info = await bmcl.info();
     state.settings = await bmcl.getSettings();
     $('#sideVersion').textContent = 'v' + state.info.version;
     $('#updVersion').textContent = 'v' + state.info.version;
-    const v2 = $('#updVersion2');
-    if (v2) v2.textContent = 'v' + state.info.version;
+    const v2 = $('#updVersion2'); if (v2) v2.textContent = 'v' + state.info.version;
+    await refreshAccounts();
     applySettingsToForm(state.settings);
     setState(false, '未启动');
     bindEvents();
@@ -677,17 +864,14 @@
       const bad = preflight.selfCheck.checks.filter((c) => !c.ok).map((c) => c.name).join('、');
       showBanner('启动器自检未通过：' + bad + '（可尝试重新安装启动器，游戏文件不受影响）', 'error');
     }
-
     if (preflight.crash && preflight.crash.launcherCrashed) {
       openCrashPanel(preflight.crash);
       showBanner('检测到上次启动器异常退出，已自动生成诊断。', 'error');
       const before = preflight.crash;
-      $('#crashSettingsResult').innerHTML = '<span class="cause">上次启动器异常退出（' +
-        esc((before.startedAt || '').slice(0, 16).replace('T', ' ')) + '）</span>';
+      $('#crashSettingsResult').innerHTML = '<span class="cause">上次启动器异常退出（' + esc((before.startedAt || '').slice(0, 16).replace('T', ' ')) + '）</span>';
     } else if (preflight.crash && preflight.crash.summary) {
       $('#crashSettingsResult').innerHTML = '<span class="tip">' + esc(preflight.crash.summary) + '</span>';
     }
-
     if (preflight.download && !preflight.download.allowed) {
       showBanner('检测到下载可能被禁止（网络不可用）：已自动跳过更新检查。原因：' + preflight.download.reason, 'error');
       $('#netHint').textContent = '下载可能被禁止';
@@ -697,7 +881,8 @@
       if (preflight.update.hasUpdate) {
         showBanner('发现启动器新版本 ' + preflight.update.release.version + '，可在「设置」中更新。', 'ok');
         $('#btnApplyUpdate').classList.remove('hidden');
-        $('#updateResult').innerHTML = '<div><b>发现新版本 ' + esc(preflight.update.release.version) + '</b></div>';
+        $('#updateResult').innerHTML = '<div><b>发现新版本 ' + esc(preflight.update.release.version) + '</b></div>' +
+          (preflight.update.release.notes ? '<div class="diag-sub">' + esc(preflight.update.release.notes) + '</div>' : '');
       } else {
         $('#updateResult').innerHTML = '<span class="tip">已是最新版本（已自动关闭更新）</span>';
       }

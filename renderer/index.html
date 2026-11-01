@@ -68,6 +68,17 @@
               <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
+          <div class="account-panel hidden" id="accountPanel">
+            <div class="ap-head">
+              <span>账号</span>
+              <button class="ap-close" id="btnAccountClose">×</button>
+            </div>
+            <div class="ap-list" id="accountList"></div>
+            <div class="ap-add">
+              <input class="input" id="newAccountName" placeholder="新玩家名（字母/数字/下划线）" maxlength="16">
+              <button class="btn btn-sm btn-primary" id="btnAddAccount">添加</button>
+            </div>
+          </div>
         </div>
 
         <div class="launch-cta">
@@ -87,7 +98,7 @@
         </div>
 
         <div class="side-foot">
-          <span id="sideVersion">v1.0.3</span>
+          <span id="sideVersion">v1.0.4</span>
           <button class="link-btn" data-open="https://github.com/fft1145/BMCL">GitHub</button>
           <button class="link-btn" data-open="https://bmcl26.netlify.app">官网</button>
         </div>
@@ -151,6 +162,8 @@
       </aside>
 
       <div class="dl-main">
+        <!-- Minecraft 版本区 -->
+        <div id="mcPanel">
         <div class="dl-latest card">
           <h3 class="dl-section-title">最新版本</h3>
           <div class="latest-row">
@@ -200,6 +213,30 @@
         <div class="version-group">
           <button class="vg-toggle" data-vg="april"><span class="vg-name">愚人节版</span><span class="vg-count">(12)</span><span class="vg-arrow">⌄</span></button>
           <div class="vg-body collapsed" data-vgbody="april"></div>
+        </div>
+        </div><!-- /mcPanel -->
+
+        <!-- 模组区 -->
+        <div id="modPanel" class="hidden">
+          <div class="card">
+            <div class="card-head"><h2>模组下载</h2><span class="hint">数据来源：Modrinth</span></div>
+            <div class="filter-bar">
+              <input class="input" id="modSearch" type="text" placeholder="搜索模组，例如 sodium">
+              <button class="btn btn-sm btn-primary" id="btnModSearch">搜索</button>
+              <select class="input" id="modGameVersion" style="max-width:160px">
+                <option value="">全部版本</option>
+              </select>
+            </div>
+            <div class="version-list" id="modResults">
+              <p class="empty">输入关键词后点击「搜索」查找模组。</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>已安装模组</h2><button class="btn btn-sm" id="btnRefreshMods">刷新</button></div>
+            <div class="version-list" id="installedMods">
+              <p class="empty">尚未安装任何模组。</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -298,7 +335,12 @@
             <div class="card-head"><h2>游戏管理</h2></div>
             <div class="form-grid">
               <label class="field"><span>玩家名</span><input id="setPlayer" maxlength="16"></label>
-              <label class="field field-wide"><span>游戏目录</span><input id="setGameDir"></label>
+              <label class="field field-wide"><span>游戏目录</span>
+                <div style="display:flex;gap:8px;width:100%">
+                  <input id="setGameDir" style="flex:1">
+                  <button class="btn btn-sm" id="btnScanGameDir">扫描</button>
+                </div>
+              </label>
               <label class="field field-wide"><span>版本与资源下载</span>
                 <select id="setSource">
                   <option value="bmclapi">BMCLAPI 镜像（国内加速）</option>
@@ -365,7 +407,7 @@
         <!-- 关于 -->
         <div class="set-sub" data-subbody="about">
           <div class="card">
-            <div class="card-head"><h2>软件信息</h2><span class="tag" id="updVersion">v1.0.3</span></div>
+            <div class="card-head"><h2>软件信息</h2><span class="tag" id="updVersion">v1.0.4</span></div>
             <p class="about">BMCL 是 fft1145 在爱发电发布的 Minecraft 启动器，完全本地运行，不依赖自建服务器。更新只覆盖启动器自身的程序文件，不会覆盖任何游戏文件。</p>
             <div class="row wrap">
               <button class="btn btn-sm" data-open="https://bmcl26.netlify.app">访问官网</button>
@@ -377,7 +419,7 @@
         <!-- 软件更新 -->
         <div class="set-sub" data-subbody="update">
           <div class="card">
-            <div class="card-head"><h2>软件更新</h2><span class="tag" id="updVersion2">v1.0.3</span></div>
+            <div class="card-head"><h2>软件更新</h2><span class="tag" id="updVersion2">v1.0.4</span></div>
             <div class="row wrap">
               <button class="btn btn-sm" id="btnCheckUpdate">检查更新</button>
               <button class="btn btn-sm btn-primary hidden" id="btnApplyUpdate">立即更新</button>

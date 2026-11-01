@@ -19,6 +19,8 @@ const updater = require('./src/core/updater');
 const crashGuard = require('./src/core/crash-guard');
 const javaCore = require('./src/core/java');
 const repairCore = require('./src/core/repair');
+const tools = require('./src/core/tools');
+const accounts = require('./src/core/accounts');
 
 const APP_NAME = 'fft1145';
 const APP_VERSION = require('./package.json').version;
@@ -39,7 +41,15 @@ function sessionFile() {
 
 function getSettings() {
   const s = settingsCore.load(settingsFile());
-  if (!s.gameDir) s.gameDir = path.join(userData(), 'game');
+  if (!s.gameDir) {
+    // 自动检测已有的 Minecraft 安装目录
+    const found = tools.scanMinecraftDirs();
+    if (found.length) {
+      s.gameDir = found[0].path;
+    } else {
+      s.gameDir = path.join(userData(), 'game');
+    }
+  }
   return s;
 }
 
@@ -166,8 +176,9 @@ async function launchGame(versionId) {
   if (!javaProbe.ok) {
     throw new Error('没有找到可用的 Java。请在「设置」里填写 java.exe 的路径（' + javaProbe.message + '）');
   }
-  const playerName = (s.playerName || '').trim() || 'Player';
-  const uuid = launcherCore.offlineUuid(playerName);
+  const activeAccount = accounts.getActiveAccount(userData());
+  const playerName = (activeAccount && activeAccount.name) || (s.playerName || '').trim() || 'Player';
+  const uuid = (activeAccount && activeAccount.uuid) || launcherCore.offlineUuid(playerName);
   const ctx = { os: require('./src/core/rules').detectContext().os, features: {} };
   const libraryPaths = launcherCore.collectLibraryPaths(json, dirs.librariesDir, ctx);
   const clientJar = path.join(versionDir, versionId + '.jar');
@@ -204,6 +215,8 @@ async function launchGame(versionId) {
     env: Object.assign({}, process.env)
   });
   send('game:state', { running: true, versionId });
+  const count = tools.incrementLaunchCount(userData());
+  log('启动计数：' + count);
 
   const append = (chunk) => {
     const text = chunk.toString();
@@ -400,6 +413,43 @@ function registerIpc() {
     return win.isMaximized();
   });
   ipcMain.handle('window:close', () => { if (win && !win.isDestroyed()) win.close(); });
+
+  // ===== 账号 =====
+  ipcMain.handle('account:list', () => accounts.listAccounts(userData()));
+  ipcMain.handle('account:active', () => accounts.getActiveAccount(userData()));
+  ipcMain.handle('account:add', (e, name) => accounts.addOfflineAccount(userData(), name));
+  ipcMain.handle('account:remove', (e, id) => accounts.removeAccount(userData(), id));
+  ipcMain.handle('account:setActive', (e, id) => accounts.setActiveAccount(userData(), id));
+
+  // ===== 游戏目录扫描 =====
+  ipcMain.handle('game:scanDirs', () => tools.scanMinecraftDirs());
+
+  // ===== 模组（Modrinth）=====
+  ipcMain.handle('mods:search', (e, query, gameVersion) => tools.modrinthSearch(query, { gameVersion }));
+  ipcMain.handle('mods:versions', (e, projectId, gameVersion) => tools.modrinthVersions(projectId, gameVersion));
+  ipcMain.handle('mods:install', (e, modVersion) =>
+    tools.installMod(modVersion, dataDirs().gameDir, { onProgress: (p) => send('download:progress', p) })
+  );
+  ipcMain.handle('mods:list', () => tools.listInstalledMods(dataDirs().gameDir));
+
+  // ===== 工具 =====
+  ipcMain.handle('tools:cleanJunk', async () => tools.cleanJunk(dataDirs().gameDir));
+  ipcMain.handle('tools:launchCount', () => tools.getLaunchCount(userData()));
+  ipcMain.handle('tools:createShortcut', async () => {
+    const exe = app.isPackaged ? process.execPath : null;
+    return tools.createShortcut(app.getAppPath(), exe);
+  });
+
+  // ===== 通用下载（自定义文件 / 皮肤）=====
+  ipcMain.handle('download:file', async (e, url, destDir, fileName) => {
+    const name = fileName || path.basename(new URL(url).pathname) || 'download.bin';
+    const dest = path.join(destDir || dataDirs().gameDir, name);
+    return tools.downloadFile(url, dest, { onProgress: (p) => send('download:progress', p) });
+  });
+  ipcMain.handle('download:skin', async (e, playerName) => {
+    const dest = path.join(dataDirs().gameDir, 'skins', playerName + '.png');
+    return tools.downloadSkin(playerName, dest);
+  });
 }
 
 app.whenReady().then(() => {
