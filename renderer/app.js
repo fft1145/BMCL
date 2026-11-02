@@ -48,7 +48,16 @@
 
   function switchPage(name) {
     document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.page === name));
-    document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + name));
+    document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
+    const target = $('#page-' + name);
+    if (target) {
+      target.classList.add('active');
+      // 强制重排以重放进入动画
+      void target.offsetWidth;
+      target.style.animation = 'none';
+      void target.offsetWidth;
+      target.style.animation = '';
+    }
     if (name === 'download') {
       if (!state.remote) loadRemoteVersions();
       refreshModsList();

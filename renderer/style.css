@@ -516,3 +516,63 @@ body.theme-bmcl .bmcl-label{display:inline}
 body.theme-bmcl .pcl-label{display:none}
 button.nav-btn.bmcl-only{display:none !important}
 body.theme-bmcl button.nav-btn.bmcl-only{display:flex !important}
+
+/* ============================================================
+   动画系统（双主题通用）
+   ============================================================ */
+@keyframes bmcl-fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes bmcl-slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes bmcl-glow{0%,100%{box-shadow:0 3px 10px rgba(11,91,203,.30)}50%{box-shadow:0 3px 18px rgba(13,115,253,.55)}}
+@keyframes bmcl-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes bmcl-pop{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+
+/* 页面切换淡入 */
+.page{animation:bmcl-fadeUp .28s cubic-bezier(.22,.61,.36,1) both}
+/* 启动按钮呼吸光 */
+.launch-btn{animation:bmcl-glow 2.6s ease-in-out infinite}
+.launch-btn:hover{animation-play-state:paused}
+/* 玩家模型漂浮（BMCL） */
+body.theme-bmcl .player-body{animation:bmcl-float 3.2s ease-in-out infinite}
+
+/* 顶栏导航激活指示条 */
+.nav-btn{position:relative;transition:background .18s,color .18s,transform .12s}
+.nav-btn::after{content:"";position:absolute;left:50%;bottom:1px;width:18px;height:2px;background:#fff;border-radius:2px;transform:translateX(-50%) scaleX(0);transition:transform .2s}
+.nav-btn.active::after{transform:translateX(-50%) scaleX(1)}
+body.theme-bmcl .nav-btn::after{background:#6ec24a}
+
+/* 按钮悬浮抬起 + 点击回弹 */
+.btn{transition:transform .12s,box-shadow .15s,background .15s,border-color .15s,color .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.btn:active{transform:translateY(0) scale(.97)}
+.btn-primary{transition:transform .12s,box-shadow .15s,filter .15s}
+.btn-primary:hover{filter:brightness(1.06)}
+
+/* 侧栏分类错落淡入 + 悬浮右移 */
+.dl-cat,.set-cat{transition:background .14s,color .14s,transform .12s}
+.dl-cat:hover,.set-cat:hover{transform:translateX(3px)}
+.dl-cat.active,.set-cat.active{animation:bmcl-pop .3s cubic-bezier(.34,1.56,.64,1)}
+
+/* 版本/模组列表错落出现 */
+.version-item,.mod-item{animation:bmcl-slideIn .32s cubic-bezier(.22,.61,.36,1) both}
+
+/* 统计卡片/快捷启动项悬浮 */
+.stat{transition:transform .15s,box-shadow .15s}
+.stat:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.10)}
+.quick-item{transition:transform .12s,background .14s}
+.quick-item:hover{transform:translateX(4px)}
+
+/* 选项行悬浮高亮 */
+.option-row{transition:background .12s}
+.option-row:hover{background:rgba(0,0,0,.02)}
+body.theme-bmcl .option-row:hover{background:rgba(255,255,255,.03)}
+
+/* 头像/标签微交互 */
+.avatar-shell{transition:transform .15s}
+.avatar-shell:hover{transform:scale(1.03)}
+.tag{transition:transform .12s}
+.tag:hover{transform:scale(1.05)}
+
+/* 减少动态效果偏好 */
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
