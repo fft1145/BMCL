@@ -504,8 +504,8 @@
     },
     optifine: {
       title: 'OptiFine 安装',
-      hint: '需要给客户端 jar 打补丁',
-      body: 'OptiFine 安装需要给客户端 jar 打补丁，当前版本尚未内置该流程。请先用官方安装器安装；启动器支持 inheritsFrom 继承，装好后可直接启动。',
+      hint: '下载官方安装器并执行 --installClient',
+      body: '会先确保原版已安装，再运行 OptiFine 官方安装器给客户端 jar 打补丁；安装完成后自动识别新版本并设为当前实例。',
       url: 'https://optifine.net/downloads'
     }
   };
@@ -517,9 +517,10 @@
     $('#packNoticeHint').textContent = info.hint;
     $('#packNoticeBody').textContent = info.body;
     $('#packStatus').textContent = '';
-    $('#packForm').classList.toggle('hidden', state.packKind === 'optifine');
+    // 所有类型都显示安装表单
+    $('#packForm').classList.remove('hidden');
     $('#btnPackOpenSite').onclick = () => bmcl.openExternal(info.url);
-    if (state.packKind !== 'optifine') populatePackGames();
+    populatePackGames();
   }
 
   function populatePackGames() {
@@ -546,7 +547,9 @@
     const sel = $('#packLoaderVer');
     try {
       sel.innerHTML = '<option value="">加载中…</option>';
-      const list = await bmcl.listForgeLoaders(game, state.packKind);
+      const list = state.packKind === 'optifine'
+        ? await bmcl.listOptifineLoaders(game)
+        : await bmcl.listForgeLoaders(game, state.packKind);
       if (!list.length) { sel.innerHTML = '<option value="">该版本没有可用安装器</option>'; return; }
       sel.innerHTML = '<option value="">自动选择最新</option>' + list.map((item) =>
         '<option value="' + esc(item.version) + '">' + esc(item.version) + (item.tag ? '（' + item.tag + '）' : '') + '</option>'
@@ -566,7 +569,9 @@
     $('#packStatus').textContent = '准备安装 ' + kind + '（' + game + '）…';
     $('#btnPackInstall').disabled = true;
     try {
-      const result = await bmcl.installForge(game, kind, version);
+      const result = kind === 'optifine'
+        ? await bmcl.installOptifine(game, version)
+        : await bmcl.installForge(game, kind, version);
       toast(kind + ' 安装完成：' + result.versionId, 'ok');
       $('#packStatus').textContent = '安装完成：' + result.versionId + '，已设为当前实例。';
       state.settings = await bmcl.getSettings();
@@ -1540,10 +1545,17 @@
 
     // BMCL「更多」页按钮
     if ($('#btnSkinMgr')) $('#btnSkinMgr').addEventListener('click', () => switchPage('tools'));
-    if ($('#btnAccount')) $('#btnAccount').addEventListener('click', () => { $('#accountPanel').classList.remove('hidden'); });
+    if ($('#btnAccount')) $('#btnAccount').addEventListener('click', () => {
+      switchPage('launch');
+      $('#accountPanel').classList.remove('hidden');
+    });
     if ($('#btnSkinUpload')) $('#btnSkinUpload').addEventListener('click', uploadSkinFromTool);
     if ($('#btnCape')) $('#btnCape').addEventListener('click', () => toast('披风管理将在后续版本接入（支持 LittleSkin）', 'info'));
-    if ($('#btnProfileEdit')) $('#btnProfileEdit').addEventListener('click', () => { $('#accountPanel').classList.remove('hidden'); toast('在账号面板中编辑资料', 'info'); });
+    if ($('#btnProfileEdit')) $('#btnProfileEdit').addEventListener('click', () => {
+      switchPage('launch');
+      $('#accountPanel').classList.remove('hidden');
+      $('#newAccountName').focus();
+    });
     if ($('#btnBackup')) $('#btnBackup').addEventListener('click', () => toast('游戏目录备份功能开发中', 'info'));
     if ($('#btnRestore')) $('#btnRestore').addEventListener('click', () => toast('还原备份功能开发中', 'info'));
   }

@@ -23,7 +23,9 @@ contextBridge.exposeInMainWorld('bmcl', {
   installVersion: (id) => ipcRenderer.invoke('versions:install', id),
   installFabric: (gameVersion, loaderVersion) => ipcRenderer.invoke('versions:installFabric', gameVersion, loaderVersion),
   installForge: (gameVersion, loader, loaderVersion) => ipcRenderer.invoke('versions:installForge', gameVersion, loader, loaderVersion),
+  installOptifine: (gameVersion, loaderVersion) => ipcRenderer.invoke('versions:installOptifine', gameVersion, loaderVersion),
   listForgeLoaders: (gameVersion, loader) => ipcRenderer.invoke('forge:loaders', gameVersion, loader),
+  listOptifineLoaders: (gameVersion) => ipcRenderer.invoke('optifine:loaders', gameVersion),
   listFabricLoaders: (gameVersion) => ipcRenderer.invoke('fabric:loaders', gameVersion),
 
   // 游戏

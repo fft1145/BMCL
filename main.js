@@ -269,6 +269,85 @@ async function installForge(gameVersion, loader, loaderVersion) {
   return { versionId: matched, loaderVersion: version };
 }
 
+// ===== OptiFine（通过 BMCLAPI 列表 + 官方安装器 --installClient）=====
+const OPTIFINE_LIST_URL = 'https://bmclapi2.bangbang93.com/optifine/versionList';
+const OPTIFINE_DOWNLOAD_BASE = 'https://bmclapi2.bangbang93.com/optifine';
+
+async function listOptifineLoaders(gameVersion) {
+  const game = String(gameVersion || '').trim();
+  if (!game) throw new Error('请先选择游戏版本');
+  const list = await fetchJson(OPTIFINE_LIST_URL);
+  if (!Array.isArray(list)) return [];
+  const matched = list.filter((x) => x && x.mcversion === game);
+  if (!matched.length) throw new Error('OptiFine 暂不支持 Minecraft ' + game);
+  // 优先稳定版（非 preview），再按 patch 倒序
+  const stable = matched.filter((x) => !/^preview_/i.test(x.filename || ''));
+  const ordered = (stable.length ? stable : matched).slice().sort((a, b) =>
+    String(b.patch || '').localeCompare(String(a.patch || ''))
+  );
+  return ordered.slice(0, 30).map((x) => ({
+    version: (x.type || '') + ' ' + (x.patch || ''),
+    type: x.type || '',
+    patch: x.patch || '',
+    filename: x.filename || '',
+    forge: x.forge || ''
+  }));
+}
+
+async function installOptifine(gameVersion, loaderVersion) {
+  const s = getSettings();
+  const dirs = dataDirs();
+  const game = String(gameVersion || '').trim();
+  if (!game) throw new Error('请先选择游戏版本');
+  if (!fs.existsSync(path.join(dirs.versionsDir, game, game + '.json'))) {
+    log('OptiFine 需要先安装原版 ' + game + '，正在安装…');
+    await installVersion(game);
+  }
+  // 解析 loaderVersion："HD_U I5" → type=HD_U, patch=I5
+  let type = '';
+  let patch = '';
+  const lv = String(loaderVersion || '').trim();
+  if (lv) {
+    const idx = lv.lastIndexOf(' ');
+    if (idx > 0) { type = lv.slice(0, idx); patch = lv.slice(idx + 1); }
+    else { patch = lv; }
+  }
+  if (!type || !patch) {
+    const list = await listOptifineLoaders(game);
+    const first = list[0];
+    type = first.type;
+    patch = first.patch;
+  }
+  const javaProbe = await javaCore.probeJava(s.javaPath || 'java');
+  if (!javaProbe.ok) throw new Error('没有找到可用的 Java，无法运行安装器：' + javaProbe.message);
+
+  const filename = 'OptiFine_' + game + '_' + type + '_' + patch + '.jar';
+  const jarUrl = OPTIFINE_DOWNLOAD_BASE + '/' + encodeURIComponent(game) +
+    '/' + encodeURIComponent(type) + '/' + encodeURIComponent(patch);
+  const tmpJar = path.join(app.getPath('temp'), 'bmcl-optifine-' + game + '-' + type + '-' + patch + '.jar');
+  send('install:progress', { stage: '下载 OptiFine 安装器', done: 0, total: 0 });
+  await tools.downloadFile(jarUrl, tmpJar);
+
+  const before = fs.existsSync(dirs.versionsDir) ? fs.readdirSync(dirs.versionsDir) : [];
+  send('install:progress', { stage: '运行 OptiFine 安装器（可能需要几分钟）', done: 0, total: 0 });
+  log('运行 OptiFine 安装器：' + filename);
+  await runProcess(javaProbe.javaPath, ['-jar', tmpJar, '--installClient', dirs.gameDir], {
+    cwd: dirs.gameDir,
+    onOutput: (text) => send('game:log', { text })
+  });
+  try { fs.unlinkSync(tmpJar); } catch (e) { /* ignore */ }
+
+  const after = fs.readdirSync(dirs.versionsDir);
+  const created = after.filter((id) => !before.includes(id));
+  const matched = created.find((id) => /optifine/i.test(id)) ||
+    after.find((id) => new RegExp(game + '.*OptiFine', 'i').test(id));
+  if (!matched) throw new Error('OptiFine 安装器运行完成，但没有找到生成的新版本，请查看日志');
+  settingsCore.save(settingsFile(), Object.assign(getSettings(), { versionId: matched }));
+  send('install:progress', { stage: '完成', done: 1, total: 1 });
+  log('OptiFine ' + type + ' ' + patch + ' 安装完成：' + matched, 'ok');
+  return { versionId: matched, loaderVersion: type + ' ' + patch };
+}
+
 async function fetchJson(url, timeoutMs) {
   const controller = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = controller ? setTimeout(() => controller.abort(), timeoutMs || 20000) : null;
@@ -681,7 +760,9 @@ function registerIpc() {
   ipcMain.handle('versions:install', (e, versionId) => installVersion(versionId));
   ipcMain.handle('versions:installFabric', (e, gameVersion, loaderVersion) => installFabric(gameVersion, loaderVersion));
   ipcMain.handle('versions:installForge', (e, gameVersion, loader, loaderVersion) => installForge(gameVersion, loader, loaderVersion));
+  ipcMain.handle('versions:installOptifine', (e, gameVersion, loaderVersion) => installOptifine(gameVersion, loaderVersion));
   ipcMain.handle('forge:loaders', (e, gameVersion, loader) => listForgeLoaders(gameVersion, loader));
+  ipcMain.handle('optifine:loaders', (e, gameVersion) => listOptifineLoaders(gameVersion));
   ipcMain.handle('fabric:loaders', async (e, gameVersion) => {
     const game = String(gameVersion || '').trim();
     if (!game) return [];
@@ -730,9 +811,17 @@ function registerIpc() {
   // ===== 账号 =====
   ipcMain.handle('account:list', () => accounts.listAccounts(userData()));
   ipcMain.handle('account:active', () => accounts.getActiveAccount(userData()));
-  ipcMain.handle('account:add', (e, name) => accounts.addOfflineAccount(userData(), name));
+  ipcMain.handle('account:add', (e, name) => {
+    const acc = accounts.addOfflineAccount(userData(), name);
+    if (acc && acc.name) settingsCore.save(settingsFile(), Object.assign(getSettings(), { playerName: acc.name }));
+    return acc;
+  });
   ipcMain.handle('account:remove', (e, id) => accounts.removeAccount(userData(), id));
-  ipcMain.handle('account:setActive', (e, id) => accounts.setActiveAccount(userData(), id));
+  ipcMain.handle('account:setActive', (e, id) => {
+    const acc = accounts.setActiveAccount(userData(), id);
+    if (acc && acc.name) settingsCore.save(settingsFile(), Object.assign(getSettings(), { playerName: acc.name }));
+    return acc;
+  });
 
   // ===== 微软正版登录（设备代码流）=====
   ipcMain.handle('account:msStart', async () => {
