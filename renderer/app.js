@@ -1535,7 +1535,7 @@
     if (!bmcl) { showBanner('未检测到 Electron 环境：请用 npm start 运行启动器。', 'error'); return; }
     state.info = await bmcl.info();
     state.settings = await bmcl.getSettings();
-    ['#sideVersion', '#updVersion', '#updVersion2'].forEach((sel) => {
+    ['#sideVersion', '#updVersion', '#updVersion2', '#codeVer'].forEach((sel) => {
       const el = $(sel); if (el) el.textContent = 'v' + state.info.version;
     });
     await refreshAccounts();

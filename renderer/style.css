@@ -1,27 +1,30 @@
-/* ===== BMCL GUI — PCL 经典白色主题 ===== */
+/* ===== BMCL GUI — PCL 经典白色主题（配色对齐 PCL2 CE） ===== */
 :root{
-  --tb-top:#3093e6;
-  --tb-bottom:#2276cb;
+  /* PCL CE 精确色板 */
+  --tb-top:#1370f3;
+  --tb-bottom:#0b5bcb;
 
-  --bg:#f3f6fa;
-  --side:#eef4fb;
+  --bg:#fbfbfb;
+  --side:#eaf2fe;
+  --side-2:#e0eafd;
   --card:#ffffff;
   --card-2:#f7fafd;
-  --line:#dde7f2;
-  --line-soft:#e9f0f7;
+  --line:#dde6f0;
+  --line-soft:#eef2f7;
 
-  --text:#24282d;
-  --muted:#5f6670;
-  --blue:#1e7fd0;
-  --blue-strong:#1772bd;
-  --blue-text:#1772c2;
-  --blue-soft:#e8f2fc;
+  --text:#343d4a;
+  --muted:#737373;
+  --blue:#1370f3;
+  --blue-strong:#0b5bcb;
+  --blue-text:#0b5bcb;
+  --blue-soft:#e0eafd;
+  --blue-pill:#4890f5;
 
   --green:#2f9e44;
   --danger:#d9363e;
   --warn:#b7791f;
 
-  --radius:6px;
+  --radius:4px;
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -48,7 +51,7 @@ a{color:var(--blue-text);text-decoration:none}
   display:flex;align-items:center;gap:10px;
   padding:0 6px 0 14px;
   background:linear-gradient(180deg,var(--tb-top) 0%,var(--tb-bottom) 100%);
-  border-bottom:1px solid #1f6fbf;
+  border-bottom:1px solid #0a4fa8;
   color:#fff;user-select:none;
   -webkit-app-region:drag;
 }
@@ -217,11 +220,11 @@ a{color:var(--blue-text);text-decoration:none}
    启动页
    ============================================================ */
 .launch-side{
-  width:250px;flex:0 0 250px;
+  width:300px;flex:0 0 300px;
   display:flex;flex-direction:column;
   padding:12px 14px 10px;
-  background:linear-gradient(180deg,#f2f8fe 0%,#eaf2fb 100%);
-  border-right:1px solid #d8e4f1;
+  background:linear-gradient(180deg,#eaf2fe 0%,#e0eafd 100%);
+  border-right:1px solid #d5e2f3;
 }
 .player-box{display:flex;flex-direction:column;align-items:center;gap:9px;padding:18px 0 10px}
 .avatar-shell{
@@ -255,14 +258,16 @@ a{color:var(--blue-text);text-decoration:none}
 .launch-cta{margin-top:14px;display:flex;flex-direction:column;gap:10px}
 .launch-btn{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-  height:64px;border:1px solid var(--blue);border-radius:4px;
-  background:var(--blue);color:#fff;
-  box-shadow:0 3px 10px rgba(30,127,208,.28);
-  transition:background .15s,border-color .15s;
+  height:54px;border:1px solid var(--blue-strong);border-radius:4px;
+  background:linear-gradient(180deg,#4890f5 0%,#1370f3 60%,#0b5bcb 100%);
+  color:#fff;
+  box-shadow:0 3px 10px rgba(11,91,203,.30);
+  transition:background .15s,border-color .15s,transform .08s;
 }
-.launch-btn:hover{background:var(--blue-strong);border-color:var(--blue-strong)}
-.lb-title{font-size:16px;font-weight:700}
-.lb-sub{font-size:11.5px;color:#d9ecfb}
+.launch-btn:hover{background:linear-gradient(180deg,#5a9ef7 0%,#1b7af4 60%,#0d62d6 100%)}
+.launch-btn:active{transform:translateY(1px)}
+.lb-title{font-size:17px;font-weight:700;letter-spacing:1px}
+.lb-sub{font-size:11px;color:#d9ecfb}
 .launch-stop{border-color:#c62f36;background:#d9363e;box-shadow:0 3px 10px rgba(217,54,62,.26)}
 .launch-stop:hover{background:#c62f36;border-color:#c62f36}
 .launch-stop .lb-sub{color:#ffdedf}
@@ -311,8 +316,8 @@ a{color:var(--blue-text);text-decoration:none}
   width:200px;flex:0 0 200px;
   display:flex;flex-direction:column;
   padding:12px 10px;
-  background:linear-gradient(180deg,#f2f8fe 0%,#eaf2fb 100%);
-  border-right:1px solid #d8e4f1;
+  background:linear-gradient(180deg,#eaf2fe 0%,#e0eafd 100%);
+  border-right:1px solid #d5e2f3;
   overflow-y:auto;
 }
 .dl-cats{list-style:none;display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
@@ -369,8 +374,8 @@ a{color:var(--blue-text);text-decoration:none}
   width:200px;flex:0 0 200px;
   display:flex;flex-direction:column;
   padding:12px 10px;
-  background:linear-gradient(180deg,#f2f8fe 0%,#eaf2fb 100%);
-  border-right:1px solid #d8e4f1;
+  background:linear-gradient(180deg,#eaf2fe 0%,#e0eafd 100%);
+  border-right:1px solid #d5e2f3;
   overflow-y:auto;
 }
 .set-group{
