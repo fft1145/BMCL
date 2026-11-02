@@ -811,7 +811,8 @@ function registerIpc() {
   ipcMain.handle('mods:search', (e, query, options) => {
     const s = getSettings();
     const opts = Object.assign({}, options || {});
-    if (!opts.gameVersion) opts.gameVersion = s.versionId || '';
+    // 不强制按当前版本过滤：前端选「全部版本」时应返回全量结果，
+    // 否则推荐数量过少、分页按钮提前消失。
     if (!opts.apiKey) opts.apiKey = s.curseForgeApiKey || '';
     return tools.searchProjects(query, opts);
   });

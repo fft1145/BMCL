@@ -17,7 +17,8 @@
     activeAccount: null,
     modResults: [],
     repair: null,
-    msLogin: null
+    msLogin: null,
+    versionShown: { release: 200, snapshot: 200, old: 200, april: 200 }
   };
 
   function esc(value) {
@@ -352,14 +353,28 @@
     for (const key of Object.keys(map)) {
       const body = $(map[key].body);
       const count = $(map[key].count);
-      if (count) count.textContent = '(' + groups[key].length + ')';
+      const total = groups[key].length;
+      if (count) count.textContent = '(' + total + ')';
       if (!body) continue;
-      if (!groups[key].length) {
+      if (!total) {
         body.innerHTML = '<p class="empty">没有匹配的版本。</p>';
         continue;
       }
-      body.innerHTML = groups[key].slice(0, 120).map((v) => versionItem(v, installedIds.has(v.id))).join('');
+      const shown = Math.min(state.versionShown[key] || 200, total);
+      const items = groups[key].slice(0, shown).map((v) => versionItem(v, installedIds.has(v.id))).join('');
+      let more = '';
+      if (shown < total) {
+        const remain = total - shown;
+        more = '<div class="row" style="margin-top:8px"><button class="btn btn-sm" data-vmore="' + key + '">显示更多（还有 ' + remain + ' 个）</button></div>';
+      }
+      body.innerHTML = items + more;
     }
+  }
+
+  function showMoreVersions(key) {
+    if (!key || !state.versionShown) return;
+    state.versionShown[key] = (state.versionShown[key] || 200) + 200;
+    renderRemote($('#dlFilter') ? $('#dlFilter').value : '');
   }
 
   async function loadRemoteVersions() {
@@ -997,8 +1012,9 @@
       $('#modResults').innerHTML = '<p class="empty">正在获取…</p>';
     }
     const query = $('#modSearch') ? $('#modSearch').value.trim() : '';
+    const requestedSource = isFav ? 'curseforge' : modSource();
     const options = {
-      source: isFav ? 'curseforge' : modSource(),
+      source: requestedSource,
       projectType: modType(),
       sort: $('#modSort') ? $('#modSort').value : 'downloads',
       limit: 20,
@@ -1010,6 +1026,13 @@
     state.modLoading = true;
     try {
       const results = await bmcl.searchMods(query, options);
+      // 检测后端是否因 CurseForge Key 失效而回退到了 Modrinth
+      const actualSource = results.length && results[0].source ? results[0].source : requestedSource;
+      if (requestedSource === 'curseforge' && actualSource === 'modrinth') {
+        const sel = $('#modSource');
+        if (sel) sel.value = 'modrinth';
+        toast('CurseForge 不可用，已自动切换到 Modrinth', 'ok');
+      }
       state.modResults = reset ? results : (state.modResults || []).concat(results);
       state.modOffset += results.length;
       renderModResults(state.modResults);
@@ -1356,6 +1379,8 @@
 
     // 版本列表：安装 / 启动 / 设为当前
     document.addEventListener('click', (e) => {
+      const vmore = e.target.closest('[data-vmore]');
+      if (vmore) { showMoreVersions(vmore.dataset.vmore); return; }
       const install = e.target.closest('[data-install]');
       if (install) { installVersion(install.dataset.install); return; }
       const launch = e.target.closest('[data-launch]');

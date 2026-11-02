@@ -252,8 +252,17 @@ async function downloadSkin(playerName, destPath) {
 const MODRINTH_API = 'https://api.modrinth.com/v2';
 const MODRINTH_HEADERS = { 'User-Agent': 'fft1145-bmcl/1.0 (github.com/fft1145/BMCL)' };
 
+// Modrinth 支持的 project_type：mod / modpack / resourcepack / shader / datapack
+// 没有 world（世界/存档）类型，遇到 world 时去掉 project_type 限定改为全库搜索
+const MODRINTH_PROJECT_TYPES = new Set(['mod', 'modpack', 'resourcepack', 'shader', 'datapack']);
+
 function modrinthFacets(projectType, gameVersion) {
-  const facets = [['project_type:' + (projectType || 'mod')]];
+  const facets = [];
+  // 默认按 mod 搜索；world 不在 Modrinth 支持的类型里，去掉 project_type 限定
+  const type = projectType || 'mod';
+  if (MODRINTH_PROJECT_TYPES.has(type)) {
+    facets.push(['project_type:' + type]);
+  }
   if (gameVersion) facets.push(['versions:' + gameVersion]);
   return JSON.stringify(facets);
 }
@@ -423,11 +432,24 @@ async function curseForgeFiles(projectId, gameVersion, options = {}) {
   })).sort((a, b) => String(b.datePublished).localeCompare(String(a.datePublished)));
 }
 
-/** 按来源聚合搜索：Modrinth + CurseForge */
+/** 按来源聚合搜索：Modrinth + CurseForge，CurseForge 失败时自动回退到 Modrinth */
 async function searchProjects(query, options = {}) {
   const source = options.source || 'curseforge';
   if (source === 'modrinth') return modrinthSearch(query, options);
-  return curseForgeSearch(query, options);
+  try {
+    return await curseForgeSearch(query, options);
+  } catch (err) {
+    // CurseForge 默认 Key 可能失效（403），自动回退到 Modrinth，
+    // 避免用户看到空白结果。world 类型在 Modrinth 无原生分类，
+    // 会走全库搜索作为兜底。
+    const msg = (err && err.message) || String(err);
+    if (/403|401|invalid|missing/i.test(msg)) {
+      const fallbackOpts = Object.assign({}, options, { source: 'modrinth' });
+      const results = await modrinthSearch(query, fallbackOpts);
+      return results.map((r) => Object.assign({}, r, { source: 'modrinth' }));
+    }
+    throw err;
+  }
 }
 
 /** 按来源取项目的可下载文件 */
