@@ -304,3 +304,91 @@ body.theme-bmcl .bmcl-quick-type{background:#1b2916;border-color:#2f4a22;color:#
   .bmcl-dashboard{grid-template-columns:1fr}
   .theme-grid{grid-template-columns:1fr}
 }
+
+/* ============================================================
+   BMCL 布局：顶部导航 → 左侧竖栏（主页/下载/设置/更多/代码/退出）
+   ============================================================ */
+body.theme-bmcl .titlebar{
+  height:46px;
+}
+body.theme-bmcl .tb-nav{
+  position:fixed;
+  top:46px;left:0;bottom:0;
+  width:60px;flex:0 0 60px;
+  flex-direction:column;justify-content:flex-start;align-items:stretch;
+  gap:2px;padding:8px 6px;
+  background:#0e0e0e;
+  border-right:1px solid #1e1e1e;
+  z-index:60;
+}
+body.theme-bmcl .nav-btn{
+  flex-direction:column;justify-content:center;align-items:center;
+  gap:3px;padding:9px 2px;border-radius:6px;
+  font-size:11px;font-weight:600;
+}
+body.theme-bmcl .nav-btn svg{width:20px;height:20px}
+body.theme-bmcl .nav-btn.active{border-radius:6px}
+body.theme-bmcl #btnQuit{margin-top:auto}
+
+/* 工作区让出左侧栏空间 */
+body.theme-bmcl .workspace{
+  margin-left:60px;
+}
+
+/* 顶栏品牌区：BMCL 模式只留 logo + 窗口按钮 */
+body.theme-bmcl .tb-brand{width:auto;min-width:auto}
+body.theme-bmcl .tb-name{display:none}
+
+/* ============================================================
+   液态玻璃（拟态玻璃）卡片与表格
+   ============================================================ */
+body.theme-bmcl .glass-card{
+  background:rgba(255,255,255,.04);
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 4px 18px rgba(0,0,0,.35);
+}
+body.theme-bmcl .glass-card .card-head h2{color:#eaffdc}
+
+/* 版本/模组列表用玻璃表格风 */
+body.theme-bmcl .version-group{
+  background:rgba(255,255,255,.035);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:6px;overflow:hidden;
+}
+body.theme-bmcl .vg-toggle{background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.06)}
+body.theme-bmcl .version-item{
+  background:transparent;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  transition:background .12s;
+}
+body.theme-bmcl .version-item:hover{background:rgba(60,133,39,.10)}
+body.theme-bmcl .version-item.selected{background:rgba(60,133,39,.16);border-left-color:var(--green)}
+
+body.theme-bmcl .mod-item{
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:5px;margin-bottom:8px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+body.theme-bmcl .mod-item:hover{background:rgba(60,133,39,.08)}
+
+/* ============================================================
+   BMCL 玩家模型（中心身体渲染）
+   ============================================================ */
+body.theme-bmcl .player-body{
+  display:block !important;
+  width:120px;height:240px;margin:0 auto;
+  image-rendering:pixelated;
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,.5));
+}
+body.theme-bmcl .avatar{display:none}
+body.theme-bmcl .avatar-shell{
+  background:linear-gradient(180deg,rgba(60,133,39,.18),rgba(0,0,0,0));
+  padding:12px 0;
+}
+

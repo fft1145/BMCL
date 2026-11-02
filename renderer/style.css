@@ -501,3 +501,13 @@ a{color:var(--blue-text);text-decoration:none}
 .version-group.collapsed .vg-arrow{transform:rotate(-90deg)}
 .mod-actions .btn{min-width:56px}
 .instance-btn{cursor:pointer}
+
+/* ===== BMCL 主题切换：默认隐藏 BMCL 专属元素 ===== */
+.bmcl-only{display:none !important}
+.bmcl-label{display:none}
+.pcl-label{display:inline}
+body.theme-bmcl .bmcl-only{display:block !important}
+body.theme-bmcl .bmcl-label{display:inline}
+body.theme-bmcl .pcl-label{display:none}
+button.nav-btn.bmcl-only{display:none !important}
+body.theme-bmcl button.nav-btn.bmcl-only{display:flex !important}

@@ -80,9 +80,15 @@
 
   function updateAvatar(name) {
     const av = $('#playerAvatar');
-    if (!av) return;
-    av.onerror = () => { av.onerror = null; av.src = '../build/icon.png'; };
-    av.src = 'https://mc-heads.net/avatar/' + encodeURIComponent(name || 'fft1145') + '/96';
+    if (av) {
+      av.onerror = () => { av.onerror = null; av.src = '../build/icon.png'; };
+      av.src = 'https://mc-heads.net/avatar/' + encodeURIComponent(name || 'fft1145') + '/96';
+    }
+    const body = $('#playerBody');
+    if (body) {
+      body.onerror = () => { body.onerror = null; };
+      body.src = 'https://mc-heads.net/body/' + encodeURIComponent(name || 'fft1145') + '/right';
+    }
   }
 
   function syncVersionLabel() {
@@ -1493,6 +1499,19 @@
     });
     $('#btnDownloadSkin').addEventListener('click', downloadSkin);
     $('#btnNetTest').addEventListener('click', netTest);
+
+    // BMCL 模式：退出启动器
+    const btnQuit = $('#btnQuit');
+    if (btnQuit) btnQuit.addEventListener('click', () => { if (bmcl && bmcl.winClose) bmcl.winClose(); });
+
+    // BMCL「更多」页按钮
+    if ($('#btnSkinMgr')) $('#btnSkinMgr').addEventListener('click', () => switchPage('tools'));
+    if ($('#btnAccount')) $('#btnAccount').addEventListener('click', () => { $('#accountPanel').classList.remove('hidden'); });
+    if ($('#btnSkinUpload')) $('#btnSkinUpload').addEventListener('click', uploadSkinFromTool);
+    if ($('#btnCape')) $('#btnCape').addEventListener('click', () => toast('披风管理将在后续版本接入（支持 LittleSkin）', 'info'));
+    if ($('#btnProfileEdit')) $('#btnProfileEdit').addEventListener('click', () => { $('#accountPanel').classList.remove('hidden'); toast('在账号面板中编辑资料', 'info'); });
+    if ($('#btnBackup')) $('#btnBackup').addEventListener('click', () => toast('游戏目录备份功能开发中', 'info'));
+    if ($('#btnRestore')) $('#btnRestore').addEventListener('click', () => toast('还原备份功能开发中', 'info'));
   }
 
   function bindBridgeEvents() {
