@@ -42,6 +42,8 @@ body:not(.theme-bmcl) .pcl-logo path{
 }
 body:not(.theme-bmcl) .tb-logo,
 body:not(.theme-bmcl) .tb-name{display:none}
+/* BMCL 主题下隐藏 PCL 字母 Logo，只显示大写字母 + BMCL 字样 */
+body.theme-bmcl .pcl-logo{display:none}
 
 /* CE 角标：白色 20×18，圆角 5，居中 10px 左边距 */
 body:not(.theme-bmcl) .tb-ce{
