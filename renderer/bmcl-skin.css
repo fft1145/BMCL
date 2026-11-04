@@ -1,0 +1,110 @@
+/* ============================================================
+   BMCL 2.2.0 界面皮肤
+   只作用于 <body class="theme-bmcl">，PCL 主题完全不受影响。
+   ============================================================ */
+body.theme-bmcl{
+  --green:#1370f3;
+  --green-hover:#0b5bcb;
+  --green-hi:#4890f5;
+  --green-soft:#132743;
+}
+
+/* ---------- 左栏：实用功能模块 ---------- */
+.util{display:none}
+body.theme-bmcl .util{
+  display:flex;flex-direction:column;
+  flex:1 1 auto;min-height:0;overflow:hidden;
+  margin:10px 16px 0;padding-top:8px;border-top:1px solid #232323;
+}
+.util-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 6px}
+.util-title{font-size:12px;font-weight:600;color:#c6c6c6;letter-spacing:.3px}
+.util-live{font-size:10px;color:#4890f5;display:flex;align-items:center;gap:5px}
+.util-live i{width:6px;height:6px;border-radius:50%;background:#4890f5;box-shadow:0 0 6px #4890f5}
+.util-tabs{display:flex;gap:4px;padding:0 2px 6px;flex-wrap:wrap}
+.utab{
+  font-size:10.5px;padding:2px 7px;border:1px solid #2c2c2c;border-radius:10px;
+  background:#1c1c1c;color:#a0a0a0;cursor:pointer;font-family:inherit;
+}
+.utab:hover{border-color:#3d3d3d;color:#c6c6c6}
+.utab.on{background:#1370f3;border-color:#1370f3;color:#fff}
+.reco{flex:1 1 auto;min-height:0;overflow-y:auto;padding:0 2px;
+  -webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 88%,transparent 100%)}
+.reco-item{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:5px;cursor:pointer}
+.reco-item:hover{background:#1c1c1c}
+.reco-rank{width:14px;font-size:10.5px;color:#a0a0a0;text-align:center;flex:0 0 14px}
+.reco-rank.top{color:#4890f5;font-weight:700}
+.reco-main{flex:1;min-width:0}
+.reco-name{font-size:11.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reco-meta{font-size:9.5px;color:#7d7d7d;margin-top:1px}
+.reco-num{font-size:10.5px;color:#4890f5;flex:0 0 auto}
+.util-links{display:grid;gap:0;padding:3px 0 0;border-top:1px solid #232323;margin-top:3px}
+.ulink{
+  display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:5px;cursor:pointer;
+  background:none;border:0;color:#c6c6c6;font-size:11px;font-family:inherit;text-align:left;
+}
+.ulink:hover{background:#1c1c1c;color:#fff}
+.ulink svg{width:15px;height:15px;stroke:#4890f5;fill:none;stroke-width:2;flex:0 0 15px}
+.ulink .cnt{margin-left:auto;font-size:10px;color:#a0a0a0}
+.util-src{display:none;padding:3px 2px 0;font-size:9px;color:#6b6b6b;line-height:1.5}
+.util-src a{color:#4890f5;text-decoration:none}
+
+/* ---------- 主界面：仪表盘 ---------- */
+.dash{display:none}
+body.theme-bmcl .dash{display:block;margin-bottom:15px}
+.dash-hero{display:grid;grid-template-columns:1.15fr 1fr;gap:15px;margin-bottom:15px}
+.dash-card{
+  background:#171717;border:1px solid #232323;border-radius:6px;overflow:hidden;
+  display:flex;flex-direction:column;min-height:0;
+}
+.dash-head{
+  height:38px;display:flex;align-items:center;gap:8px;padding:0 14px;flex:0 0 38px;
+  font-size:12.5px;color:#c6c6c6;border-bottom:1px solid #232323;
+}
+.dash-head svg{width:14px;height:14px;stroke:#4890f5;fill:none;stroke-width:2;flex:0 0 14px}
+.dash-head .more{margin-left:auto;font-size:11px;color:#a0a0a0;cursor:pointer;background:none;border:0;font-family:inherit}
+.dash-head .more:hover{color:#fff}
+.dash-model{display:flex;height:262px}
+.model-stage{flex:1;position:relative;min-width:0;
+  background:radial-gradient(400px 240px at 50% 40%,#16243a 0%,#12161c 60%,#0e1116 100%)}
+#skinCanvas{width:100%;height:100%;display:block;cursor:grab}
+#skinCanvas:active{cursor:grabbing}
+.model-tip{position:absolute;left:12px;bottom:8px;font-size:10px;color:#7f8da4;pointer-events:none}
+.model-info{position:absolute;right:10px;top:8px;text-align:right;font-size:10px;color:#8b9ab1;line-height:1.6}
+.model-side{width:132px;flex:0 0 132px;border-left:1px solid #232323;padding:11px;display:flex;flex-direction:column;gap:6px;font-size:10.5px;color:#a0a0a0}
+.model-side b{display:block;color:#c6c6c6;font-size:10.5px;font-weight:600}
+.model-side .chip{display:inline-block;font-size:9.5px;padding:1px 6px;border-radius:9px;background:#132743;color:#4890f5;border:1px solid #23405f}
+
+.sav-row{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:5px;cursor:pointer}
+.sav-row:hover{background:#1c1c1c}
+.sav-ico{width:28px;height:28px;border-radius:4px;background:#1b2c44;display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 28px}
+.sav-main{flex:1;min-width:0}
+.sav-name{font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sav-meta{font-size:10px;color:#7d7d7d;margin-top:2px}
+.sav-time{font-size:10px;color:#a0a0a0;flex:0 0 auto}
+
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.stat-in{padding:11px 13px;display:flex;flex-direction:column;gap:3px;flex:1;min-height:104px}
+.stat-big{font-size:22px;font-weight:700;color:#fff}
+.stat-big span{font-size:10.5px;font-weight:400;color:#a0a0a0;margin-left:4px}
+.stat-sub{font-size:10.5px;color:#a0a0a0}
+body.theme-bmcl .dash .bar{height:4px;border-radius:2px;background:#242424;margin-top:5px;overflow:hidden}
+body.theme-bmcl .dash .bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#1370f3,#4890f5)}
+.stat-foot{margin-top:auto;font-size:10.5px;color:#4890f5;cursor:pointer}
+
+@media (max-width:900px){
+  body.theme-bmcl .dash-hero{grid-template-columns:1fr}
+  body.theme-bmcl .dash-grid{grid-template-columns:1fr}
+}
+
+/* 公告卡：统一成 BMCL 深蓝配色 */
+body.theme-bmcl .notice-card{
+  background:#152033;border:1px solid #24344f;border-left:3px solid #1370f3;
+}
+body.theme-bmcl .notice-title{color:#8cbcf7}
+body.theme-bmcl .notice-card p{color:#a9bdd6}
+body.theme-bmcl .notice-foot{color:#6f86a3}
+
+/* 账号区在 BMCL 主题下更紧凑，给实用功能留出空间 */
+body.theme-bmcl .player-box{padding:12px 0 8px;gap:6px}
+body.theme-bmcl .player-box .avatar-shell{max-height:112px;overflow:hidden}

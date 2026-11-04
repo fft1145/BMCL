@@ -261,7 +261,7 @@
     populateModGameVersions();
     populateFabricGames();
     populatePackGames();
-    if (document.body.classList.contains('theme-bmcl')) renderBmclDashboard();
+    if (document.body.classList.contains('theme-bmcl') && typeof renderBmclDashboard === 'function') renderBmclDashboard();
   }
 
   function populateModGameVersions() {
