@@ -253,13 +253,13 @@
         </div>
 
         <!-- 管理员下发公告（由 notices.json 驱动） -->
-        <div class="notice-card hidden" id="annCard">
+        <div class="notice-card hidden ann-card">
           <div class="notice-head">
-            <span class="notice-title" id="annTitle">公告</span>
-            <button class="notice-close" id="btnAnnClose" title="关闭公告">×</button>
+            <span class="notice-title">公告</span>
+            <button class="notice-close" title="关闭公告">×</button>
           </div>
-          <div id="annBody"></div>
-          <p class="notice-foot" id="annFoot"></p>
+          <div class="ann-body"></div>
+          <p class="notice-foot ann-foot"></p>
         </div>
 
         <!-- BMCL 模式专属：仪表盘 + 快捷启动 -->
@@ -919,6 +919,15 @@
     <!-- ====== BMCL：实用 ====== -->
     <section class="page bmcl-page" id="page-util">
       <div class="ut-wrap">
+        <!-- 管理员下发公告（BMCL 实用页同样可见） -->
+        <div class="notice-card hidden ann-card">
+          <div class="notice-head">
+            <span class="notice-title">公告</span>
+            <button class="notice-close" title="关闭公告">×</button>
+          </div>
+          <div class="ann-body"></div>
+          <p class="notice-foot ann-foot"></p>
+        </div>
         <header class="ut-topbar">
           <nav class="ut-tabs">
             <button class="ut-tab on" data-utab="bmcl">BMCL</button>

@@ -1589,39 +1589,40 @@
 
   /** 管理员下发公告：读取 notices.json，展示最新一条未被关闭的公告。 */
   async function loadAnnouncements() {
-    const card = $('#annCard');
-    if (!card || !bmcl || !bmcl.getNotices) return;
+    const cards = document.querySelectorAll('.ann-card');
+    if (!cards.length || !bmcl || !bmcl.getNotices) return;
     let res = null;
     try { res = await bmcl.getNotices(); } catch (_) { return; }
     const notices = (res && res.notices) || [];
     const visible = notices.filter((n) => n && n.id && !localStorage.getItem('bmcl.notice.' + n.id));
-    if (!visible.length) { card.classList.add('hidden'); return; }
+    if (!visible.length) return;
     const n = visible[0];
-    $('#annTitle').textContent = n.title || '公告';
-    const body = $('#annBody');
-    body.innerHTML = '';
-    String(n.body || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean).forEach((line) => {
-      const p = document.createElement('p');
-      p.textContent = line;
-      body.appendChild(p);
+    cards.forEach((card) => {
+      card.querySelector('.notice-title').textContent = n.title || '公告';
+      const body = card.querySelector('.ann-body');
+      body.innerHTML = '';
+      String(n.body || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean).forEach((line) => {
+        const p = document.createElement('p');
+        p.textContent = line;
+        body.appendChild(p);
+      });
+      const foot = card.querySelector('.ann-foot');
+      foot.textContent = '';
+      if (n.date) foot.textContent = '下发时间：' + n.date + ' · 管理员公告';
+      if (n.url) {
+        const a = document.createElement('a');
+        a.href = n.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = ' 查看详情 →';
+        foot.appendChild(a);
+      }
+      card.querySelector('.notice-close').onclick = () => {
+        try { localStorage.setItem('bmcl.notice.' + n.id, '1'); } catch (_) { /* 忽略 */ }
+        cards.forEach((c) => c.classList.add('hidden'));
+      };
+      card.classList.remove('hidden');
     });
-    const foot = $('#annFoot');
-    foot.textContent = '';
-    if (n.date) foot.textContent = '下发时间：' + n.date + ' · 管理员公告';
-    if (n.url) {
-      const a = document.createElement('a');
-      a.href = n.url;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.textContent = ' 查看详情 →';
-      foot.appendChild(a);
-    }
-    const btn = $('#btnAnnClose');
-    if (btn) btn.onclick = () => {
-      try { localStorage.setItem('bmcl.notice.' + n.id, '1'); } catch (_) { /* 忽略 */ }
-      card.classList.add('hidden');
-    };
-    card.classList.remove('hidden');
   }
 
   async function boot() {
