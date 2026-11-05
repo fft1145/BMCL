@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld('bmcl', {
 
   // 版本
   listInstalled: () => ipcRenderer.invoke('versions:installed'),
+  deleteVersion: (id) => ipcRenderer.invoke('versions:delete', id),
+  listSaves: () => ipcRenderer.invoke('saves:list'),
   listRemote: () => ipcRenderer.invoke('versions:list'),
   installVersion: (id) => ipcRenderer.invoke('versions:install', id),
   installFabric: (gameVersion, loaderVersion) => ipcRenderer.invoke('versions:installFabric', gameVersion, loaderVersion),

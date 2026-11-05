@@ -729,6 +729,41 @@ function registerIpc() {
     return saved;
   });
   ipcMain.handle('versions:installed', () => installedVersions());
+  ipcMain.handle('versions:delete', async (e, id) => {
+    const versionId = String(id || '').trim();
+    if (!versionId || /[\\/:*?"<>|]/.test(versionId) || versionId.includes('..')) throw new Error('版本名不合法');
+    const dir = path.join(dataDirs().versionsDir, versionId);
+    if (!fs.existsSync(dir)) throw new Error('版本不存在：' + versionId);
+    const result = await dialog.showMessageBox(win, {
+      type: 'warning',
+      buttons: ['取消', '删除'],
+      defaultId: 0,
+      cancelId: 0,
+      title: '删除版本',
+      message: '确定删除版本「' + versionId + '」？',
+      detail: '会删除 versions/' + versionId + ' 文件夹，且无法恢复。'
+    });
+    if (result.response !== 1) return { ok: false, canceled: true };
+    await fsp.rm(dir, { recursive: true, force: true });
+    log('已删除版本：' + versionId, 'warn');
+    return { ok: true, id: versionId };
+  });
+  ipcMain.handle('saves:list', () => {
+    const savesDir = path.join(dataDirs().gameDir, 'saves');
+    if (!fs.existsSync(savesDir)) return [];
+    return fs.readdirSync(savesDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => {
+        const dir = path.join(savesDir, d.name);
+        let lastPlayed = 0;
+        try {
+          const level = path.join(dir, 'level.dat');
+          if (fs.existsSync(level)) lastPlayed = fs.statSync(level).mtimeMs;
+        } catch (err) { /* 忽略单个存档读取错误 */ }
+        return { name: d.name, lastPlayed, dir };
+      })
+      .sort((a, b) => b.lastPlayed - a.lastPlayed);
+  });
   ipcMain.handle('versions:rescan', () => gameDirState(getSettings()));
   ipcMain.handle('game:scanDirs', () => tools.scanMinecraftDirs({ extra: getSettings().extraGameDirs || [] }));
   ipcMain.handle('game:setDir', (e, dir) => {

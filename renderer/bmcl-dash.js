@@ -102,7 +102,7 @@
     cv.height = Math.round(r.height * dpr);
     W = r.width; H = r.height;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    S = Math.min(H * 0.037, W * 0.05);
+    S = Math.min(H * 0.037, W * 0.05, 13);
   }
   window.addEventListener('resize', resize);
   setTimeout(resize, 30);
@@ -126,7 +126,7 @@
     part(-2.1, -6, 0, 3.7, 12, 4, COL.pants, 0, 1)
   ];
 
-  var rotY = 0.95, rotX = 0.12, dragY = 0, dragX = 0, autoRotate = true, t = 0;
+  var rotY = 0.52, rotX = 0.1, dragY = 0, dragX = 0, autoRotate = true, t = 0;
   var DIST = 46, FOC = 33;
 
   function rotPoint(p, yaw, pitch) {
@@ -189,7 +189,7 @@
     BODY.forEach(function (pt, pi) {
       var c = pt.c, s = pt.s;
       var ang = pt.sw * swing;
-      var pivot = [c[0], pt.py === 0 ? c[1] + s[1] / 2 : c[1], c[2]];
+      var pivot = [c[0], pt.py, c[2]];
       var yOff = pi === 0 ? bob : 0;
       var x0 = c[0] - s[0] / 2, x1 = c[0] + s[0] / 2;
       var y0 = c[1] - s[1] / 2 + yOff, y1 = c[1] + s[1] / 2 + yOff;
@@ -324,6 +324,7 @@
     });
   }
 
+  window.bmclModelResize = resize;
   resize();
   requestAnimationFrame(loop);
 })();

@@ -129,7 +129,15 @@
     // 同步设置页里的单选
     const radios = document.querySelectorAll('input[name="uiTheme"]');
     radios.forEach((r) => { r.checked = (r.value === theme); });
-    if (bmcl) renderBmclDashboard();
+    if (bmcl) {
+      const cur = document.querySelector('.page.active');
+      const ok = cur && /^page-(util|manage|download|account|settings)$/.test(cur.id);
+      if (!ok) switchPage('util');
+      renderBmclDashboard();
+    } else {
+      const cur = document.querySelector('.page.active');
+      if (cur && /^page-(util|manage|account)$/.test(cur.id)) switchPage('launch');
+    }
   }
 
   // BMCL 模式专属仪表盘
@@ -262,6 +270,7 @@
     populateFabricGames();
     populatePackGames();
     if (document.body.classList.contains('theme-bmcl') && typeof renderBmclDashboard === 'function') renderBmclDashboard();
+    document.dispatchEvent(new CustomEvent('bmcl:versions'));
   }
 
   function populateModGameVersions() {
@@ -809,6 +818,7 @@
     state.activeAccount = state.accounts.find((a) => a.id === data.active) || state.accounts[0] || null;
     renderAccountList();
     syncAccountCard();
+    document.dispatchEvent(new CustomEvent('bmcl:accounts'));
   }
 
   function renderAccountList() {
@@ -1392,7 +1402,7 @@
       if (launch) {
         state.settings.versionId = launch.dataset.launch;
         syncVersionLabel();
-        switchPage('launch');
+        if (!document.body.classList.contains('theme-bmcl')) switchPage('launch');
         launchGame(launch.dataset.launch);
         return;
       }
