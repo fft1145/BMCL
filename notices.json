@@ -1,12 +1,12 @@
 {
   "notices": [
     {
-      "id": "2026-11-05-222",
-      "title": "BMCL 2.2.2 已发布",
-      "body": "本次更新新增「管理员下发公告」：启动器启动时会自动接收官网公告，可在首页查看。\n官网已同步更新至 2.2.2，下载页可获取最新版与源码包。",
+      "id": "2026-11-05-223",
+      "title": "BMCL 2.2.3 已发布",
+      "body": "管理员下发公告现已覆盖 BMCL 实用页与 PCL 启动页，关闭一处即同步隐藏。\n官网已更新至 2.2.3，下载页可获取最新版与源码包。",
       "date": "2026-11-05",
       "level": "info",
-      "url": "https://github.com/fft1145/BMCL/releases/tag/v2.2.2"
+      "url": "https://github.com/fft1145/BMCL/releases/tag/v2.2.3"
     }
   ]
 }
