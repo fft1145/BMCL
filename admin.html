@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BMCL 管理员 · 下发公告</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>BMCL 管理员 · 下发公告</h1>
+  <p class="sub">公告会写入 <code>gh-pages/notices.json</code>，启动器下次启动时自动拉取。仅仓库管理员可发布。</p>
+
+  <section class="card">
+    <h2>1. 管理员验证</h2>
+    <label>验证问题：性别</label>
+    <input id="gender" placeholder="请输入答案" autocomplete="off">
+    <label>GitHub 令牌（需该仓库 Contents 写权限）</label>
+    <input id="token" placeholder="github_pat_… 或 ghp_…" autocomplete="off">
+    <button id="btnVerify" class="primary">验证身份</button>
+    <p class="hint">令牌只保存在本机浏览器，不会上传到任何第三方。</p>
+  </section>
+
+  <section class="card">
+    <h2>2. 公告内容</h2>
+    <label>标题</label>
+    <input id="title" maxlength="60" placeholder="例如：BMCL 2.2.2 已发布">
+    <label>正文（每行一段）</label>
+    <textarea id="body" rows="5" placeholder="公告正文，可换行分段"></textarea>
+    <label>日期</label>
+    <input id="date" placeholder="2026-11-05">
+    <label>详情链接（可留空）</label>
+    <input id="url" placeholder="https://…">
+    <label>级别</label>
+    <select id="level"><option value="info">普通</option><option value="warning">重要</option></select>
+    <button id="btnPublish" class="primary" disabled>发布公告</button>
+  </section>
+
+  <section class="card">
+    <h2>3. 当前在线公告</h2>
+    <div id="list" class="list">尚未读取</div>
+  </section>
+
+  <p id="status" class="status"></p>
+</main>
+<script src="admin.js"></script>
+</body>
+</html>
