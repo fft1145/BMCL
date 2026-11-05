@@ -10,6 +10,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const fsp = fs.promises;
 const crypto = require('node:crypto');
+const https = require('node:https');
 const { spawn, execFile } = require('node:child_process');
 
 const settingsCore = require('./src/core/settings');
@@ -27,6 +28,11 @@ const microsoft = require('./src/core/microsoft');
 const APP_NAME = 'fft1145';
 const APP_VERSION = require('./package.json').version;
 const WEBSITE = 'https://bmcl26.netlify.app';
+// 管理员下发公告：优先读 GitHub 原始文件，官网部署后同样可用
+const NOTICE_URLS = [
+  'https://raw.githubusercontent.com/fft1145/BMCL/gh-pages/notices.json',
+  WEBSITE + '/notices.json'
+];
 
 let win = null;
 let gameProcess = null;
@@ -720,8 +726,55 @@ function createWindow() {
   win.on('closed', () => { win = null; });
 }
 
+function httpGetJson(url, redirects) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, {
+      headers: { 'User-Agent': 'BMCL/' + APP_VERSION, Accept: 'application/json' },
+      timeout: 6000
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && (redirects || 0) < 3) {
+        res.resume();
+        return resolve(httpGetJson(new URL(res.headers.location, url).toString(), (redirects || 0) + 1));
+      }
+      if (res.statusCode !== 200) { res.resume(); return reject(new Error('HTTP ' + res.statusCode)); }
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => { if (data.length < 256 * 1024) data += chunk; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); } catch (err) { reject(err); }
+      });
+    });
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+    req.on('error', reject);
+  });
+}
+
+/** 拉取管理员下发的公告；离线或全部源失败时返回空列表，不阻塞启动。 */
+async function fetchNotices() {
+  for (const url of NOTICE_URLS) {
+    try {
+      const sep = url.includes('?') ? '&' : '?';
+      const data = await httpGetJson(url + sep + 't=' + Date.now());
+      const list = Array.isArray(data) ? data : (data && Array.isArray(data.notices) ? data.notices : null);
+      if (!list) continue;
+      return {
+        notices: list.filter((n) => n && n.title).map((n) => ({
+          id: String(n.id || n.title),
+          title: String(n.title),
+          body: String(n.body || ''),
+          date: String(n.date || ''),
+          level: n.level === 'warning' ? 'warning' : 'info',
+          url: typeof n.url === 'string' ? n.url : ''
+        })).slice(0, 20)
+      };
+    } catch (_) { /* 换下一个源 */ }
+  }
+  return { notices: [] };
+}
+
 function registerIpc() {
   ipcMain.handle('app:info', () => ({ name: APP_NAME, version: APP_VERSION, website: WEBSITE, packaged: app.isPackaged }));
+  ipcMain.handle('notices:fetch', () => fetchNotices());
   ipcMain.handle('preflight', () => preflight());
   ipcMain.handle('settings:get', () => getSettings());
   ipcMain.handle('settings:save', (e, value) => {

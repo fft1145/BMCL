@@ -1,7 +1,7 @@
 {
   "name": "bmcl-launcher",
   "productName": "Better MC Launcher",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "BMCL — 基于 PCL2 交互思路的 Minecraft 启动器（fft1145 爱发电项目）",
   "main": "main.js",
   "author": "fft1145",

@@ -252,6 +252,16 @@
           <p class="notice-foot">若要永久隐藏此提示，请输入正确的 PCL CE 开发组织名称。</p>
         </div>
 
+        <!-- 管理员下发公告（由 notices.json 驱动） -->
+        <div class="notice-card hidden" id="annCard">
+          <div class="notice-head">
+            <span class="notice-title" id="annTitle">公告</span>
+            <button class="notice-close" id="btnAnnClose" title="关闭公告">×</button>
+          </div>
+          <div id="annBody"></div>
+          <p class="notice-foot" id="annFoot"></p>
+        </div>
+
         <!-- BMCL 模式专属：仪表盘 + 快捷启动 -->
         <div id="bmclDashboard" class="bmcl-dashboard hidden">
           <div class="bmcl-stats">
