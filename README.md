@@ -102,7 +102,9 @@ npm run dist     # 打包 Windows 便携版
 
 ## ❤️ 贡献者
 
-[![](https://contrib.rocks/image?repo=fft1145/BMCL)](https://github.com/fft1145/BMCL/graphs/contributors)
+感谢所有为 BMCL 提供建议、反馈问题与提交代码的朋友。
+
+[查看贡献者列表](https://github.com/fft1145/BMCL/graphs/contributors)
 
 ## 📄 许可证
 
