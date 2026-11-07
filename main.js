@@ -51,6 +51,8 @@ function sessionFile() {
 
 function getSettings() {
   const s = settingsCore.load(settingsFile());
+  // 玩家可能填的是 versions 目录或单个版本目录，统一归一化到游戏根目录
+  if (s.gameDir) s.gameDir = tools.normalizeGameDir(s.gameDir);
   // 已保存的游戏目录若不再可用（被删除/移动/本身为空壳），重新检测
   if (!s.gameDir || !tools.isValidGameDir(s.gameDir)) {
     const found = tools.scanMinecraftDirs({ extra: s.extraGameDirs || [] });
@@ -148,6 +150,8 @@ function resolveVersionChain(versionsDir, versionId) {
       break;
     }
   }
+  // 同一运行库只保留一个版本（防止 asm 9.3 与 9.9 同时进 classpath）
+  if (merged) merged.libraries = launcherCore.dedupeLibraries(merged.libraries);
   return { json: merged, levels, clientJar };
 }
 
@@ -823,7 +827,14 @@ function registerIpc() {
     const value = String(dir || '').trim();
     if (!value) throw new Error('游戏目录不能为空');
     if (!tools.isDirectory(value)) throw new Error('目录不存在：' + value);
-    const saved = settingsCore.save(settingsFile(), Object.assign(getSettings(), { gameDir: value }));
+    // 允许直接指定 versions 目录或单个版本目录
+    const gameDir = tools.normalizeGameDir(value);
+    const extra = (getSettings().extraGameDirs || []).slice();
+    if (!extra.some((item) => String(item).toLowerCase() === gameDir.toLowerCase())) extra.push(gameDir);
+    const saved = settingsCore.save(settingsFile(), Object.assign(getSettings(), {
+      gameDir,
+      extraGameDirs: extra
+    }));
     return gameDirState(saved);
   });
   ipcMain.handle('dialog:pickDir', async (e, title) => {

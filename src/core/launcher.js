@@ -35,6 +35,39 @@ function applyTokens(str, values) {
 }
 
 /**
+ * 库的去重标识：group:artifact[:classifier]，忽略版本。
+ * 版本继承时父版本与 Fabric/Forge 可能带同一运行库的不同版本
+ * （例如 asm 9.3 与 asm 9.9），全部进 classpath 会让 Fabric 报
+ * duplicate ASM classes，因此同一库只保留一个版本。
+ */
+function libraryKey(lib) {
+  const name = String((lib && lib.name) || '').toLowerCase().trim();
+  if (!name) return '';
+  const parts = name.split(':');
+  if (parts.length >= 3) return parts[0] + ':' + parts[1] + ':' + (parts[3] || '');
+  return name;
+}
+
+/** 同一 group:artifact 只保留最后一个（子版本优先） */
+function dedupeLibraries(libraries) {
+  const out = [];
+  const indexByKey = new Map();
+  for (const lib of Array.isArray(libraries) ? libraries : []) {
+    const key = libraryKey(lib);
+    if (!key) {
+      out.push(lib);
+      continue;
+    }
+    if (indexByKey.has(key)) out[indexByKey.get(key)] = lib;
+    else {
+      indexByKey.set(key, out.length);
+      out.push(lib);
+    }
+  }
+  return out;
+}
+
+/**
  * 合并 inheritsFrom 版本链（等价于 PCL 的版本继承）。
  * 子版本覆盖父版本的同名库，参数按「父在前、子在后」拼接，
  * 这样 Fabric / Quilt / 部分整合包写法才能正常启动。
@@ -46,7 +79,7 @@ function mergeVersionJson(parent, child) {
   const indexByKey = new Map();
 
   const addLibrary = (lib, fromChild) => {
-    const key = String((lib && lib.name) || '').toLowerCase().trim();
+    const key = libraryKey(lib);
     if (!key) {
       libraries.push(lib);
       return;
@@ -230,6 +263,8 @@ function buildCommand(options) {
 
 module.exports = {
   offlineUuid,
+  libraryKey,
+  dedupeLibraries,
   mergeVersionJson,
   applyTokens,
   collectArgs,

@@ -133,13 +133,51 @@ test('mergeVersionJson 合并 inheritsFrom：库去重、参数拼接、子版�
   assert.strictEqual(merged.inheritsFrom, undefined);
   assert.deepStrictEqual(merged.assetIndex, parent.assetIndex);
   assert.strictEqual(merged.downloads.client.url, 'https://x/client.jar');
-  // 库：父 2 + 子 2，同名（group:artifact:version）去重，不同版本保留
-  assert.strictEqual(merged.libraries.length, 4);
+  // 库：同名 group:artifact 只保留一个版本（子版本覆盖父版本），避免重复类
+  assert.strictEqual(merged.libraries.length, 3);
   assert.ok(merged.libraries.some((l) => l.name === 'org.ow2.asm:asm:9.6'));
-  assert.ok(merged.libraries.some((l) => l.name === 'org.ow2.asm:asm:9.5'));
+  assert.strictEqual(merged.libraries.some((l) => l.name === 'org.ow2.asm:asm:9.5'), false);
   // 参数：父在前、子在后
   assert.deepStrictEqual(merged.arguments.jvm, ['-cp', '${classpath}', '-DFabricMcEmu=net.minecraft.client.main.Main']);
   assert.deepStrictEqual(merged.arguments.game, ['--username', '${auth_player_name}']);
+});
+
+test('dedupeLibraries 同一 group:artifact 只留一个，classifier 不合并', () => {
+  const libs = [
+    { name: 'org.ow2.asm:asm:9.3', downloads: { artifact: { path: 'org/ow2/asm/asm/9.3/asm-9.3.jar' } } },
+    { name: 'org.ow2.asm:asm:9.9', downloads: { artifact: { path: 'org/ow2/asm/asm/9.9/asm-9.9.jar' } } },
+    { name: 'org.lwjgl:lwjgl:3.3.1' },
+    { name: 'org.lwjgl:lwjgl:3.3.1:natives-windows' }
+  ];
+  const out = launcher.dedupeLibraries(libs);
+  assert.strictEqual(out.length, 3);
+  assert.strictEqual(out[0].name, 'org.ow2.asm:asm:9.9');
+  assert.ok(out.some((l) => l.name === 'org.lwjgl:lwjgl:3.3.1'));
+  assert.ok(out.some((l) => l.name === 'org.lwjgl:lwjgl:3.3.1:natives-windows'));
+});
+
+test('Fabric 继承合并后 classpath 只有一个 ASM，避免 duplicate ASM classes', () => {
+  const merged = launcher.mergeVersionJson(
+    {
+      id: '1.20.1',
+      mainClass: 'net.minecraft.client.main.Main',
+      libraries: [
+        { name: 'org.ow2.asm:asm:9.3', downloads: { artifact: { path: 'org/ow2/asm/asm/9.3/asm-9.3.jar' } } }
+      ]
+    },
+    {
+      id: '1.20.1-Fabric 0.17.3',
+      inheritsFrom: '1.20.1',
+      mainClass: 'net.fabricmc.loader.impl.launch.knot.KnotClient',
+      libraries: [
+        { name: 'org.ow2.asm:asm:9.9', downloads: { artifact: { path: 'org/ow2/asm/asm/9.9/asm-9.9.jar' } } }
+      ]
+    }
+  );
+  const paths = launcher.collectLibraryPaths(merged, '/libs', { os: { name: 'windows', arch: 'x86_64', version: '' }, features: {} });
+  const asm = paths.filter((p) => /[\\/]asm-9\.\d+\.jar$/.test(p));
+  assert.strictEqual(asm.length, 1);
+  assert.ok(asm[0].includes('asm-9.9.jar'));
 });
 
 test('mergeVersionJson 结果可直接构造启动命令', () => {

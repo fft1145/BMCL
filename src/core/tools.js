@@ -18,13 +18,60 @@ function isDirectory(p) {
   try { return fs.statSync(p).isDirectory(); } catch { return false; }
 }
 
+/** 读取单个版本目录的元信息；没有同名 json 则返回 null */
+function readVersionMeta(versionDir, id) {
+  const jsonPath = path.join(versionDir, (id || path.basename(versionDir)) + '.json');
+  if (!fs.existsSync(jsonPath)) return null;
+  let type = 'release';
+  let time = '';
+  try {
+    const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    type = data.type || type;
+    time = data.releaseTime || data.time || '';
+  } catch { /* 忽略损坏的 json */ }
+  return {
+    id: id || path.basename(versionDir),
+    type,
+    time,
+    installedAt: fs.statSync(jsonPath).mtime.toISOString()
+  };
+}
+
+/**
+ * 把玩家选择的目录归一化成 .minecraft 游戏根目录。
+ * 支持三种选法：
+ *  - 游戏根目录（含 versions 子目录）
+ *  - versions 目录本身
+ *  - 单个版本目录（versions/1.20.1）
+ */
+function normalizeGameDir(dir) {
+  if (!dir || typeof dir !== 'string') return '';
+  const input = dir.trim();
+  if (!input) return '';
+  const root = path.resolve(input);
+  if (!isDirectory(root)) return root;
+  // 单个版本目录 → 回到 versions 容器
+  if (readVersionMeta(root, path.basename(root))) {
+    const parent = path.dirname(root);
+    return path.basename(parent).toLowerCase() === 'versions' ? path.dirname(parent) : parent;
+  }
+  // versions 目录本身 → 回到游戏根目录
+  if (path.basename(root).toLowerCase() === 'versions') {
+    return path.dirname(root);
+  }
+  return root;
+}
+
 /**
  * 判断一个目录是不是合法的 Minecraft 游戏目录。
- * 判据：存在 versions 子目录，且至少有一个 <name>/<name>.json。
+ * 支持传入游戏根目录、versions 目录或单个版本目录。
+ * 判据：存在 <版本>/<版本>.json（或 <版本>.jar）。
  */
 function isValidGameDir(dir) {
   if (!dir || typeof dir !== 'string') return false;
-  const versionsDir = path.join(dir, 'versions');
+  const root = normalizeGameDir(dir);
+  if (!root) return false;
+  const versionsDir = path.join(root, 'versions');
   if (!isDirectory(versionsDir)) return false;
   let entries;
   try { entries = fs.readdirSync(versionsDir, { withFileTypes: true }); } catch { return false; }
@@ -38,30 +85,22 @@ function isValidGameDir(dir) {
   return false;
 }
 
-/** 列出目录里可识别的版本 */
+/**
+ * 列出目录里可识别的版本。
+ * dir 可以是游戏根目录、versions 目录或单个版本目录。
+ */
 function listVersionsIn(dir) {
-  const versionsDir = path.join(dir, 'versions');
+  const root = normalizeGameDir(dir);
+  if (!root) return [];
+  const versionsDir = path.join(root, 'versions');
   if (!isDirectory(versionsDir)) return [];
   const out = [];
   let entries;
   try { entries = fs.readdirSync(versionsDir, { withFileTypes: true }); } catch { return []; }
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const jsonPath = path.join(versionsDir, entry.name, entry.name + '.json');
-    if (!fs.existsSync(jsonPath)) continue;
-    let type = 'release';
-    let time = '';
-    try {
-      const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-      type = data.type || type;
-      time = data.releaseTime || data.time || '';
-    } catch { /* 忽略损坏的 json */ }
-    out.push({
-      id: entry.name,
-      type,
-      time,
-      installedAt: fs.statSync(jsonPath).mtime.toISOString()
-    });
+    const meta = readVersionMeta(path.join(versionsDir, entry.name), entry.name);
+    if (meta) out.push(meta);
   }
   return out.sort((a, b) => b.installedAt.localeCompare(a.installedAt));
 }
@@ -103,12 +142,14 @@ function candidateDirs(options = {}) {
 function scanMinecraftDirs(options = {}) {
   const seen = new Map();
   for (const item of candidateDirs(options)) {
-    const key = item.path.toLowerCase();
-    if (seen.has(key)) continue;
-    const versions = listVersionsIn(item.path);
+    // 允许玩家填 versions 目录或单个版本目录，统一归一化到游戏根目录
+    const root = normalizeGameDir(item.path);
+    const key = String(root || '').toLowerCase();
+    if (!key || seen.has(key)) continue;
+    const versions = listVersionsIn(root);
     if (!versions.length) continue;
     seen.set(key, {
-      path: item.path,
+      path: root,
       label: item.label,
       versions: versions.length,
       sample: versions.slice(0, 3).map((v) => v.id)
@@ -500,6 +541,7 @@ function listInstalledMods(gameDir, type) {
 
 module.exports = {
   isDirectory,
+  normalizeGameDir,
   isValidGameDir,
   listVersionsIn,
   candidateDirs,

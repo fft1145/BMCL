@@ -24,7 +24,7 @@ function makeGameDir(root, versions) {
   return root;
 }
 
-test('isValidGameDir 只认带 versions/<id>/<id>.json 的目录', () => {
+test('isValidGameDir 要求目录内至少有一个可识别版本', () => {
   const root = tmpDir('valid');
   assert.strictEqual(tools.isValidGameDir(root), false);
   assert.strictEqual(tools.isValidGameDir(''), false);
@@ -54,6 +54,22 @@ test('scanMinecraftDirs 通过 extra 找到自定义游戏目录，并忽略空�
   assert.strictEqual(found[0].path, path.resolve(good));
   assert.strictEqual(found[0].versions, 2);
   assert.ok(found[0].sample.includes('1.20.1'));
+});
+
+test('玩家可以直接指定 versions 目录或单个版本目录', () => {
+  const root = makeGameDir(tmpDir('custom'), ['1.20.1', '1.21.4']);
+  const versionsDir = path.join(root, 'versions');
+  const oneVersion = path.join(versionsDir, '1.20.1');
+
+  assert.strictEqual(tools.normalizeGameDir(versionsDir), path.resolve(root));
+  assert.strictEqual(tools.normalizeGameDir(oneVersion), path.resolve(root));
+  assert.strictEqual(tools.listVersionsIn(versionsDir).length, 2);
+  assert.strictEqual(tools.listVersionsIn(oneVersion).length, 2);
+  assert.strictEqual(tools.isValidGameDir(versionsDir), true);
+  assert.strictEqual(tools.isValidGameDir(oneVersion), true);
+
+  const found = tools.scanMinecraftDirs({ extra: [versionsDir] });
+  assert.ok(found.some((d) => d.path === path.resolve(root) && d.versions === 2));
 });
 
 test('cleanJunk 删除 logs/crash-reports 与 .part 残留', async () => {

@@ -422,7 +422,7 @@
             <div class="card-head"><h2>已安装实例</h2>
               <div class="row">
                 <button class="btn btn-sm" id="btnRescanVersions">重新扫描</button>
-                <button class="btn btn-sm" id="btnPickGameDir">选择游戏目录</button>
+                <button class="btn btn-sm" id="btnPickGameDir">选择版本文件夹</button>
               </div>
             </div>
             <div class="diag small" id="gameDirState"></div>
@@ -586,7 +586,7 @@
           <div class="card">
             <div class="card-head"><h2><span class="pcl-label">Java</span><span class="bmcl-label">JVM 环境</span></h2></div>
             <div class="form-grid">
-              <label class="field field-wide"><span>Java 路径（留空自动寻找）</span><input id="setJava" placeholder="C:\Program Files\Java\jdk-21\bin\java.exe"></label>
+              <label class="field field-wide"><span>Java 路径（可填安装目录，自动进入 bin 查找）</span><input id="setJava" placeholder="C:\Program Files\Java\jdk-21 或 ...\bin\java.exe"></label>
             </div>
             <div class="row wrap">
               <button class="btn btn-sm" id="btnProbeJava">检测 Java</button>
@@ -602,9 +602,9 @@
             <div class="card-head"><h2><span class="pcl-label">游戏管理</span><span class="bmcl-label">游戏</span></h2></div>
             <div class="form-grid">
               <label class="field"><span>玩家名</span><input id="setPlayer" maxlength="16"></label>
-              <label class="field field-wide"><span>游戏目录</span>
+              <label class="field field-wide"><span>游戏目录 / 版本文件夹</span>
                 <div style="display:flex;gap:8px;width:100%">
-                  <input id="setGameDir" style="flex:1" placeholder="例如 C:\Users\你\AppData\Roaming\.minecraft">
+                  <input id="setGameDir" style="flex:1" placeholder=".minecraft、versions 或单个版本文件夹">
                   <button class="btn btn-sm" id="btnScanGameDir">扫描</button>
                   <button class="btn btn-sm" id="btnPickGameDir2">选择</button>
                 </div>

@@ -200,7 +200,7 @@
     const gs = state.gameState;
     const lines = [];
     lines.push('<div><b>当前目录：</b>' + esc(gs.gameDir || '(未设置)') + '</div>');
-    lines.push('<div class="tip">识别到 ' + (gs.versions.length || 0) + ' 个版本' + (gs.valid ? '' : '（该目录下没有 versions/<版本>/<版本>.json）') + '</div>');
+    lines.push('<div class="tip">识别到 ' + (gs.versions.length || 0) + ' 个版本' + (gs.valid ? '' : '（该目录下没有可识别的版本，可直接选择 versions 或某个版本文件夹）') + '</div>');
     if (gs.candidates && gs.candidates.length) {
       const others = gs.candidates.filter((c) => c.path !== gs.gameDir);
       if (others.length) {
@@ -314,7 +314,7 @@
 
   async function pickGameDir() {
     try {
-      const dir = await bmcl.pickDirectory('选择 .minecraft 游戏目录');
+      const dir = await bmcl.pickDirectory('选择 .minecraft、versions 或版本文件夹');
       if (!dir) return;
       const applied = await bmcl.setGameDir(dir);
       state.gameState = applied;
@@ -324,7 +324,7 @@
       if (applied.versions.length) {
         toast('已设置游戏目录，识别到 ' + applied.versions.length + ' 个版本', 'ok');
       } else {
-        toast('目录已设置，但没有识别到版本（需要 versions/<版本>/<版本>.json）', 'error');
+        toast('目录已设置，但没有识别到版本（需要 <版本>/<版本>.json）', 'error');
       }
     } catch (err) {
       toast('设置目录失败：' + err.message, 'error');
@@ -749,10 +749,14 @@
 
   async function probeJava() {
     $('#javaHint').textContent = '检测中…';
-    const result = await bmcl.probeJava($('#setJava').value.trim());
-    $('#javaHint').textContent = result.ok
-      ? 'Java ' + result.version + '（主版本 ' + result.major + '）'
-      : '未找到可用的 Java：' + (result.message || '');
+    const input = $('#setJava').value.trim();
+    const result = await bmcl.probeJava(input);
+    if (result.ok) {
+      const resolved = result.javaPath && result.javaPath !== input ? ' · ' + result.javaPath : '';
+      $('#javaHint').textContent = 'Java ' + result.version + '（主版本 ' + result.major + '）' + resolved;
+    } else {
+      $('#javaHint').textContent = '未找到可用的 Java：' + (result.message || '');
+    }
   }
 
   async function scanRepair() {
