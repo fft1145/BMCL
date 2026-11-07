@@ -1,0 +1,172 @@
+/* ============================================================
+   PCL CE 皮肤（转译自 pcl_ce / FormMain.xaml · PageLaunchLeft.xaml）
+   仅在 PCL 主题（body 无 theme-bmcl）下生效
+   颜色取自 Application.xaml：
+   ColorBrush1 #343d4a  ColorBrush2 #0b5bcb  ColorBrush3 #1370f3
+   ColorBrush4 #4890f5  ColorBrush5 #96c0f9  ColorBrush6 #d5e6fd
+   ColorBrush7 #e0eafd  ColorBrush8 #eaf2fe
+   ColorBrushTransparentBackground #d2fbfbfb
+   ============================================================ */
+
+body:not(.theme-bmcl){
+  --pcl-1:#343d4a;
+  --pcl-2:#0b5bcb;
+  --pcl-3:#1370f3;
+  --pcl-4:#4890f5;
+  --pcl-5:#96c0f9;
+  --pcl-6:#d5e6fd;
+  --pcl-7:#e0eafd;
+  --pcl-8:#eaf2fe;
+  --pcl-panel:rgba(251,251,251,.82);
+  --pcl-gray:#9aa3ad;
+
+  /* PCL 的彩色背景（FormMain PanForm） */
+  background:linear-gradient(135deg,#e9f1fc 0%,#f6faff 45%,#e3eefc 100%);
+}
+
+/* ===== 标题栏：48px，ColorBrush3 实色 ===== */
+body:not(.theme-bmcl) .titlebar{
+  height:48px;flex:0 0 48px;
+  padding:0 12px 0 19px;gap:0;
+  background:#1370f3;border-bottom:none;
+}
+
+/* PCL 字母 Logo（ShapeTitleLogo，白色描边 2.2） */
+body:not(.theme-bmcl) .tb-brand{width:auto;min-width:0;gap:0}
+body:not(.theme-bmcl) .pcl-logo{
+  width:39px;height:17px;display:block;flex:0 0 39px;
+  overflow:visible;
+}
+body:not(.theme-bmcl) .pcl-logo path{
+  fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:square;
+}
+body:not(.theme-bmcl) .tb-logo,
+body:not(.theme-bmcl) .tb-name{display:none}
+/* BMCL 主题下隐藏 PCL 字母 Logo，只显示大写字母 + BMCL 字样 */
+body.theme-bmcl .pcl-logo{display:none}
+
+/* CE 角标：白色 20×18，圆角 5，居中 10px 左边距 */
+body:not(.theme-bmcl) .tb-ce{
+  width:20px;height:18px;margin-left:10px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;color:#1370f3;border-radius:5px;
+  font-size:8px;font-weight:800;letter-spacing:0;line-height:1;
+}
+
+/* 顶部选项卡：27px 高胶囊，半透明白底，白字 */
+body:not(.theme-bmcl) .tb-nav{
+  flex:1;justify-content:flex-start;gap:0;
+  margin-left:13px;
+}
+body:not(.theme-bmcl) .nav-btn{
+  height:27px;min-height:27px;padding:0 12px;margin:0 5px;
+  border-radius:13.5px;background:rgba(255,255,255,.12);
+  color:#fff;font-size:13px;font-weight:500;gap:6px;
+}
+body:not(.theme-bmcl) .nav-btn:hover{background:rgba(255,255,255,.28);color:#fff}
+body:not(.theme-bmcl) .nav-btn.active{
+  background:#fff;color:#1370f3;
+  box-shadow:0 1px 2px rgba(0,0,0,.14);
+}
+
+/* 窗口按钮：28×28，右边距 12 / 44 */
+body:not(.theme-bmcl) .tb-window{padding-right:0}
+body:not(.theme-bmcl) .win-btn{
+  width:28px;height:28px;border-radius:3px;
+  color:#fff;opacity:.92;
+}
+body:not(.theme-bmcl) .win-btn:hover{background:rgba(255,255,255,.26);opacity:1}
+body:not(.theme-bmcl) .win-close:hover{background:#e81123;color:#fff}
+
+/* ===== 工作区 ===== */
+body:not(.theme-bmcl) .workspace{background:transparent}
+
+/* ===== 启动页左侧栏：300px（PageLaunchLeft Width=300） ===== */
+body:not(.theme-bmcl) .launch-side{
+  width:300px;flex:0 0 300px;
+  padding:12px 20px 10px;
+  background:var(--pcl-panel);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  border-right:1px solid rgba(0,0,0,.04);
+  box-shadow:4px 0 12px -6px rgba(0,0,0,.10);
+}
+
+/* 账号区（PanLogin） */
+body:not(.theme-bmcl) .player-box{gap:4px;padding:14px 0 0}
+body:not(.theme-bmcl) .avatar-shell{width:64px;height:64px;border-radius:50%;overflow:hidden}
+body:not(.theme-bmcl) .player-name{font-size:15px;font-weight:700;color:var(--pcl-1);margin-top:8px}
+body:not(.theme-bmcl) .player-tag{
+  font-size:11px;color:var(--pcl-gray);
+  background:none;border:none;padding:0;
+}
+body:not(.theme-bmcl) .player-actions{margin-top:6px}
+
+/* 启动按钮：54px，高亮色（MyButton ColorType=Highlight） */
+body:not(.theme-bmcl) .launch-cta{margin-top:14px}
+body:not(.theme-bmcl) .launch-btn{
+  height:54px;border-radius:3px;border:none;
+  background:#1370f3;
+  box-shadow:0 4px 14px -4px rgba(19,112,243,.55);
+  padding:0 30px;
+  transition:background .15s,transform .08s,box-shadow .15s;
+}
+body:not(.theme-bmcl) .launch-btn:hover{
+  background:#4890f5;
+  box-shadow:0 6px 18px -4px rgba(19,112,243,.6);
+}
+body:not(.theme-bmcl) .launch-btn:active{transform:translateY(1px)}
+body:not(.theme-bmcl) .lb-title{font-size:15px;font-weight:700;letter-spacing:1px}
+body:not(.theme-bmcl) .lb-sub{
+  font-size:11px;font-weight:400;letter-spacing:0;
+  color:rgba(255,255,255,.86);
+}
+
+/* 实例按钮：35px */
+body:not(.theme-bmcl) .instance-row{margin-top:10px}
+body:not(.theme-bmcl) .instance-btn{
+  height:35px;border-radius:3px;
+  border:1px solid #d8dde3;background:#fff;color:var(--pcl-1);
+  font-size:12.5px;
+}
+body:not(.theme-bmcl) .instance-btn:hover{
+  border-color:var(--pcl-4);color:var(--pcl-2);background:#fff;
+}
+
+body:not(.theme-bmcl) .side-foot{color:var(--pcl-gray);font-size:11px}
+body:not(.theme-bmcl) .link-btn{color:var(--pcl-4);font-size:11px}
+
+/* ===== 右侧内容区（PageLaunchRight：Padding 25） ===== */
+body:not(.theme-bmcl) .launch-main{padding:25px 25px 10px}
+
+/* 卡片（MyCard：圆角 5，白色，7% 阴影） */
+body:not(.theme-bmcl) .card{
+  background:#fff;border:none;border-radius:5px;
+  box-shadow:0 3px 10px -4px rgba(0,0,0,.18);
+  padding:16px 20px;
+}
+body:not(.theme-bmcl) .card-head{margin-bottom:12px}
+body:not(.theme-bmcl) .card-head h2{
+  font-size:13.5px;font-weight:700;color:var(--pcl-1);
+}
+
+/* 提示卡（PanHint） */
+body:not(.theme-bmcl) .notice-card{
+  background:#fff;border:none;border-radius:5px;
+  box-shadow:0 3px 10px -4px rgba(0,0,0,.18);
+  padding:14px 20px 15px;
+}
+body:not(.theme-bmcl) .notice-title{color:var(--pcl-3);font-size:13.5px;font-weight:700}
+body:not(.theme-bmcl) .notice-card p{font-size:13.5px;line-height:1.75;color:var(--pcl-1);margin-bottom:2px}
+body:not(.theme-bmcl) .notice-card p.notice-foot{font-size:13.5px;color:var(--pcl-1)}
+
+/* 日志卡 */
+body:not(.theme-bmcl) .log-card .log{
+  margin:0;background:#fafbfc;border-radius:4px;
+  color:#5b636c;
+}
+body:not(.theme-bmcl) .card-head-right .welcome-state{color:var(--pcl-gray)}
+
+/* 通用输入 / 标签 */
+body:not(.theme-bmcl) .input:focus{border-color:var(--pcl-3);box-shadow:0 0 0 2px rgba(19,112,243,.16)}
+body:not(.theme-bmcl) .btn-primary{background:var(--pcl-3);border-color:var(--pcl-3)}
+body:not(.theme-bmcl) .btn-primary:hover{background:var(--pcl-2);border-color:var(--pcl-2)}

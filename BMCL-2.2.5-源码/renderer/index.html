@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BMCL</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style-bmcl.css">
+  <link rel="stylesheet" href="pcl-skin.css">
+  <link rel="stylesheet" href="bmcl-skin.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ====== 标题栏 ====== -->
+  <header class="titlebar">
+    <div class="tb-brand">
+      <!-- PCL 字母 Logo：转译自 FormMain.xaml ShapeTitleLogo -->
+      <svg class="pcl-logo" viewBox="19 2 66 27" aria-label="PCL">
+        <path d="M26,29 v-25 h6 a7,7 180 0 1 0,14 h-6 M62.5,6.5 a10,11.5 180 1 0 0,18 M71,2.5 v24.5 h13.5"/>
+      </svg>
+      <span class="tb-logo bmcl-only">P</span>
+      <span class="tb-name bmcl-only">BMCL</span>
+      <span class="tb-ce">CE</span>
+      <div class="tb-account bmcl-only" id="tbAccount">
+        <img class="tba-avatar" id="tbAvatar" src="../build/icon.png" alt="">
+        <span class="tba-name" id="tbPlayerName">未登录</span>
+      </div>
+    </div>
+
+    <nav class="tb-nav">
+      <button class="nav-btn active pcl-nav" data-page="launch">
+        <svg viewBox="0 0 24 24"><path d="M8 5.2v13.6L19 12z" fill="currentColor"/></svg>
+        <span class="pcl-label">启动</span><span class="bmcl-label">主页</span>
+      </button>
+      <button class="nav-btn bmcl-only" data-page="util">
+        <svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span>实用</span>
+      </button>
+      <button class="nav-btn bmcl-only" data-page="manage">
+        <svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span>管理</span>
+      </button>
+      <button class="nav-btn" data-page="download">
+        <svg viewBox="0 0 24 24"><path d="M12 3v11m0 0l-4-4m4 4l4-4M4 19h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="pcl-label">下载</span><span class="bmcl-label">下载</span>
+      </button>
+      <button class="nav-btn bmcl-only" data-page="account">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.6-4 3.7-6.2 7.5-6.2s6.9 2.2 7.5 6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span>账号</span>
+      </button>
+      <button class="nav-btn" data-page="settings">
+        <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span class="pcl-label">设置</span><span class="bmcl-label">设置</span>
+      </button>
+      <button class="nav-btn pcl-nav" data-page="tools">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="pcl-label">工具</span><span class="bmcl-label">更多</span>
+      </button>
+      <button class="nav-btn bmcl-only" id="btnQuit" title="退出启动器">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>退出</span>
+      </button>
+    </nav>
+
+    <div class="tb-window">
+      <button class="win-btn" id="winMin" title="最小化" aria-label="最小化">
+        <svg viewBox="0 0 12 12"><path d="M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+      <button class="win-btn win-close" id="winClose" title="关闭" aria-label="关闭">
+        <svg viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="workspace">
+
+    <!-- ====== 启动页 ====== -->
+    <section class="page active" id="page-launch">
+      <aside class="launch-side">
+        <div class="player-box">
+          <div class="avatar-shell">
+            <img class="avatar" id="playerAvatar" src="../build/icon.png" alt="玩家头像">
+            <img class="player-body bmcl-only" id="playerBody" src="https://mc-heads.net/body/fft1145/right" alt="玩家模型">
+          </div>
+          <div class="player-name" id="topAccount">fft1145</div>
+          <div class="player-tag">正版验证</div>
+          <div class="player-actions">
+            <button class="pa-btn" id="btnSkin" title="皮肤与披风">
+              <svg viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" fill="currentColor"/></svg>
+            </button>
+            <button class="pa-btn" id="btnEditProfile" title="编辑资料">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="pa-btn" id="btnSwitchAccount" title="切换账号">
+              <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="account-panel hidden" id="accountPanel">
+            <div class="ap-head">
+              <span>账号</span>
+              <button class="ap-close" id="btnAccountClose">×</button>
+            </div>
+            <div class="ap-list" id="accountList"></div>
+            <div class="ap-add">
+              <input class="input" id="newAccountName" placeholder="新玩家名（字母/数字/下划线）" maxlength="16">
+              <button class="btn btn-sm btn-primary" id="btnAddAccount">添加</button>
+            </div>
+            <div class="ap-ms">
+              <button class="btn btn-sm btn-primary" id="btnMsLogin">微软正版登录</button>
+              <span class="ap-ms-hint">设备代码流，浏览器里输入代码即可</span>
+            </div>
+            <div class="ap-ms-flow hidden" id="msFlow">
+              <p>打开 <a id="msFlowUrl" href="https://microsoft.com/devicelogin" target="_blank">microsoft.com/devicelogin</a> 并输入代码：</p>
+              <div class="ms-code" id="msFlowCode">--------</div>
+              <p class="tip" id="msFlowStatus">等待授权…</p>
+              <div class="row">
+                <button class="btn btn-sm" id="btnMsCopy">复制代码</button>
+                <button class="btn btn-sm" id="btnMsCancel">取消登录</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section class="util">
+          <div class="util-head">
+            <span class="util-title">实用功能</span>
+            <span class="util-live"><i></i>实时推荐</span>
+          </div>
+          <div class="util-tabs">
+            <button class="utab on" data-cat="server">服务器</button>
+            <button class="utab" data-cat="mod">模组</button>
+            <button class="utab" data-cat="version">版本</button>
+            <button class="utab" data-cat="pack">整合包</button>
+            <button class="utab" data-cat="map">地图</button>
+          </div>
+          <div class="reco" id="recoList"></div>
+          <div class="util-links">
+            <button class="ulink" data-goto="launch">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              最近游玩的存档<span class="cnt">3</span>
+            </button>
+            <button class="ulink" data-goto="saves">
+              <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 5v14"/></svg>
+              存档管理<span class="cnt">12</span>
+            </button>
+            <button class="ulink" data-goto="mods">
+              <svg viewBox="0 0 24 24"><path d="M12 3l8 5v8l-8 5-8-5V8z"/></svg>
+              模组管理<span class="cnt">34</span>
+            </button>
+            <button class="ulink" data-goto="settings">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2"/></svg>
+              启动器设置<span class="cnt">Java 17</span>
+            </button>
+          </div>
+          <div class="util-src">数据来源：<a href="https://bmcl26.netlify.app" target="_blank" rel="noopener">BMCL 官网</a> 推荐接口 · 5 分钟刷新</div>
+        </section>
+
+        <div class="launch-cta">
+          <button class="launch-btn" id="btnLaunch">
+            <span class="lb-title">启动游戏</span>
+            <span class="lb-sub" id="launchVersionLabel">未选择版本</span>
+          </button>
+          <button class="launch-btn launch-stop hidden" id="btnStop">
+            <span class="lb-title">结束游戏</span>
+            <span class="lb-sub">游戏正在运行</span>
+          </button>
+          <div class="instance-row">
+            <button class="instance-btn" id="btnInstanceSelect">实例选择</button>
+            <button class="instance-btn" data-goto="settings">实例设置</button>
+          </div>
+          <p class="launch-hint" id="launchHint"></p>
+        </div>
+
+        <div class="side-foot">
+          <span id="sideVersion">v2.2.1</span>
+          <button class="link-btn" data-open="https://github.com/fft1145/BMCL">GitHub</button>
+          <button class="link-btn" data-open="https://bmcl26.netlify.app">官网</button>
+        </div>
+      </aside>
+
+      <div class="launch-main">
+        <div class="banner hidden" id="banner"></div>
+
+
+        <section class="dash">
+          <div class="dash-hero">
+            <article class="dash-card">
+              <div class="dash-head">
+                <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>
+                玩家模型 · 实时渲染
+                <button class="more" id="btnRotate">自动旋转：开</button>
+              </div>
+              <div class="dash-model">
+                <div class="model-stage">
+                  <div class="model-info">玩家模型已移至「实用」界面</div>
+                  <div class="model-tip">在 BMCL 主题下，模型显示在「实用」页中央</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="dash-card">
+              <div class="dash-head">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                最近游玩的存档
+              </div>
+              <div id="recentList" style="padding:4px 6px"></div>
+            </article>
+          </div>
+
+          <div class="dash-grid">
+            <article class="dash-card">
+              <div class="dash-head"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 5v14"/></svg>存档</div>
+              <div class="stat-in">
+                <div class="stat-big">12<span>个世界</span></div>
+                <div class="stat-sub">最近创建：无尽荒野 · 1.20.1</div>
+                <div class="bar"><i style="width:42%"></i></div>
+                <div class="stat-sub">占用 1.8 GB / 4.0 GB</div>
+                <div class="stat-foot" data-goto="saves">打开存档文件夹 →</div>
+              </div>
+            </article>
+            <article class="dash-card">
+              <div class="dash-head"><svg viewBox="0 0 24 24"><path d="M12 3l8 5v8l-8 5-8-5V8z"/></svg>模组</div>
+              <div class="stat-in">
+                <div class="stat-big">34<span>个已启用</span></div>
+                <div class="stat-sub">Forge 47.2.0 · 2 个可更新</div>
+                <div class="bar"><i style="width:88%"></i></div>
+                <div class="stat-sub">JEI · 机械动力 · 钠 · Iris</div>
+                <div class="stat-foot" data-goto="mods">管理模组 →</div>
+              </div>
+            </article>
+            <article class="dash-card">
+              <div class="dash-head"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2"/></svg>设置</div>
+              <div class="stat-in">
+                <div class="stat-big">Java 17<span>· 4096 MB</span></div>
+                <div class="stat-sub">下载源：镜像加速 · 自动选择</div>
+                <div class="bar"><i style="width:100%"></i></div>
+                <div class="stat-sub">启动参数：-XX:+UseG1GC</div>
+                <div class="stat-foot" data-goto="settings">打开启动器设置 →</div>
+              </div>
+            </article>
+          </div>
+        </section>
+        <div class="notice-card" id="noticeCard">
+          <div class="notice-head">
+            <span class="notice-title">PCL CE 提示</span>
+            <button class="notice-close" id="btnNoticeClose" title="关闭提示">×</button>
+          </div>
+          <p>你正在使用 PCL CE（PCL 社区版）！此版本为独立开发和维护，与原版维护路线不同，体验有所出入。</p>
+          <p>如果你是意外下载到了 PCL CE，我们十分建议你下载原版 PCL 长期使用，此发行版本对新手用户体验可能不友好。</p>
+          <p>此外， PCL CE 的问题请向 PCL CE 的仓库提交 Issue，不要向官方仓库反馈 PCL CE 的问题哦！</p>
+          <p class="notice-foot">若要永久隐藏此提示，请输入正确的 PCL CE 开发组织名称。</p>
+        </div>
+
+        <!-- 管理员下发公告（由 notices.json 驱动） -->
+        <div class="notice-card hidden ann-card">
+          <div class="notice-head">
+            <span class="notice-title">公告</span>
+            <button class="notice-close" title="关闭公告">×</button>
+          </div>
+          <div class="ann-body"></div>
+          <p class="notice-foot ann-foot"></p>
+        </div>
+
+        <!-- BMCL 模式专属：仪表盘 + 快捷启动 -->
+        <div id="bmclDashboard" class="bmcl-dashboard hidden">
+          <div class="bmcl-stats">
+            <div class="bmcl-stat">
+              <span class="bmcl-stat-label">Java</span>
+              <span class="bmcl-stat-value" id="bmclJava">检测中…</span>
+            </div>
+            <div class="bmcl-stat">
+              <span class="bmcl-stat-label">内存</span>
+              <span class="bmcl-stat-value" id="bmclMemory">—</span>
+            </div>
+            <div class="bmcl-stat">
+              <span class="bmcl-stat-label">已安装版本</span>
+              <span class="bmcl-stat-value" id="bmclVersions">0</span>
+            </div>
+            <div class="bmcl-stat">
+              <span class="bmcl-stat-label">启动计数</span>
+              <span class="bmcl-stat-value" id="bmclLaunches">0</span>
+            </div>
+          </div>
+          <div class="bmcl-quick">
+            <div class="bmcl-quick-title">快捷启动</div>
+            <div class="bmcl-quick-list" id="bmclQuickList"></div>
+          </div>
+        </div>
+
+        <div class="card log-card">
+          <div class="card-head">
+            <h2>运行日志</h2>
+            <div class="card-head-right">
+              <span class="welcome-state"><span class="dot" id="stateDot"></span><span id="stateText">未启动</span></span>
+              <button class="btn btn-sm" id="btnClearLog">清空</button>
+            </div>
+          </div>
+          <pre class="log" id="gameLog"></pre>
+        </div>
+
+        <div class="card crash-card" id="crashBox" hidden>
+          <div class="card-head">
+            <h2>崩溃诊断</h2>
+            <button class="btn btn-sm" id="btnCloseCrash">关闭</button>
+          </div>
+          <div class="diag" id="crashResult"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 下载页 ====== -->
+    <section class="page dl-empty-mode" id="page-download">
+      <div class="dl-bmcl-top bmcl-only">
+        <nav class="dl-bmcl-tabs">
+          <button class="dl-bmcl-tab" data-mcat="mc">原版</button>
+          <button class="dl-bmcl-tab" data-mcat="mods2">模组</button>
+          <button class="dl-bmcl-tab" data-mcat="modpacks">整合包</button>
+          <button class="dl-bmcl-tab" data-mcat="worlds">地图</button>
+          <button class="dl-bmcl-tab" data-mcat="resourcepacks">材质</button>
+          <button class="dl-bmcl-tab" data-mcat="shaders">光影</button>
+        </nav>
+        <div class="dl-bmcl-loaders">
+          <span>加载器：</span>
+          <button class="dl-mini" data-mcat="fabric">Fabric</button>
+          <button class="dl-mini" data-mcat="forge">Forge</button>
+          <button class="dl-mini" data-mcat="neoforge">NeoForge</button>
+          <button class="dl-mini" data-mcat="optifine">OptiFine</button>
+        </div>
+      </div>
+      <div class="dl-bmcl-empty bmcl-only" id="dlBmclEmpty">
+        <div class="dl-empty-art"></div>
+        <p>你还没选择子项哦！qwq</p>
+        <span>在上方选择 原版 / 模组 / 整合包 / 地图 / 材质 / 光影</span>
+      </div>
+      <aside class="dl-side">
+        <ul class="dl-cats">
+          <li class="dl-cat active" data-cat="mc"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v12l8 4 8-4V6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="pcl-label">Minecraft</span><span class="bmcl-label">游戏</span></li>
+          <li class="dl-cat" data-cat="mods"><svg viewBox="0 0 24 24"><path d="M9 2h6v6l5 3v8l-5 3H9l-5-3v-8l5-3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="pcl-label">社区资源</span><span class="bmcl-label">社区资源</span></li>
+          <li class="dl-cat" data-cat="mods2"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="pcl-label">模组</span><span class="bmcl-label">mod</span></li>
+          <li class="dl-cat" data-cat="modpacks"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="pcl-label">整合包</span><span class="bmcl-label">整合包</span></li>
+          <li class="dl-cat" data-cat="datapacks"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="pcl-label">数据包</span><span class="bmcl-label">数据包</span></li>
+          <li class="dl-cat" data-cat="resourcepacks"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="pcl-label">资源包</span><span class="bmcl-label">材质包</span></li>
+          <li class="dl-cat" data-cat="shaders"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="pcl-label">光影包</span><span class="bmcl-label">光影</span></li>
+          <li class="dl-cat" data-cat="worlds"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span class="pcl-label">世界</span><span class="bmcl-label">存档</span></li>
+          <li class="dl-cat" data-cat="favorites"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="pcl-label">收藏夹</span><span class="bmcl-label">收藏夹</span></li>
+        </ul>
+        <div class="dl-side-label"><span class="pcl-label">安装包</span><span class="bmcl-label">正版加载器</span></div>
+        <ul class="dl-cats">
+          <li class="dl-cat active" data-cat="mc-install"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v12l8 4 8-4V6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="pcl-label">Minecraft</span><span class="bmcl-label">原版</span></li>
+          <li class="dl-cat" data-cat="fabric"><svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4 6l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span class="pcl-label">Fabric</span><span class="bmcl-label">Fabric</span></li>
+          <li class="dl-cat" data-cat="optifine"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span class="pcl-label">OptiFine</span><span class="bmcl-label">OptiFine</span></li>
+          <li class="dl-cat" data-cat="forge"><svg viewBox="0 0 24 24"><path d="M12 2 2 7v10l10 5 10-5V7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="pcl-label">Forge</span><span class="bmcl-label">Forge</span></li>
+          <li class="dl-cat" data-cat="neoforge"><svg viewBox="0 0 24 24"><path d="M12 2 2 7v10l10 5 10-5V7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 7v10M7 9.5 12 7l5 2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="pcl-label">NeoForge</span><span class="bmcl-label">NeoForge</span></li>
+        </ul>
+      </aside>
+
+      <div class="dl-main">
+        <!-- Minecraft 版本区 -->
+        <div id="mcPanel">
+        <div class="dl-latest card">
+          <h3 class="dl-section-title">最新版本</h3>
+          <div class="latest-row">
+            <img class="mc-icon" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><rect width='28' height='28' fill='%233c8527'/></svg>" alt="">
+            <div class="latest-info">
+              <div class="latest-ver">26.3</div>
+              <div class="latest-meta">最新正式版，发布于 2026/9/15 19:23</div>
+            </div>
+          </div>
+          <div class="latest-row">
+            <img class="mc-icon" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><rect width='28' height='28' fill='%239c5a1a'/></svg>" alt="">
+            <div class="latest-info">
+              <div class="latest-ver">26.4-snapshot-6</div>
+              <div class="latest-meta">最新预览版，发布于 2026/10/27 21:40</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="version-group">
+          <button class="vg-toggle" data-vg="release"><span class="vg-name">正式版</span><span class="vg-count" id="vgCountRelease">(0)</span><span class="vg-arrow">⌄</span></button>
+          <div class="vg-body" data-vgbody="release">
+            <div class="filter-bar">
+              <input class="input" id="dlFilter" type="text" placeholder="搜索版本，例如 1.20">
+              <div class="row">
+                <button class="btn btn-sm btn-primary" id="btnRefreshVersions">刷新清单</button>
+                <button class="btn btn-sm" id="btnOpenDir4">打开目录</button>
+              </div>
+            </div>
+            <div class="progress hidden" id="installProgress">
+              <div class="progress-head"><span id="installStage">准备中…</span><span id="installCount"></span></div>
+              <div class="bar"><i id="installBar"></i></div>
+            </div>
+            <div class="version-list" id="vgRelease">
+              <p class="empty">点击「刷新清单」加载可下载版本。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="version-group">
+          <button class="vg-toggle" data-vg="snapshot"><span class="vg-name">预览版</span><span class="vg-count" id="vgCountSnapshot">(0)</span><span class="vg-arrow">⌄</span></button>
+          <div class="vg-body collapsed" data-vgbody="snapshot">
+            <div class="version-list" id="vgSnapshot"><p class="empty">尚未加载版本清单。</p></div>
+          </div>
+        </div>
+        <div class="version-group">
+          <button class="vg-toggle" data-vg="old"><span class="vg-name">远古版</span><span class="vg-count" id="vgCountOld">(0)</span><span class="vg-arrow">⌄</span></button>
+          <div class="vg-body collapsed" data-vgbody="old">
+            <div class="version-list" id="vgOld"><p class="empty">尚未加载版本清单。</p></div>
+          </div>
+        </div>
+        <div class="version-group">
+          <button class="vg-toggle" data-vg="april"><span class="vg-name">愚人节版</span><span class="vg-count" id="vgCountApril">(0)</span><span class="vg-arrow">⌄</span></button>
+          <div class="vg-body collapsed" data-vgbody="april">
+            <div class="version-list" id="vgApril"><p class="empty">尚未加载版本清单。</p></div>
+          </div>
+        </div>
+        </div><!-- /mcPanel -->
+
+        <!-- 已安装实例（实例选择） -->
+        <div id="instancePanel" class="hidden">
+          <div class="card">
+            <div class="card-head"><h2>已安装实例</h2>
+              <div class="row">
+                <button class="btn btn-sm" id="btnRescanVersions">重新扫描</button>
+                <button class="btn btn-sm" id="btnPickGameDir">选择版本文件夹</button>
+              </div>
+            </div>
+            <div class="diag small" id="gameDirState"></div>
+            <div class="version-list" id="instanceList"><p class="empty">正在扫描…</p></div>
+          </div>
+        </div>
+
+        <!-- 模组区 -->
+        <div id="modPanel" class="hidden">
+          <div class="card">
+            <div class="card-head"><h2 id="modPanelTitle">模组下载</h2><span class="hint" id="modSourceHint">数据来源：CurseForge + Modrinth</span></div>
+            <div class="filter-bar">
+              <input class="input" id="modSearch" type="text" placeholder="搜索模组，例如 sodium">
+              <button class="btn btn-sm btn-primary" id="btnModSearch">搜索</button>
+              <select class="input" id="modSource" style="max-width:130px">
+                <option value="modrinth" selected>Modrinth</option>
+                <option value="curseforge">CurseForge</option>
+              </select>
+              <select class="input" id="modSort" style="max-width:120px">
+                <option value="downloads" selected>下载量最高</option>
+                <option value="popularity">热门度</option>
+                <option value="newest">最新发布</option>
+                <option value="updated">最近更新</option>
+                <option value="relevance">相关度</option>
+              </select>
+              <select class="input" id="modGameVersion" style="max-width:170px">
+                <option value="">全部版本</option>
+              </select>
+            </div>
+            <div class="version-list" id="modResults">
+              <p class="empty">正在获取热门推荐…</p>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <button class="btn btn-sm" id="btnModMore">加载更多</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2 id="modInstalledTitle">已安装模组</h2>
+              <div class="row">
+                <button class="btn btn-sm" id="btnRefreshMods">刷新</button>
+                <button class="btn btn-sm" id="btnOpenModsDir">打开 mods 目录</button>
+              </div>
+            </div>
+            <div class="version-list" id="installedMods">
+              <p class="empty">尚未安装任何模组。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fabric 安装 -->
+        <div id="loaderPanel" class="hidden">
+          <div class="card">
+            <div class="card-head"><h2>安装 Fabric</h2><span class="hint">自动安装原版并叠加 Fabric Loader（版本继承）</span></div>
+            <div class="filter-bar">
+              <select class="input" id="fabricGame" style="max-width:200px"><option value="">选择游戏版本</option></select>
+              <button class="btn btn-sm" id="btnFabricGames">获取版本</button>
+              <select class="input" id="fabricLoader" style="max-width:220px"><option value="">自动选择最新稳定版</option></select>
+              <button class="btn btn-sm" id="btnFabricLoaders">Loader 列表</button>
+              <button class="btn btn-sm btn-primary" id="btnInstallFabric">开始安装</button>
+            </div>
+            <div class="diag small" id="fabricStatus">未安装原版时会先自动安装原版；安装完成后会自动设为当前实例。</div>
+          </div>
+        </div>
+
+        <!-- 其他安装器说明 -->
+        <div id="packNoticePanel" class="hidden">
+          <div class="card">
+            <div class="card-head"><h2 id="packNoticeTitle">安装包</h2><span class="hint" id="packNoticeHint">由官方安装器完成</span></div>
+            <div class="filter-bar" id="packForm">
+              <select class="input" id="packGame" style="max-width:200px"><option value="">选择游戏版本</option></select>
+              <button class="btn btn-sm" id="btnPackGames">获取版本</button>
+              <select class="input" id="packLoaderVer" style="max-width:220px"><option value="">自动选择最新</option></select>
+              <button class="btn btn-sm" id="btnPackLoaders">安装器版本</button>
+              <button class="btn btn-sm btn-primary" id="btnPackInstall">开始安装</button>
+            </div>
+            <div class="diag small" id="packNoticeBody"></div>
+            <div class="diag small" id="packStatus"></div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn btn-sm" id="btnPackOpenSite">打开官网下载页</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 设置页 ====== -->
+    <section class="page" id="page-settings">
+      <aside class="set-side">
+        <div class="set-group">游戏</div>
+        <ul class="set-cats">
+          <li class="set-cat active" data-sub="launch"><svg viewBox="0 0 24 24"><path d="M5 3 19 12 5 21z" fill="currentColor"/></svg><span class="pcl-label">启动</span><span class="bmcl-label">启动参数</span></li>
+          <li class="set-cat" data-sub="java"><svg viewBox="0 0 24 24"><path d="M8 2h8M12 2v6M9 8h6M7 14h10M7 14l-1 6h12l-1-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="pcl-label">Java</span><span class="bmcl-label">JVM环境</span></li>
+          <li class="set-cat" data-sub="manage"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="pcl-label">管理</span><span class="bmcl-label">游戏</span></li>
+        </ul>
+        <div class="set-group">工具</div>
+        <ul class="set-cats">
+          <li class="set-cat" data-sub="online"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>联机</span></li>
+        </ul>
+        <div class="set-group">启动器</div>
+        <ul class="set-cats">
+          <li class="set-cat" data-sub="ui"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span class="pcl-label">个性化</span><span class="bmcl-label">外观</span></li>
+          <li class="set-cat" data-sub="language"><svg viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>语言</span></li>
+          <li class="set-cat" data-sub="misc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>杂项</span></li>
+        </ul>
+        <div class="set-group">关于</div>
+        <ul class="set-cats">
+          <li class="set-cat" data-sub="about"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 16v-4M12 8h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>软件信息</span></li>
+          <li class="set-cat" data-sub="update"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>软件更新</span></li>
+          <li class="set-cat" data-sub="feedback"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span>反馈</span></li>
+          <li class="set-cat" data-sub="log"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z M4 9h16 M4 14h16" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>查看日志</span></li>
+        </ul>
+      </aside>
+
+      <div class="set-main">
+        <!-- 启动 -->
+        <div class="set-sub active" data-subbody="launch">
+          <div class="card">
+            <div class="card-head"><h2><span class="pcl-label">启动选项</span><span class="bmcl-label">启动参数</span></h2></div>
+            <div class="option-list">
+              <label class="option-row"><span>默认实例隔离</span>
+                <select><option>隔离所有实例</option><option>不隔离</option><option>仅隔离版本文件</option></select>
+              </label>
+              <label class="option-row"><span>游戏窗口标题</span>
+                <select><option>默认</option><option>Minecraft</option><option>自定义</option></select>
+              </label>
+              <label class="option-row"><span>自定义信息</span>
+                <input value="PCLCE">
+              </label>
+              <label class="option-row"><span>启动器可见性</span>
+                <select><option>游戏启动后仍保持不变</option><option>启动后隐藏</option><option>启动后最小化</option><option>启动后关闭</option></select>
+              </label>
+              <label class="option-row"><span>进程优先级</span>
+                <select><option>中（平衡）</option><option>高</option><option>低</option><option>实时</option></select>
+              </label>
+              <label class="option-row"><span>窗口大小</span>
+                <select><option>默认</option><option>全屏</option><option>854×480</option><option>1280×720</option><option>1920×1080</option></select>
+              </label>
+              <label class="option-row"><span>正版验证方式</span>
+                <select id="setAuthMethod"><option>设备代码流</option><option>网页登录</option><option>第三方认证</option><option>离线</option></select>
+              </label>
+              <label class="option-row"><span>IP 协议偏好</span>
+                <select><option>Java 默认</option><option>仅 IPv4</option><option>仅 IPv6</option></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>游戏内存</h2></div>
+            <div class="mem-row">
+              <label class="mem-radio"><input type="radio" name="memMode" checked><span>自动配置</span></label>
+              <label class="mem-radio"><input type="radio" name="memMode"><span>自定义</span></label>
+            </div>
+            <label class="option-row" style="margin-top:10px"><span>内存（MB）</span>
+              <input id="setMemory" type="number" min="512" step="256" value="2048">
+            </label>
+          </div>
+        </div>
+
+        <!-- Java -->
+        <div class="set-sub" data-subbody="java">
+          <div class="card">
+            <div class="card-head"><h2><span class="pcl-label">Java</span><span class="bmcl-label">JVM 环境</span></h2></div>
+            <div class="form-grid">
+              <label class="field field-wide"><span>Java 路径（可填安装目录，自动进入 bin 查找）</span><input id="setJava" placeholder="C:\Program Files\Java\jdk-21 或 ...\bin\java.exe"></label>
+            </div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnProbeJava">检测 Java</button>
+              <button class="btn btn-sm" id="btnOpenDir3">打开游戏目录</button>
+              <span class="hint" id="javaHint"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 管理 -->
+        <div class="set-sub" data-subbody="manage">
+          <div class="card">
+            <div class="card-head"><h2><span class="pcl-label">游戏管理</span><span class="bmcl-label">游戏</span></h2></div>
+            <div class="form-grid">
+              <label class="field"><span>玩家名</span><input id="setPlayer" maxlength="16"></label>
+              <label class="field field-wide"><span>游戏目录 / 版本文件夹</span>
+                <div style="display:flex;gap:8px;width:100%">
+                  <input id="setGameDir" style="flex:1" placeholder=".minecraft、versions 或单个版本文件夹">
+                  <button class="btn btn-sm" id="btnScanGameDir">扫描</button>
+                  <button class="btn btn-sm" id="btnPickGameDir2">选择</button>
+                </div>
+              </label>
+              <label class="field field-wide"><span>版本与资源下载</span>
+                <select id="setSource">
+                  <option value="bmclapi">BMCLAPI 镜像（国内加速）</option>
+                  <option value="official">官方源（Mojang）</option>
+                </select>
+              </label>
+              <label class="field field-wide"><span>已安装版本</span>
+                <div class="diag small" id="gameDirState2"><span class="tip">正在扫描…</span></div>
+              </label>
+              <label class="field field-wide"><span>CurseForge API Key（留空使用内置公共 Key）</span>
+                <input id="setCurseKey" placeholder="$2a$10$...">
+              </label>
+              <label class="field field-wide"><span>微软登录应用 ID（留空使用内置公共应用 ID）</span>
+                <input id="setMsClientId" placeholder="Azure 应用的客户端 ID（可选）">
+              </label>
+            </div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnCheckNet">检测下载是否被禁止</button>
+              <span class="hint" id="netHint">尚未检测</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>已安装版本</h2><button class="btn btn-sm" id="btnOpenDir2">打开目录</button></div>
+            <div class="version-list" id="installedVersions"></div>
+          </div>
+        </div>
+
+        <!-- 联机 -->
+        <div class="set-sub" data-subbody="online">
+          <div class="card">
+            <div class="card-head"><h2>联机</h2><span class="hint">启动器负责端口与玩家上限的默认值</span></div>
+            <div class="option-list">
+              <label class="option-row"><span>联机方式</span>
+                <select><option selected>陶瓦联机（Terracotta）</option><option>局域网联机</option></select>
+              </label>
+              <label class="option-row"><span>监听端口</span><input value="25565"></label>
+              <label class="option-row"><span>最大玩家数</span><input value="8"></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>说明</h2></div>
+            <p class="hint">联机请到「工具 → 大厅」使用陶瓦联机；创建大厅前需在游戏内按 Esc 选择「对局域网开放」并记下端口。</p>
+          </div>
+        </div>
+
+        <!-- 个性化 -->
+        <div class="set-sub" data-subbody="ui">
+          <div class="card">
+            <div class="card-head"><h2>GUI 模式</h2><span class="hint">切换后立即生效，不影响任何功能</span></div>
+            <div class="theme-grid">
+              <label class="theme-card">
+                <input type="radio" name="uiTheme" value="pcl">
+                <div class="theme-preview theme-preview-pcl">
+                  <div class="tp-bar"><div class="tp-pill tp-pill-on"></div><div class="tp-pill"></div></div>
+                  <div class="tp-body"><div class="tp-side"></div><div class="tp-main"></div></div>
+                </div>
+                <div class="theme-name">PCL 经典模式</div>
+                <div class="theme-desc">白蓝配色，贴近 PCL CE 原版</div>
+              </label>
+              <label class="theme-card">
+                <input type="radio" name="uiTheme" value="bmcl">
+                <div class="theme-preview theme-preview-bmcl">
+                  <div class="tp-bar"><div class="tp-pill tp-pill-on"></div><div class="tp-pill"></div></div>
+                  <div class="tp-body"><div class="tp-side"></div><div class="tp-main"></div></div>
+                </div>
+                <div class="theme-name">BMCL 官网风格</div>
+                <div class="theme-desc">暗色 + 像素标题 + 蓝色强调，含模型与快捷启动</div>
+              </label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>外观</h2></div>
+            <p class="about">启动器主题、背景、字体等外观设置将在此处提供。</p>
+          </div>
+        </div>
+
+        <!-- 语言 -->
+        <div class="set-sub" data-subbody="language">
+          <div class="card">
+            <div class="card-head"><h2>语言</h2></div>
+            <label class="option-row"><span>界面语言</span>
+              <select><option>简体中文</option><option>繁體中文</option><option>English</option></select>
+            </label>
+          </div>
+        </div>
+
+        <!-- 杂项 -->
+        <div class="set-sub" data-subbody="misc">
+          <div class="card">
+            <div class="card-head"><h2>杂项</h2></div>
+            <div class="switch-row">
+              <label class="switch"><input type="checkbox" id="setAutoUpdate"><span>自动检测更新</span></label>
+              <label class="switch"><input type="checkbox" id="setCheckDownloads"><span>启动时检测下载是否被禁止</span></label>
+              <label class="switch"><input type="checkbox" id="setCrashWatch"><span>启动时自动检测上次崩溃</span></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>一键修复启动器</h2><span class="tag" id="repairState">未扫描</span></div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnRepairScan">开始扫描</button>
+              <button class="btn btn-sm btn-primary hidden" id="btnRepairRun">一键修复</button>
+            </div>
+            <div class="diag small" id="repairResult"><span class="tip">点击「开始扫描」，检查启动器自身的配置、目录与残留文件。</span></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>崩溃自检</h2></div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnDiagnose">立即诊断</button>
+            </div>
+            <div class="diag small" id="crashSettingsResult"></div>
+          </div>
+          <div class="card bmcl-only">
+            <div class="card-head"><h2>BMCL 专属</h2><span class="hint">额外设置项</span></div>
+            <div class="switch-row">
+              <label class="switch"><input type="checkbox" id="setIntroAnim" checked><span>启动时播放 BMCL 开场动画</span></label>
+              <label class="switch"><input type="checkbox" id="setAutoBackup"><span>退出游戏时自动备份存档</span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关于 -->
+        <div class="set-sub" data-subbody="about">
+          <div class="card">
+            <div class="card-head"><h2>软件信息</h2><span class="tag" id="updVersion">v2.2.1</span></div>
+            <p class="about">BMCL 是 fft1145 在爱发电发布的 Minecraft 启动器，完全本地运行，不依赖自建服务器。更新只覆盖启动器自身的程序文件，不会覆盖任何游戏文件。</p>
+            <div class="row wrap">
+              <button class="btn btn-sm" data-open="https://bmcl26.netlify.app">访问官网</button>
+              <button class="btn btn-sm" data-open="https://github.com/fft1145/BMCL">GitHub 仓库</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 软件更新 -->
+        <div class="set-sub" data-subbody="update">
+          <div class="card">
+            <div class="card-head"><h2>软件更新</h2><span class="tag" id="updVersion2">v2.2.1</span></div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnCheckUpdate">检查更新</button>
+              <button class="btn btn-sm btn-primary hidden" id="btnApplyUpdate">立即更新</button>
+            </div>
+            <div class="diag small" id="updateResult"></div>
+            <p class="hint">更新只会覆盖启动器自身的程序文件，<b>不会覆盖任何游戏文件</b>。</p>
+          </div>
+        </div>
+
+        <!-- 反馈 -->
+        <div class="set-sub" data-subbody="feedback">
+          <div class="card">
+            <div class="card-head"><h2>反馈</h2></div>
+            <p class="about">遇到问题或有建议？欢迎通过 GitHub Issues 反馈。</p>
+            <div class="row wrap">
+              <button class="btn btn-sm" data-open="https://github.com/fft1145/BMCL/issues">提交 Issue</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 查看日志 -->
+        <div class="set-sub" data-subbody="log">
+          <div class="card">
+            <div class="card-head"><h2>查看日志</h2><button class="btn btn-sm" id="btnClearLog2">清空</button></div>
+            <pre class="log" id="gameLog2"></pre>
+          </div>
+        </div>
+
+        <div class="row save-row">
+          <button class="btn btn-primary" id="btnSaveSettings">保存设置</button>
+          <span class="hint" id="saveHint"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 工具页 ====== -->
+    <section class="page" id="page-tools">
+      <aside class="set-side">
+        <div class="set-group">联机</div>
+        <ul class="set-cats">
+          <li class="set-cat active" data-sub="lobby"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>大厅</span></li>
+          <li class="set-cat" data-sub="toolbox"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>百宝箱</span></li>
+        </ul>
+        <div class="set-group">奇妙小工具</div>
+        <ul class="set-cats">
+          <li class="set-cat" data-sub="nettest"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>网络测试</span></li>
+        </ul>
+      </aside>
+
+      <div class="set-main">
+        <!-- 大厅 -->
+        <div class="set-sub active" data-subbody="lobby">
+          <div class="lobby-tip">
+            <span class="lt-ico">ⓘ</span>
+            <span>陶瓦联机由 Terracotta + EasyTier 提供，首次使用会自动下载联机组件</span>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>加入大厅</h2></div>
+            <p class="about">1、在下方输入朋友发送给你的陶瓦大厅编号，单击【加入】<br>2、加入成功后，在游戏的【多人游戏 → 直接连接】中输入下方给出的连接地址</p>
+            <div class="row">
+              <input class="input" id="lobbyCode" placeholder="编号应该长得像这样：XXXXX-XXXXX-XXXXX-XXXXX-XXXXX">
+              <button class="btn btn-sm" id="btnLobbyClear">清除</button>
+              <button class="btn btn-sm" id="btnLobbyPaste">粘贴</button>
+              <button class="btn btn-sm btn-primary" id="btnLobbyJoin">加入</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>创建大厅</h2></div>
+            <p class="about">1、进入世界后，在游戏菜单中选择【对局域网开放】，记下聊天栏提示的端口<br>2、选择实例并填写该端口，单击【创建】<br>3、把生成的大厅编号发给朋友，朋友加入后即可在多人游戏里直连</p>
+            <div class="row">
+              <select class="input" id="lobbyInstance" style="flex:1"><option value="">（请选择实例）</option></select>
+              <input class="input" id="lobbyPort" style="width:120px" placeholder="局域网端口" inputmode="numeric">
+              <button class="btn btn-sm" id="btnLobbyRefresh">刷新</button>
+              <button class="btn btn-sm btn-primary" id="btnLobbyCreate">创建</button>
+            </div>
+          </div>
+
+          <div class="card hidden" id="onlineStatusCard">
+            <div class="card-head"><h2>联机状态</h2><span class="hint" id="onlineStatusText"></span></div>
+            <div class="option-list">
+              <label class="option-row"><span>大厅编号</span><input id="onlineCode" readonly></label>
+              <label class="option-row"><span>连接地址</span><input id="onlineAddress" readonly></label>
+            </div>
+            <div class="row">
+              <button class="btn btn-sm btn-primary" id="btnOnlineCopy">复制编号</button>
+              <button class="btn btn-sm" id="btnOnlineStop">断开联机</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 百宝箱 -->
+        <div class="set-sub" data-subbody="toolbox">
+          <div class="card">
+            <div class="card-head"><h2>百宝箱</h2></div>
+            <div class="toolbox-grid">
+              <button class="btn" id="btnCleanJunk">清理游戏垃圾</button>
+              <button class="btn" id="btnFortune">今日人品</button>
+              <button class="btn" id="btnShortcut">创建快捷方式</button>
+              <button class="btn" id="btnLaunchCount">查看启动计数</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>下载自定义文件</h2></div>
+            <p class="about">使用高速多线程下载引擎下载任意文件。请注意，部分网站（例如百度网盘）可能会报错（403）已禁止，无法正常下载。</p>
+            <div class="option-list">
+              <label class="option-row"><span>下载地址</span><input id="customUrl" placeholder="https://..."></label>
+              <label class="option-row"><span>保存到</span>
+                <div style="display:flex;gap:8px;width:100%">
+                  <input id="customSaveDir" style="flex:1">
+                  <button class="btn btn-sm" id="btnPickSaveDir">选择</button>
+                </div>
+              </label>
+              <label class="option-row"><span>文件名</span><input id="customFileName"></label>
+            </div>
+            <div class="row wrap" style="justify-content:center">
+              <button class="btn btn-primary" id="btnCustomDownload">开始下载</button>
+              <button class="btn" id="btnOpenCustomDir">打开文件夹</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>下载正版玩家的皮肤</h2></div>
+            <label class="option-row"><span>正版玩家名</span>
+              <div style="display:flex;gap:8px;width:100%">
+                <input id="skinPlayer" style="flex:1" placeholder="玩家名">
+                <button class="btn btn-primary btn-sm" id="btnDownloadSkin">下载</button>
+              </div>
+            </label>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>上传皮肤到正版账号</h2></div>
+            <p class="tip">需要先在账号面板完成微软正版登录。支持 64×64 或 64×32 的 PNG。</p>
+            <div class="row wrap">
+              <select id="skinVariant">
+                <option value="classic">经典（Classic）</option>
+                <option value="slim">纤细（Slim）</option>
+              </select>
+              <button class="btn btn-primary btn-sm" id="btnUploadSkin">选择 PNG 并上传</button>
+              <button class="btn btn-sm" id="btnResetSkin">恢复默认皮肤</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 网络测试 -->
+        <div class="set-sub" data-subbody="nettest">
+          <div class="card">
+            <div class="card-head"><h2>网络测试</h2></div>
+            <div class="row wrap">
+              <button class="btn btn-sm btn-primary" id="btnNetTest">点击测试</button>
+              <button class="btn btn-sm" data-open="https://www.natayark.com">点击登录 Natayark 账户</button>
+            </div>
+            <div class="diag small" id="netTestResult"></div>
+          </div>
+        </div>
+
+        <!-- BMCL 更多：皮肤 / 账号 / 联机 / 资料 / 备份 -->
+        <div class="bmcl-only" style="margin-top:16px">
+          <div class="card glass-card">
+            <div class="card-head"><h2>皮肤与账号</h2></div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnSkinMgr">皮肤管理</button>
+              <button class="btn btn-sm" id="btnAccount">服务账号</button>
+              <button class="btn btn-sm" id="btnSkinUpload">上传皮肤</button>
+              <button class="btn btn-sm" id="btnCape">披风管理</button>
+            </div>
+          </div>
+          <div class="card glass-card">
+            <div class="card-head"><h2>联机与资料</h2></div>
+            <div class="row wrap">
+              <button class="btn btn-sm" data-open="https://littleskin.cn">LittleSkin 联机</button>
+              <button class="btn btn-sm" id="btnProfileEdit">资料修改</button>
+              <button class="btn btn-sm" id="btnBackup">游戏目录备份</button>
+              <button class="btn btn-sm" id="btnRestore">还原备份</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== BMCL：实用 ====== -->
+    <section class="page bmcl-page" id="page-util">
+      <div class="ut-wrap">
+        <!-- 管理员下发公告（BMCL 实用页同样可见） -->
+        <div class="notice-card hidden ann-card">
+          <div class="notice-head">
+            <span class="notice-title">公告</span>
+            <button class="notice-close" title="关闭公告">×</button>
+          </div>
+          <div class="ann-body"></div>
+          <p class="notice-foot ann-foot"></p>
+        </div>
+        <header class="ut-topbar">
+          <nav class="ut-tabs">
+            <button class="ut-tab on" data-utab="bmcl">BMCL</button>
+            <button class="ut-tab" data-utab="last">上次游玩</button>
+            <button class="ut-tab" data-utab="fav">我的收藏</button>
+            <button class="ut-tab" data-utab="srv">服务器推荐</button>
+          </nav>
+          <span class="ut-count" id="utCount">0 项</span>
+        </header>
+
+        <main class="ut-main">
+          <div class="ut-pane on" data-upane="bmcl">
+            <div class="hm-card">
+              <div class="hm-stage">
+                <canvas id="skinCanvas"></canvas>
+                <div class="hm-caption">你还没选择子项哦！qwq</div>
+                <div class="hm-empty" id="hmEmpty">
+                  <div class="hm-pixel">?</div>
+                  <p>你还没选择子项哦！qwq</p>
+                  <span>登录账号后，这里会显示你的 3D 玩家模型</span>
+                </div>
+              </div>
+              <div class="hm-foot">
+                <span class="hm-player" id="hmPlayer">未登录</span>
+                <span class="hm-tip">拖拽旋转 · 待机动作 · 披风飘动</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ut-pane" data-upane="last">
+            <div class="ut-list-card">
+              <div class="ut-list-head">
+                <span>版本 / 存档</span><span>上次游玩</span><span>ID</span>
+              </div>
+              <div class="ut-rows" id="utLastList"></div>
+              <div class="ut-pager"><button class="ut-pg" id="utPgPrev">‹</button><span id="utPgInfo">1 / 1</span><button class="ut-pg" id="utPgNext">›</button></div>
+            </div>
+          </div>
+
+          <div class="ut-pane" data-upane="fav">
+            <div class="ut-list-card">
+              <div class="ut-list-head"><span>收藏内容</span><span>类型</span><span>来源</span></div>
+              <div class="ut-rows" id="utFavList"></div>
+            </div>
+          </div>
+
+          <div class="ut-pane" data-upane="srv">
+            <div class="ut-list-card">
+              <div class="ut-list-head"><span>服务器</span><span>IP</span><span>在线人数</span></div>
+              <div class="ut-rows" id="utSrvList"></div>
+            </div>
+          </div>
+        </main>
+
+        <footer class="ut-footer">
+          <button class="launch-btn" id="btnUtilLaunch">
+            <span class="lb-title">启动游戏</span>
+            <span class="lb-sub" id="utilLaunchVersion">未选择版本</span>
+          </button>
+          <div class="ut-footer-hint">
+            <span id="utilHint">点击启动将打开「管理 → 版本」</span>
+            <button class="link-btn" id="btnUtilManage">打开版本管理</button>
+          </div>
+        </footer>
+      </div>
+    </section>
+
+    <!-- ====== BMCL：管理 ====== -->
+    <section class="page bmcl-page" id="page-manage">
+      <aside class="mg-side">
+        <div class="mg-side-head">
+          <span>版本</span>
+          <button class="mg-mini" id="mgRescan">重新扫描</button>
+        </div>
+        <div class="mg-list" id="mgVersionList"></div>
+      </aside>
+      <main class="mg-main">
+        <header class="mg-head">
+          <div class="mg-title-wrap">
+            <h1 id="mgTitle">版本管理</h1>
+            <p id="mgSub">选择左侧版本查看详情</p>
+          </div>
+          <div class="mg-actions">
+            <button class="btn btn-sm" id="mgOpenDir">打开游戏目录</button>
+            <button class="btn btn-sm btn-primary" id="mgLaunch">启动此版本</button>
+          </div>
+        </header>
+        <nav class="mg-tabs">
+          <button class="mg-tab on" data-mtab="saves">存档设置</button>
+          <button class="mg-tab" data-mtab="mods">mod</button>
+          <button class="mg-tab" data-mtab="packs">材质包</button>
+          <button class="mg-tab" data-mtab="modpack">整合包设置</button>
+        </nav>
+        <div class="mg-body">
+          <div class="mg-pane on" data-mpane="saves">
+            <div class="ut-list-card">
+              <div class="ut-list-head"><span>存档名</span><span>上次游玩</span><span>大小</span></div>
+              <div class="ut-rows" id="mgSaves"></div>
+            </div>
+          </div>
+          <div class="mg-pane" data-mpane="mods">
+            <div class="ut-list-card">
+              <div class="ut-list-head"><span>已安装 mod</span><span>类型</span><span>文件</span></div>
+              <div class="ut-rows" id="mgMods"></div>
+            </div>
+          </div>
+          <div class="mg-pane" data-mpane="packs">
+            <div class="ut-list-card">
+              <div class="ut-list-head"><span>材质包</span><span>类型</span><span>文件</span></div>
+              <div class="ut-rows" id="mgPacks"></div>
+            </div>
+          </div>
+          <div class="mg-pane" data-mpane="modpack">
+            <div class="mg-pack-card">
+              <div class="mg-pack-title">整合包设置</div>
+              <label class="option-row"><span>整合包名称</span><input id="mgPackName" placeholder="例如 机械动力：星空"></label>
+              <label class="option-row"><span>实例隔离</span><select id="mgPackIsolate"><option>隔离所有实例</option><option>不隔离</option><option>仅隔离版本文件</option></select></label>
+              <label class="option-row"><span>分配内存（MB）</span><input id="mgPackMem" type="number" min="512" step="256" value="4096"></label>
+              <div class="row wrap"><button class="btn btn-sm btn-primary" id="mgPackSave">保存整合包设置</button><span class="hint" id="mgPackHint"></span></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ====== BMCL：账号 ====== -->
+    <section class="page bmcl-page" id="page-account">
+      <div class="ac-wrap">
+        <header class="ac-head">
+          <nav class="ac-tabs">
+            <button class="ac-tab on" data-atab="official">正版</button>
+            <button class="ac-tab" data-atab="offline">离线</button>
+            <button class="ac-tab" data-atab="third">第三方</button>
+          </nav>
+          <span class="ac-head-hint" id="acHeadHint">连接 Mojang 服务器获取账号</span>
+        </header>
+
+        <main class="ac-body">
+          <div class="ac-pane on" data-apane="official">
+            <div class="ac-identity" id="acIdentity">
+              <img class="ac-avatar" id="acAvatar" src="../build/icon.png" alt="">
+              <div class="ac-who">
+                <div class="ac-name" id="acName">未登录</div>
+                <div class="ac-sub" id="acSub">使用 Microsoft 账号登录后自动获取皮肤与披风</div>
+              </div>
+              <span class="ac-badge" id="acBadge">未登录</span>
+            </div>
+
+            <div class="ac-card">
+              <div class="ac-card-title">正版登录</div>
+              <p class="ac-tip">点击后打开浏览器，输入下方代码完成授权。登录成功后账号信息与皮肤会自动同步。</p>
+              <div class="row wrap">
+                <button class="btn btn-primary btn-sm" id="acBtnMs">微软正版登录</button>
+                <button class="btn btn-sm" id="acBtnActiveRefresh">刷新账号信息</button>
+              </div>
+              <div class="ac-flow hidden" id="acFlow">
+                <p>打开 <a id="acFlowUrl" href="https://microsoft.com/devicelogin" target="_blank">microsoft.com/devicelogin</a> 并输入代码：</p>
+                <div class="ac-code" id="acFlowCode">--------</div>
+                <p class="hint" id="acFlowStatus">等待授权…</p>
+                <div class="row">
+                  <button class="btn btn-sm" id="acBtnCopy">复制代码</button>
+                  <button class="btn btn-sm" id="acBtnCancel">取消登录</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="ac-card">
+              <div class="ac-card-title">皮肤与披风</div>
+              <p class="ac-tip">从文件资源管理器选择 PNG 图片。正版账号的皮肤会写入 Mojang 数据库。</p>
+              <div class="row wrap">
+                <select class="input" id="acSkinVariant" style="max-width:120px">
+                  <option value="classic">经典</option>
+                  <option value="slim">纤细</option>
+                </select>
+                <button class="btn btn-sm" id="acBtnSkin">上传皮肤</button>
+                <button class="btn btn-sm" id="acBtnCape">上传披风</button>
+                <button class="btn btn-sm" id="acBtnSkinReset">恢复默认皮肤</button>
+              </div>
+              <div class="ac-skin-prev" id="acSkinPrev">未选择文件</div>
+            </div>
+          </div>
+
+          <div class="ac-pane" data-apane="offline">
+            <div class="ac-identity offline" id="acOfflineIdentity">
+              <img class="ac-avatar" id="acOfflineAvatar" src="../build/icon.png" alt="">
+              <div class="ac-who">
+                <div class="ac-name" id="acOfflineName">未登录</div>
+                <div class="ac-sub">离线账号仅用于本地启动，不上传皮肤到 Mojang</div>
+              </div>
+              <span class="ac-badge" id="acOfflineBadge">未登录</span>
+            </div>
+            <div class="ac-card">
+              <div class="ac-card-title">添加离线账号</div>
+              <div class="row wrap">
+                <input class="input" id="acNewName" maxlength="16" placeholder="玩家名（字母/数字/下划线）" style="flex:1">
+                <button class="btn btn-primary btn-sm" id="acBtnAdd">添加并设为当前</button>
+              </div>
+            </div>
+            <div class="ac-card">
+              <div class="ac-card-title">账号列表</div>
+              <div class="ac-list" id="acAccountList"></div>
+            </div>
+          </div>
+
+          <div class="ac-pane" data-apane="third">
+            <div class="ac-card">
+              <div class="ac-card-title">第三方认证</div>
+              <p class="ac-tip">使用 authlib-injector / LittleSkin 等第三方认证服务器登录。皮肤与披风从本地文件选择。</p>
+              <label class="option-row"><span>认证服务器地址</span><input id="acThirdServer" placeholder="https://littleskin.cn/api/yggdrasil"></label>
+              <label class="option-row"><span>账号 / 密码</span><input id="acThirdUser" placeholder="邮箱或角色名"><input id="acThirdPass" type="password" placeholder="密码"></label>
+              <div class="row wrap">
+                <button class="btn btn-sm btn-primary" id="acBtnThird">登录第三方</button>
+                <span class="hint">皮肤 / 披风上传选择本地图片文件</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="app.js"></script>
+<script src="bmcl-dash.js"></script>
+<script src="bmcl-ui.js"></script>
+</body>
+</html>

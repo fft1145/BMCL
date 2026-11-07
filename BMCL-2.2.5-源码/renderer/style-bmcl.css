@@ -1,0 +1,394 @@
+/* ============================================================
+   BMCL GUI — BMCL 官网暗色风格主题
+   仅在 <body class="theme-bmcl"> 时生效，不修改任何内部逻辑。
+   配色取自官网 bmcl26.netlify.app：黑底 + 绿色强调。
+   ============================================================ */
+
+body.theme-bmcl{
+  --bg:#111111;
+  --bg-deep:#0b0b0b;
+  --side:#0e0e0e;
+  --card:#171717;
+  --card-2:#1c1c1c;
+  --line:#2c2c2c;
+  --line-soft:#232323;
+
+  --text:#ffffff;
+  --muted:#a0a0a0;
+  --blue:#3c8527;            /* 绿色强调 */
+  --blue-strong:#4fa832;
+  --blue-text:#6ec24a;
+  --blue-soft:#1b2916;
+
+  --green:#3c8527;
+  --danger:#d9363e;
+  --warn:#b7791f;
+
+  --radius:4px;
+
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* 像素标题字体（回退到等宽粗体） */
+body.theme-bmcl .card-head h2,
+body.theme-bmcl .dl-section-title,
+body.theme-bmcl .notice-title,
+body.theme-bmcl .set-group,
+body.theme-bmcl .bmcl-quick-title{
+  font-family:"Cascadia Mono","Consolas","Microsoft YaHei","PingFang SC",system-ui,monospace;
+  letter-spacing:.5px;
+}
+
+/* ===== 滚动条 ===== */
+body.theme-bmcl ::-webkit-scrollbar-track{background:#0b0b0b}
+body.theme-bmcl ::-webkit-scrollbar-thumb{background:#383838;border:2px solid #0b0b0b}
+body.theme-bmcl ::-webkit-scrollbar-thumb:hover{background:#4a4a4a}
+
+/* ===== 标题栏 ===== */
+body.theme-bmcl .titlebar{
+  background:#0b0b0b;
+  border-bottom:1px solid #242424;
+  color:#fff;
+}
+body.theme-bmcl .tb-logo{
+  background:var(--green);
+  color:#fff;
+}
+body.theme-bmcl .tb-ce{
+  background:var(--green);
+  color:#fff;
+}
+body.theme-bmcl .nav-btn{color:#c6c6c6}
+body.theme-bmcl .nav-btn:hover{background:rgba(255,255,255,.06);color:#fff}
+body.theme-bmcl .nav-btn.active{background:var(--green);color:#fff;box-shadow:none}
+body.theme-bmcl .nav-btn.active:hover{background:var(--green-hover,#4fa832)}
+body.theme-bmcl .win-btn{color:#c6c6c6}
+body.theme-bmcl .win-btn:hover{background:rgba(255,255,255,.08)}
+body.theme-bmcl .win-close:hover{background:#d83b3b}
+
+/* ===== 卡片 / 通用 ===== */
+body.theme-bmcl .card{
+  background:var(--card);
+  border-color:var(--line);
+  box-shadow:none;
+}
+body.theme-bmcl .card-head h2{color:#fff}
+body.theme-bmcl .notice-card{
+  background:linear-gradient(120deg,#1a1608 0%,#17140a 100%);
+  border-color:#3a2f12;
+}
+body.theme-bmcl .notice-title{color:#e0b84a}
+body.theme-bmcl .notice-card p{color:#c9b886}
+body.theme-bmcl .notice-foot{color:#9a8550}
+
+body.theme-bmcl .btn{
+  background:#1c1c1c;border-color:#2c2c2c;color:#e0e0e0;
+}
+body.theme-bmcl .btn:hover{background:#242424;border-color:#3a3a3a;color:#fff}
+body.theme-bmcl .btn-primary{background:var(--green);border-color:var(--green);color:#fff}
+body.theme-bmcl .btn-primary:hover{background:var(--green-hover,#4fa832);border-color:var(--green-hover,#4fa832)}
+body.theme-bmcl .btn-danger{border-color:#7a3538;color:#e07077;background:#1c1c1c}
+body.theme-bmcl .btn-danger:hover{background:#2a1618;border-color:#a14046}
+body.theme-bmcl .input,
+body.theme-bmcl .field input,
+body.theme-bmcl .field select,
+body.theme-bmcl .option-row select,
+body.theme-bmcl .option-row input{
+  background:#0e0e0e;border-color:#2c2c2c;color:#f0f0f0;
+}
+body.theme-bmcl .input::placeholder{color:#6f6f6f}
+body.theme-bmcl .field input:focus,
+body.theme-bmcl .input:focus,
+body.theme-bmcl .option-row select:focus{
+  border-color:var(--green);box-shadow:0 0 0 2px rgba(60,133,39,.25);
+}
+body.theme-bmcl .tag{background:#1c1c1c;border-color:#2c2c2c;color:#a0a0a0}
+body.theme-bmcl .about{color:#a0a0a0}
+body.theme-bmcl .hint{color:#8c8c8c}
+body.theme-bmcl .hint b{color:#c6c6c6}
+body.theme-bmcl .empty{color:#8c8c8c}
+body.theme-bmcl .switch{color:#d0d0d0}
+
+/* ===== 版本列表 ===== */
+body.theme-bmcl .version-item{border-bottom-color:var(--line-soft)}
+body.theme-bmcl .version-item:hover{background:#1c1c1c}
+body.theme-bmcl .v-id{color:#fff}
+body.theme-bmcl .v-meta{color:#8c8c8c}
+body.theme-bmcl .v-type{background:#1b2916;border-color:#2f4a22;color:#6ec24a}
+body.theme-bmcl .v-type.snapshot{background:#1c1c1c;border-color:#2c2c2c;color:#a0a0a0}
+body.theme-bmcl .v-type.old{background:#2a2410;border-color:#4a3d18;color:#e0b84a}
+body.theme-bmcl .version-item.selected{background:#142010;border-left-color:var(--green)}
+
+/* ===== 进度 / 日志 ===== */
+body.theme-bmcl .progress{background:#1c1c1c;border-color:var(--line)}
+body.theme-bmcl .progress-head{color:#a0a0a0}
+body.theme-bmcl .bar{background:#2c2c2c}
+body.theme-bmcl .bar i{background:linear-gradient(90deg,#3c8527,#6ec24a)}
+body.theme-bmcl .log{background:#0b0b0b;border-color:var(--line);color:#c6c6c6}
+body.theme-bmcl .crash-card{background:#1a0f10;border-color:#5a2a2d}
+body.theme-bmcl .diag{color:#d0d0d0}
+body.theme-bmcl .diag .tip{color:#6ec24a}
+body.theme-bmcl .diag .cause{color:#e07077}
+body.theme-bmcl .diag-sub{border-top-color:var(--line-soft)}
+
+/* ===== toast ===== */
+body.theme-bmcl .toast{background:#1c1c1c;border-color:#2c2c2c;color:#e0e0e0}
+
+/* ===== 启动页侧栏 ===== */
+body.theme-bmcl .launch-side{
+  background:linear-gradient(180deg,#0e0e0e 0%,#0b0b0b 100%);
+  border-right-color:#1e1e1e;
+}
+body.theme-bmcl .avatar-shell{
+  background:linear-gradient(145deg,#1b2916,#0f1a0c);
+  box-shadow:inset 0 0 0 1px #2f4a22,0 4px 10px rgba(0,0,0,.4);
+}
+body.theme-bmcl .player-name{color:#fff}
+body.theme-bmcl .player-tag{background:#1b2916;border-color:#2f4a22;color:#6ec24a}
+body.theme-bmcl .pa-btn{background:#1c1c1c;border-color:#2c2c2c;color:#a0a0a0}
+body.theme-bmcl .pa-btn:hover{background:var(--green-soft);border-color:var(--green);color:var(--green-hi,#6ec24a)}
+body.theme-bmcl .launch-btn{background:var(--green);border-color:var(--green);box-shadow:0 3px 10px rgba(60,133,39,.35)}
+body.theme-bmcl .launch-btn:hover{background:var(--green-hover,#4fa832);border-color:var(--green-hover,#4fa832)}
+body.theme-bmcl .lb-sub{color:#d6efc8}
+body.theme-bmcl .instance-btn{background:#1c1c1c;border-color:#2c2c2c;color:#d0d0d0}
+body.theme-bmcl .instance-btn:hover{border-color:var(--green);background:#1b2916;color:var(--green-hi,#6ec24a)}
+body.theme-bmcl .side-foot{border-top-color:var(--line-soft)}
+body.theme-bmcl .link-btn{color:var(--green-hi,#6ec24a)}
+body.theme-bmcl .launch-main{background:var(--bg)}
+
+/* ===== 下载 / 设置 / 工具 侧栏 ===== */
+body.theme-bmcl .dl-side,
+body.theme-bmcl .set-side{
+  background:linear-gradient(180deg,#0e0e0e 0%,#0b0b0b 100%);
+  border-right-color:#1e1e1e;
+}
+body.theme-bmcl .dl-cat,
+body.theme-bmcl .set-cat{color:#c6c6c6}
+body.theme-bmcl .dl-cat:hover,
+body.theme-bmcl .set-cat:hover{background:#1c1c1c}
+body.theme-bmcl .dl-cat.active,
+body.theme-bmcl .set-cat.active{background:var(--green);color:#fff}
+body.theme-bmcl .dl-side-label,
+body.theme-bmcl .set-group{color:#8c8c8c}
+body.theme-bmcl .dl-main,
+body.theme-bmcl .set-main{background:var(--bg)}
+
+body.theme-bmcl .version-group{background:var(--card);border-color:var(--line)}
+body.theme-bmcl .vg-toggle{background:var(--card-2);border-bottom-color:var(--line-soft);color:#fff}
+body.theme-bmcl .vg-toggle:hover{background:#202020}
+body.theme-bmcl .vg-name{color:#fff}
+body.theme-bmcl .vg-count{color:#8c8c8c}
+
+body.theme-bmcl .latest-ver{color:#fff}
+body.theme-bmcl .latest-meta{color:#8c8c8c}
+
+/* ===== 账号面板 ===== */
+body.theme-bmcl .account-panel{background:#171717;border-color:#2c2c2c}
+body.theme-bmcl .ap-head{background:#1c1c1c;color:#6ec24a}
+body.theme-bmcl .ap-item{color:#e0e0e0}
+body.theme-bmcl .ap-item:hover{background:#1c1c1c}
+body.theme-bmcl .ap-item.active{background:#1b2916;color:#6ec24a}
+body.theme-bmcl .ms-code{background:#1b2916;border-color:#2f4a22;color:#6ec24a}
+
+/* ===== 模组 ===== */
+body.theme-bmcl .mod-item{border-bottom-color:var(--line-soft)}
+body.theme-bmcl .mod-item:hover{background:#1c1c1c}
+body.theme-bmcl .mod-title{color:#fff}
+body.theme-bmcl .mod-desc,
+body.theme-bmcl .mod-meta{color:#8c8c8c}
+body.theme-bmcl .mod-cat{background:#1b2916;color:#6ec24a;border-color:#2f4a22}
+body.theme-bmcl .mod-icon{background:#1c1c1c}
+
+/* ===== 工具页 ===== */
+body.theme-bmcl .lobby-tip{background:#1b2916;border-color:#2f4a22;color:#a8d48f}
+body.theme-bmcl .lt-ico{color:var(--green-hi,#6ec24a)}
+
+/* ============================================================
+   主题选择卡片（设置页）
+   ============================================================ */
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.theme-card{
+  display:flex;flex-direction:column;gap:8px;
+  padding:14px;border:2px solid #d3d8de;border-radius:6px;
+  cursor:pointer;transition:border-color .15s,background .15s;
+}
+.theme-card input{position:absolute;opacity:0;width:0;height:0}
+.theme-card:hover{border-color:#1e7fd0}
+.theme-card:has(input:checked){border-color:#1e7fd0;background:#f0f7ff}
+body.theme-bmcl .theme-card{border-color:#2c2c2c;background:#171717}
+body.theme-bmcl .theme-card:hover{border-color:var(--green)}
+body.theme-bmcl .theme-card:has(input:checked){border-color:var(--green);background:#1b2916}
+
+.theme-preview{
+  height:80px;border-radius:4px;overflow:hidden;border:1px solid #dde7f2;
+  display:flex;flex-direction:column;
+}
+.theme-preview .tp-bar{
+  height:18px;display:flex;align-items:center;gap:5px;padding:0 8px;
+}
+.theme-preview .tp-pill{width:30px;height:9px;border-radius:999px;background:rgba(255,255,255,.4)}
+.theme-preview .tp-pill-on{background:#fff}
+.theme-preview .tp-body{flex:1;display:flex}
+.theme-preview .tp-side{width:38px;background:rgba(255,255,255,.55)}
+.theme-preview .tp-main{flex:1;background:rgba(255,255,255,.8)}
+
+.theme-preview-pcl{background:linear-gradient(180deg,#3093e6,#2276cb)}
+.theme-preview-pcl .tp-body{background:#eef4fb}
+.theme-preview-pcl .tp-side{background:#d8e4f1}
+.theme-preview-pcl .tp-main{background:#fff}
+
+.theme-preview-bmcl{background:#0b0b0b;border-color:#242424}
+.theme-preview-bmcl .tp-bar{background:#0b0b0b}
+.theme-preview-bmcl .tp-pill{background:#3c8527}
+.theme-preview-bmcl .tp-pill-on{background:#6ec24a}
+.theme-preview-bmcl .tp-body{background:#111}
+.theme-preview-bmcl .tp-side{background:#0e0e0e}
+.theme-preview-bmcl .tp-main{background:#171717}
+
+.theme-name{font-size:13.5px;font-weight:700}
+.theme-desc{font-size:11.5px;color:#6d757e;line-height:1.5}
+body.theme-bmcl .theme-name{color:#fff}
+body.theme-bmcl .theme-desc{color:#8c8c8c}
+
+/* ============================================================
+   BMCL 模式专属：仪表盘 + 快捷启动
+   ============================================================ */
+body.theme-bmcl .bmcl-dashboard.hidden{display:none}
+.bmcl-dashboard{
+  display:none;
+  grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px;
+}
+body.theme-bmcl .bmcl-dashboard{display:grid}
+
+.bmcl-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  background:var(--card,#171717);border:1px solid var(--line,#2c2c2c);border-radius:4px;padding:14px;
+}
+body.theme-bmcl .bmcl-stats{background:var(--card);border-color:var(--line)}
+.bmcl-stat{
+  display:flex;flex-direction:column;gap:4px;padding:10px 12px;
+  background:var(--card-2,#f7fafd);border-radius:4px;
+}
+body.theme-bmcl .bmcl-stat{background:#1c1c1c}
+.bmcl-stat-label{font-size:11px;color:#8a9199;text-transform:uppercase;letter-spacing:.5px}
+body.theme-bmcl .bmcl-stat-label{color:#8c8c8c}
+.bmcl-stat-value{font-size:18px;font-weight:800;color:#1b1f24;font-family:"Cascadia Mono","Consolas","Microsoft YaHei",monospace}
+body.theme-bmcl .bmcl-stat-value{color:#fff}
+
+.bmcl-quick{
+  background:var(--card,#171717);border:1px solid var(--line,#2c2c2c);border-radius:4px;padding:14px;
+  display:flex;flex-direction:column;gap:10px;min-width:0;
+}
+body.theme-bmcl .bmcl-quick{background:var(--card);border-color:var(--line)}
+.bmcl-quick-title{
+  font-size:13px;font-weight:700;color:#1b1f24;
+}
+body.theme-bmcl .bmcl-quick-title{color:#fff}
+.bmcl-quick-list{display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:180px}
+.bmcl-quick-item{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:8px 12px;background:var(--card-2,#f7fafd);border:1px solid var(--line-soft,#e9f0f7);border-radius:4px;
+  cursor:pointer;transition:background .12s,border-color .12s;
+}
+body.theme-bmcl .bmcl-quick-item{background:#1c1c1c;border-color:#2c2c2c}
+body.theme-bmcl .bmcl-quick-item:hover{background:#242424;border-color:var(--green)}
+.bmcl-quick-item:hover{background:#eef3f9;border-color:#bcd8f0}
+.bmcl-quick-id{font-weight:700;font-size:13px;color:#1b1f24;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.theme-bmcl .bmcl-quick-id{color:#fff}
+.bmcl-quick-type{font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid #bcd8f0;color:#1b74b8;background:#f2f9ff}
+body.theme-bmcl .bmcl-quick-type{background:#1b2916;border-color:#2f4a22;color:#6ec24a}
+.bmcl-quick-empty{font-size:12px;color:#8a9199;text-align:center;padding:14px 0}
+
+@media(max-width:900px){
+  .bmcl-dashboard{grid-template-columns:1fr}
+  .theme-grid{grid-template-columns:1fr}
+}
+
+/* ============================================================
+   BMCL 布局：顶部导航 → 左侧竖栏（主页/下载/设置/更多/代码/退出）
+   ============================================================ */
+body.theme-bmcl .titlebar{
+  height:46px;
+}
+body.theme-bmcl .tb-nav{
+  position:fixed;
+  top:46px;left:0;bottom:0;
+  width:60px;flex:0 0 60px;
+  flex-direction:column;justify-content:flex-start;align-items:stretch;
+  gap:2px;padding:8px 6px;
+  background:#0e0e0e;
+  border-right:1px solid #1e1e1e;
+  z-index:60;
+}
+body.theme-bmcl .nav-btn{
+  flex-direction:column;justify-content:center;align-items:center;
+  gap:3px;padding:9px 2px;border-radius:6px;
+  font-size:11px;font-weight:600;
+}
+body.theme-bmcl .nav-btn svg{width:20px;height:20px}
+body.theme-bmcl .nav-btn.active{border-radius:6px}
+body.theme-bmcl #btnQuit{margin-top:auto}
+
+/* 工作区让出左侧栏空间 */
+body.theme-bmcl .workspace{
+  margin-left:60px;
+}
+
+/* 顶栏品牌区：BMCL 模式只留 logo + 窗口按钮 */
+body.theme-bmcl .tb-brand{width:auto;min-width:auto}
+body.theme-bmcl .tb-name{display:none}
+
+/* ============================================================
+   液态玻璃（拟态玻璃）卡片与表格
+   ============================================================ */
+body.theme-bmcl .glass-card{
+  background:rgba(255,255,255,.04);
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 4px 18px rgba(0,0,0,.35);
+}
+body.theme-bmcl .glass-card .card-head h2{color:#eaffdc}
+
+/* 版本/模组列表用玻璃表格风 */
+body.theme-bmcl .version-group{
+  background:rgba(255,255,255,.035);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:6px;overflow:hidden;
+}
+body.theme-bmcl .vg-toggle{background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.06)}
+body.theme-bmcl .version-item{
+  background:transparent;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  transition:background .12s;
+}
+body.theme-bmcl .version-item:hover{background:rgba(60,133,39,.10)}
+body.theme-bmcl .version-item.selected{background:rgba(60,133,39,.16);border-left-color:var(--green)}
+
+body.theme-bmcl .mod-item{
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:5px;margin-bottom:8px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+body.theme-bmcl .mod-item:hover{background:rgba(60,133,39,.08)}
+
+/* ============================================================
+   BMCL 玩家模型（中心身体渲染）
+   ============================================================ */
+body.theme-bmcl .player-body{
+  display:block !important;
+  width:120px;height:240px;margin:0 auto;
+  image-rendering:pixelated;
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,.5));
+}
+body.theme-bmcl .avatar{display:none}
+body.theme-bmcl .avatar-shell{
+  background:linear-gradient(180deg,rgba(60,133,39,.18),rgba(0,0,0,0));
+  padding:12px 0;
+}
+
