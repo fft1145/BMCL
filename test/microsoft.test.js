@@ -65,6 +65,19 @@ test('pollDeviceCode 正确处理 authorization_pending / slow_down / expired_to
   assert.strictEqual(done.refreshToken, 'RT');
 });
 
+test('authenticateXboxLive 必须带上 RelyingParty，否则微软返回 400', async () => {
+  let payload = null;
+  const fetchImpl = async (url, init) => {
+    payload = JSON.parse(init.body);
+    return jsonResponse({ Token: 'XBL', DisplayClaims: { xui: [{ uhs: 'UH' }] } });
+  };
+  const out = await ms.authenticateXboxLive('MS-TOKEN', { fetchImpl });
+  assert.strictEqual(payload.RelyingParty, 'http://auth.xboxlive.com');
+  assert.strictEqual(payload.Properties.RpsTicket, 'd=MS-TOKEN');
+  assert.strictEqual(out.token, 'XBL');
+  assert.strictEqual(out.userHash, 'UH');
+});
+
 test('completeLogin 依次走 XboxLive → XSTS → Minecraft → 档案', async () => {
   const calls = [];
   const fetchImpl = async (url, init) => {

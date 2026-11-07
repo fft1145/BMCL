@@ -44,7 +44,7 @@ contextBridge.exposeInMainWorld('bmcl', {
   // 崩溃 / 网络 / 更新
   diagnoseCrash: () => ipcRenderer.invoke('crash:diagnose'),
   checkNetwork: () => ipcRenderer.invoke('net:check'),
-  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  checkUpdate: (opts) => ipcRenderer.invoke('update:check', opts),
   applyUpdate: (release) => ipcRenderer.invoke('update:apply', release),
 
   // Java / 修复

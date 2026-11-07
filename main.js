@@ -79,6 +79,16 @@ function dataDirs() {
   };
 }
 
+/**
+ * 当前实例真正存放游戏数据的目录。
+ * 开启「隔离所有实例」后是 <游戏目录>/versions/<版本>，
+ * 此时 mods / saves / resourcepacks / config / logs 都在版本文件夹里。
+ */
+function instanceDataDir(versionId) {
+  const s = getSettings();
+  return tools.instanceDir(s.gameDir, versionId || s.versionId, s.versionIsolation);
+}
+
 function send(channel, payload) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
 }
@@ -533,6 +543,8 @@ async function launchGame(versionId) {
   }
   const versionDir = path.join(dirs.versionsDir, id);
   versionId = id;
+  // 版本隔离：游戏数据目录改到 versions/<id>，mods/saves/config 等都跟着走
+  const instanceDir = tools.instanceDir(dirs.gameDir, id, s.versionIsolation);
   const chain = resolveVersionChain(dirs.versionsDir, id);
   const json = chain.json;
   if (!json.libraries || !json.libraries.length) throw new Error('版本 ' + id + ' 的 json 不完整，请重新安装');
@@ -573,7 +585,7 @@ async function launchGame(versionId) {
     uuid,
     accessToken,
     userType,
-    gameDir: dirs.gameDir,
+    gameDir: instanceDir,
     assetsDir: dirs.assetsDir,
     assetIndexId: json.assetIndex && json.assetIndex.id,
     classpath,
@@ -584,14 +596,14 @@ async function launchGame(versionId) {
     launcherVersion: APP_VERSION
   });
 
-  const logsDir = path.join(dirs.gameDir, 'logs');
+  const logsDir = path.join(instanceDir, 'logs');
   fs.mkdirSync(logsDir, { recursive: true });
   const logFile = path.join(logsDir, 'latest.log');
   fs.writeFileSync(logFile, '', 'utf8');
 
   log('启动命令：' + cmd.javaPath + ' ' + cmd.args.slice(0, 6).join(' ') + ' …');
   gameProcess = spawn(cmd.javaPath, cmd.args, {
-    cwd: dirs.gameDir,
+    cwd: instanceDir,
     windowsHide: true,
     env: Object.assign({}, process.env)
   });
@@ -618,7 +630,7 @@ async function launchGame(versionId) {
     gameProcess = null;
     send('game:state', { running: false, versionId, code });
     if (code !== 0 && code !== null) {
-      const report = crashGuard.diagnoseGameDir(dirs.gameDir, { exitCode: code });
+      const report = crashGuard.diagnoseGameDir(instanceDir, { exitCode: code });
       send('game:crash', report);
       log('游戏异常退出（代码 ' + code + '）：' + report.summary, 'error');
     } else {
@@ -679,7 +691,7 @@ async function preflight() {
   if (s.crashWatch) {
     const previous = crashGuard.detectPreviousCrash(sessionFile());
     if (previous && previous.crashed) {
-      out.crash = crashGuard.diagnoseGameDir(s.gameDir, {});
+      out.crash = crashGuard.diagnoseGameDir(instanceDataDir(), {});
       out.crash.launcherCrashed = true;
       out.crash.startedAt = previous.startedAt;
     }
@@ -824,7 +836,7 @@ function registerIpc() {
     return { ok: true, id: versionId };
   });
   ipcMain.handle('saves:list', () => {
-    const savesDir = path.join(dataDirs().gameDir, 'saves');
+    const savesDir = path.join(instanceDataDir(), 'saves');
     if (!fs.existsSync(savesDir)) return [];
     return fs.readdirSync(savesDir, { withFileTypes: true })
       .filter((d) => d.isDirectory())
@@ -895,12 +907,12 @@ function registerIpc() {
     shell.openPath(dataDirs().gameDir);
     return dataDirs().gameDir;
   });
-  ipcMain.handle('crash:diagnose', () => {
-    const s = getSettings();
-    return crashGuard.diagnoseGameDir(s.gameDir, {});
-  });
+  ipcMain.handle('crash:diagnose', () => crashGuard.diagnoseGameDir(instanceDataDir(), {}));
   ipcMain.handle('net:check', () => updater.checkDownloadAllowed({}));
-  ipcMain.handle('update:check', () => updater.checkForUpdate({ currentVersion: APP_VERSION }));
+  ipcMain.handle('update:check', (e, opts) => updater.checkForUpdate({
+    currentVersion: APP_VERSION,
+    preferMirror: Boolean(opts && opts.mirror)
+  }));
   ipcMain.handle('update:apply', (e, release) => applyUpdate(release));
   ipcMain.handle('java:probe', (e, javaPath) => javaCore.probeJava(javaPath || getSettings().javaPath || 'java'));
   ipcMain.handle('repair:scan', () => repairCore.scan(repairContext()));
@@ -1029,22 +1041,22 @@ function registerIpc() {
     });
   });
   ipcMain.handle('mods:install', (e, modVersion, projectType) =>
-    tools.installMod(modVersion, dataDirs().gameDir, {
+    tools.installMod(modVersion, instanceDataDir(), {
       projectType,
       onProgress: (p) => send('download:progress', p)
     })
   );
-  ipcMain.handle('mods:list', (e, type) => tools.listInstalledMods(dataDirs().gameDir, type));
+  ipcMain.handle('mods:list', (e, type) => tools.listInstalledMods(instanceDataDir(), type));
   ipcMain.handle('mods:openDir', (e, type) => {
     const dirName = { resourcepack: 'resourcepacks', shader: 'shaderpacks', datapack: 'datapacks', modpack: 'modpacks' }[type] || 'mods';
-    const dir = path.join(dataDirs().gameDir, dirName);
+    const dir = path.join(instanceDataDir(), dirName);
     fs.mkdirSync(dir, { recursive: true });
     shell.openPath(dir);
     return dir;
   });
 
   // ===== 工具 =====
-  ipcMain.handle('tools:cleanJunk', async () => tools.cleanJunk(dataDirs().gameDir));
+  ipcMain.handle('tools:cleanJunk', async () => tools.cleanJunk(instanceDataDir()));
   ipcMain.handle('tools:launchCount', () => tools.getLaunchCount(userData()));
   ipcMain.handle('tools:createShortcut', async () => {
     const exe = app.isPackaged ? process.execPath : null;
@@ -1073,7 +1085,7 @@ function registerIpc() {
   // ===== 通用下载（自定义文件 / 皮肤）=====
   ipcMain.handle('download:file', async (e, url, destDir, fileName) => {
     const name = fileName || path.basename(new URL(url).pathname) || 'download.bin';
-    const dest = path.join(destDir || dataDirs().gameDir, name);
+    const dest = path.join(destDir || instanceDataDir(), name);
     return tools.downloadFile(url, dest, { onProgress: (p) => send('download:progress', p) });
   });
   ipcMain.handle('download:skin', async (e, playerName) => {

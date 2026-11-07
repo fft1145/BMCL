@@ -88,6 +88,58 @@ test('checkForUpdate 发现更高版本', async () => {
   assert.strictEqual(same.hasUpdate, false);
 });
 
+test('parseManifest 解析备用线路清单', () => {
+  const release = updater.parseManifest({
+    version: '2.2.6',
+    notes: 'fix login',
+    pageUrl: 'https://bmcl26.netlify.app/#download',
+    assets: [{ name: 'fft1145-portable.exe', url: 'https://x/a.exe' }]
+  });
+  assert.strictEqual(release.version, '2.2.6');
+  assert.strictEqual(release.htmlUrl, 'https://bmcl26.netlify.app/#download');
+  assert.strictEqual(updater.findUpdateAsset(release.assets).url, 'https://x/a.exe');
+});
+
+test('GitHub 直连失败时自动切换备用线路', async () => {
+  const tried = [];
+  const fetchImpl = async (url) => {
+    tried.push(url);
+    if (String(url).includes('api.github.com')) {
+      throw new Error('HTTP 403');
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ version: '2.3.0', notes: 'mirror', assets: [] })
+    };
+  };
+  const result = await updater.checkForUpdate({ currentVersion: '2.2.6', fetchImpl });
+  assert.strictEqual(result.hasUpdate, true);
+  assert.strictEqual(result.sourceId, 'raw');
+  assert.ok(tried[0].includes('api.github.com'));
+  assert.ok(tried[1].includes('launcher-version.json'));
+});
+
+test('preferMirror 时跳过 GitHub 直连', async () => {
+  const tried = [];
+  const fetchImpl = async (url) => {
+    tried.push(url);
+    return { ok: true, status: 200, json: async () => ({ version: '2.2.6', assets: [] }) };
+  };
+  const result = await updater.checkForUpdate({ currentVersion: '2.2.6', fetchImpl, preferMirror: true });
+  assert.strictEqual(result.hasUpdate, false);
+  assert.strictEqual(result.sourceId, 'raw');
+  assert.ok(!tried.some((u) => u.includes('api.github.com')));
+});
+
+test('所有线路都失败时抛出汇总错误', async () => {
+  const fetchImpl = async () => ({ ok: false, status: 502, json: async () => ({}) });
+  await assert.rejects(
+    () => updater.checkForUpdate({ currentVersion: '1.0.0', fetchImpl }),
+    /所有更新线路都不可用/
+  );
+});
+
 test('validateUpdateTree 拒绝包含游戏文件的更新包', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bmcl-up-'));
   fs.mkdirSync(path.join(dir, 'renderer'), { recursive: true });

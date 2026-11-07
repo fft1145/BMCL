@@ -47,8 +47,12 @@
     el.classList.remove('hidden');
   }
 
-  function switchPage(name) {
-    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.page === name));
+  function switchPage(name, sub) {
+    document.querySelectorAll('.nav-btn').forEach((b) => {
+      const samePage = b.dataset.page === name;
+      const sameSub = sub ? b.dataset.sub === sub : !b.dataset.sub;
+      b.classList.toggle('active', samePage && sameSub);
+    });
     document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
     const target = $('#page-' + name);
     if (target) {
@@ -65,8 +69,9 @@
     }
     if (name === 'settings' || name === 'tools') {
       const page = $('#page-' + name);
-      if (page && page.querySelector('.set-cat:not(.active)')) {
-        // 保持当前子页；若没有激活项，激活第一个
+      if (sub) {
+        switchSub(name, sub);
+        return;
       }
       const active = page.querySelector('.set-cat.active');
       if (!active) switchSub(name, page.querySelector('.set-cat').dataset.sub);
@@ -188,6 +193,7 @@
     if ($('#setCurseKey')) $('#setCurseKey').value = s.curseForgeApiKey || '';
     if ($('#setMsClientId')) $('#setMsClientId').value = s.msClientId || '';
     $('#setAutoUpdate').checked = Boolean(s.autoUpdate);
+    if ($('#setVersionIsolation')) $('#setVersionIsolation').value = s.versionIsolation || 'all';
     $('#setCrashWatch').checked = Boolean(s.crashWatch);
     $('#setCheckDownloads').checked = Boolean(s.checkDownloads);
     applyTheme(s.uiTheme || 'pcl');
@@ -674,20 +680,21 @@
     return result;
   }
 
-  async function checkUpdate() {
-    $('#updateResult').innerHTML = '<span class="tip">检查中…</span>';
+  async function checkUpdate(preferMirror) {
+    $('#updateResult').innerHTML = '<span class="tip">检查中…' + (preferMirror ? '（备用线路）' : '') + '</span>';
     try {
-      const result = await bmcl.checkUpdate();
+      const result = await bmcl.checkUpdate({ mirror: Boolean(preferMirror) });
       state.pendingUpdate = result;
+      const via = result.source ? '，线路：' + esc(result.source) : '';
       if (result.hasUpdate) {
         $('#btnApplyUpdate').classList.remove('hidden');
         $('#updateResult').innerHTML =
-          '<div><b>发现新版本 ' + esc(result.release.version) + '</b>（当前 ' + esc(result.currentVersion) + '）</div>' +
+          '<div><b>发现新版本 ' + esc(result.release.version) + '</b>（当前 ' + esc(result.currentVersion) + via + '）</div>' +
           (result.release.notes ? '<div class="diag-sub">' + esc(result.release.notes).slice(0, 1000) + '</div>' : '');
         toast('发现新版本 ' + result.release.version, 'ok');
       } else {
         $('#btnApplyUpdate').classList.add('hidden');
-        $('#updateResult').innerHTML = '<span class="tip">已是最新版本</span>';
+        $('#updateResult').innerHTML = '<span class="tip">已是最新版本' + (via ? '（' + esc(result.source) + '）' : '') + '</span>';
       }
     } catch (err) {
       $('#updateResult').innerHTML = '<span class="cause">更新检查失败：' + esc(err.message) + '</span>';
@@ -724,6 +731,7 @@
       curseForgeApiKey: $('#setCurseKey') ? $('#setCurseKey').value.trim() : '',
       msClientId: $('#setMsClientId') ? $('#setMsClientId').value.trim() : '',
       autoUpdate: $('#setAutoUpdate').checked,
+      versionIsolation: $('#setVersionIsolation') ? $('#setVersionIsolation').value : 'all',
       crashWatch: $('#setCrashWatch').checked,
       checkDownloads: $('#setCheckDownloads').checked,
       uiTheme: (document.querySelector('input[name="uiTheme"]:checked') || {}).value || 'pcl',
@@ -1336,7 +1344,7 @@
   // ===== 事件绑定 =====
   function bindEvents() {
     document.querySelectorAll('.nav-btn').forEach((btn) => {
-      btn.addEventListener('click', () => switchPage(btn.dataset.page));
+      btn.addEventListener('click', () => switchPage(btn.dataset.page, btn.dataset.sub));
     });
     document.querySelectorAll('[data-goto]').forEach((btn) => {
       btn.addEventListener('click', () => switchPage(btn.dataset.goto));
@@ -1512,7 +1520,8 @@
     $('#btnSaveSettings').addEventListener('click', saveSettings);
     $('#btnProbeJava').addEventListener('click', probeJava);
     $('#btnCheckNet').addEventListener('click', checkNet);
-    $('#btnCheckUpdate').addEventListener('click', checkUpdate);
+    $('#btnCheckUpdate').addEventListener('click', () => checkUpdate(false));
+    $('#btnCheckUpdateMirror').addEventListener('click', () => checkUpdate(true));
     $('#btnApplyUpdate').addEventListener('click', applyUpdate);
     $('#btnDiagnose').addEventListener('click', diagnoseNow);
     $('#btnRepairScan').addEventListener('click', scanRepair);

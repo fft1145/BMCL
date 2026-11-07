@@ -63,6 +63,17 @@ function normalizeGameDir(dir) {
 }
 
 /**
+ * 版本隔离后的实际游戏数据目录。
+ *  «隔离所有实例» 时返回 <gameDir>/versions/<versionId>，
+ *  其余模式（不隔离 / 仅隔离版本文件）返回游戏根目录。
+ */
+function instanceDir(gameDir, versionId, isolation) {
+  if (!gameDir) return gameDir;
+  if (isolation === 'all' && versionId) return path.join(gameDir, 'versions', versionId);
+  return gameDir;
+}
+
+/**
  * 判断一个目录是不是合法的 Minecraft 游戏目录。
  * 支持传入游戏根目录、versions 目录或单个版本目录。
  * 判据：存在 <版本>/<版本>.json（或 <版本>.jar）。
@@ -542,6 +553,7 @@ function listInstalledMods(gameDir, type) {
 module.exports = {
   isDirectory,
   normalizeGameDir,
+  instanceDir,
   isValidGameDir,
   listVersionsIn,
   candidateDirs,

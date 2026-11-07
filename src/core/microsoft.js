@@ -47,7 +47,7 @@ async function postJson(url, body, options, headers) {
   });
   const data = await readJson(res);
   if (!res.ok) {
-    const err = new Error(data.error_description || data.error || data.Message || ('HTTP ' + res.status));
+    const err = new Error(data.error_description || data.error || data.Message || ('HTTP ' + res.status + ' @ ' + url));
     err.status = res.status;
     err.data = data;
     throw err;
@@ -70,7 +70,7 @@ async function getJson(url, token, options) {
   });
   const data = await readJson(res);
   if (!res.ok) {
-    const err = new Error(data.error_description || data.error || data.errorMessage || ('HTTP ' + res.status));
+    const err = new Error(data.error_description || data.error || data.errorMessage || ('HTTP ' + res.status + ' @ ' + url));
     err.status = res.status;
     err.data = data;
     throw err;
@@ -150,6 +150,7 @@ async function authenticateXboxLive(msAccessToken, options = {}) {
       SiteName: 'user.auth.xboxlive.com',
       RpsTicket: 'd=' + msAccessToken
     },
+    RelyingParty: 'http://auth.xboxlive.com',
     TokenType: 'JWT'
   }, options);
   const xui = (data.DisplayClaims && data.DisplayClaims.xui) || [];

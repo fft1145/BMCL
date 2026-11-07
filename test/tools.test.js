@@ -24,6 +24,13 @@ function makeGameDir(root, versions) {
   return root;
 }
 
+test('instanceDir：隔离所有实例时返回 versions/<版本>', () => {
+  assert.strictEqual(tools.instanceDir('/g', '1.21.3', 'all'), path.join('/g', 'versions', '1.21.3'));
+  assert.strictEqual(tools.instanceDir('/g', '1.21.3', 'off'), '/g');
+  assert.strictEqual(tools.instanceDir('/g', '1.21.3', 'version'), '/g');
+  assert.strictEqual(tools.instanceDir('/g', '', 'all'), '/g');
+});
+
 test('isValidGameDir 要求目录内至少有一个可识别版本', () => {
   const root = tmpDir('valid');
   assert.strictEqual(tools.isValidGameDir(root), false);

@@ -49,6 +49,10 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.6-4 3.7-6.2 7.5-6.2s6.9 2.2 7.5 6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         <span>账号</span>
       </button>
+      <button class="nav-btn" data-page="tools" data-sub="lobby">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span class="pcl-label">联机</span><span class="bmcl-label">联机</span>
+      </button>
       <button class="nav-btn" data-page="settings">
         <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
         <span class="pcl-label">设置</span><span class="bmcl-label">设置</span>
@@ -542,8 +546,12 @@
           <div class="card">
             <div class="card-head"><h2><span class="pcl-label">启动选项</span><span class="bmcl-label">启动参数</span></h2></div>
             <div class="option-list">
-              <label class="option-row"><span>默认实例隔离</span>
-                <select><option>隔离所有实例</option><option>不隔离</option><option>仅隔离版本文件</option></select>
+              <label class="option-row"><span>版本隔离</span>
+                <select id="setVersionIsolation">
+                  <option value="all" selected>隔离所有实例</option>
+                  <option value="off">不隔离</option>
+                  <option value="version">仅隔离版本文件</option>
+                </select>
               </label>
               <label class="option-row"><span>游戏窗口标题</span>
                 <select><option>默认</option><option>Minecraft</option><option>自定义</option></select>
@@ -747,10 +755,11 @@
             <div class="card-head"><h2>软件更新</h2><span class="tag" id="updVersion2">v2.2.1</span></div>
             <div class="row wrap">
               <button class="btn btn-sm" id="btnCheckUpdate">检查更新</button>
+              <button class="btn btn-sm" id="btnCheckUpdateMirror">备用线路</button>
               <button class="btn btn-sm btn-primary hidden" id="btnApplyUpdate">立即更新</button>
             </div>
             <div class="diag small" id="updateResult"></div>
-            <p class="hint">更新只会覆盖启动器自身的程序文件，<b>不会覆盖任何游戏文件</b>。</p>
+            <p class="hint">更新只会覆盖启动器自身的程序文件，<b>不会覆盖任何游戏文件</b>。GitHub 直连失败时会自动切换到备用线路。</p>
           </div>
         </div>
 

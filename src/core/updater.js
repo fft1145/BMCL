@@ -86,6 +86,42 @@ function parseRelease(json) {
 /** 固定产物名：配合 releases/latest 直链，网站与启动器都无需随版本改链接 */
 const UPDATE_ASSET_NAME = 'fft1145-portable.exe';
 
+/** 备用线路：仓库里的版本清单，走 Raw / 国内加速镜像，绕开 api.github.com */
+const MANIFEST_PATH = 'launcher-version.json';
+const MANIFEST_MIRRORS = [
+  { id: 'raw', label: '备用线路 1（GitHub Raw）', prefix: '' },
+  { id: 'gh-proxy', label: '备用线路 2（gh-proxy）', prefix: 'https://gh-proxy.com/' },
+  { id: 'ghproxy-net', label: '备用线路 3（ghproxy.net）', prefix: 'https://ghproxy.net/' }
+];
+
+const GITHUB_SOURCE = { id: 'github', label: 'GitHub 直连', kind: 'github' };
+
+function manifestUrl(prefix, repo) {
+  return prefix + 'https://raw.githubusercontent.com/' + repo + '/main/' + MANIFEST_PATH;
+}
+
+function parseManifest(json, repo) {
+  if (!json || !json.version) return null;
+  const version = String(json.version).replace(/^v/i, '');
+  return {
+    tag: json.tag || ('v' + version),
+    version,
+    name: json.name || ('BMCL ' + version),
+    notes: json.notes || '',
+    htmlUrl: json.pageUrl || `https://github.com/${repo || REPO}/releases`,
+    publishedAt: json.publishedAt || '',
+    assets: Array.isArray(json.assets)
+      ? json.assets.map((a) => ({
+          name: a.name,
+          size: a.size || 0,
+          url: a.url,
+          mirrors: Array.isArray(a.mirrors) ? a.mirrors : [],
+          contentType: a.contentType || ''
+        }))
+      : []
+  };
+}
+
 function findUpdateAsset(assets) {
   if (!Array.isArray(assets)) return null;
   // 优先固定名的便携版 exe
@@ -102,27 +138,63 @@ function findUpdateAsset(assets) {
   return win || zips[0];
 }
 
+async function fetchJson(url, fetchImpl, headers, timeoutMs) {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    const res = await fetchImpl(url, Object.assign(
+      { headers },
+      controller ? { signal: controller.signal } : {}
+    ));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function checkForUpdate(options = {}) {
   const repo = options.repo || REPO;
   const currentVersion = options.currentVersion || '0.0.0';
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   if (typeof fetchImpl !== 'function') throw new Error('当前环境不支持 fetch');
-  const url = `https://api.github.com/repos/${repo}/releases/latest`;
-  const res = await fetchImpl(url, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'User-Agent': 'fft1145-bmcl-updater'
-    }
-  });
-  if (!res.ok) throw new Error('GitHub 更新检查失败：HTTP ' + res.status);
-  const release = parseRelease(await res.json());
-  const hasUpdate = release && compareVersions(release.version, currentVersion) > 0;
-  return {
-    hasUpdate: Boolean(hasUpdate),
-    currentVersion,
-    release,
-    asset: release ? findUpdateAsset(release.assets) : null
+  const timeoutMs = options.timeoutMs || 8000;
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'fft1145-bmcl-updater'
   };
+  // 默认先走 GitHub 直连，失败后自动切备用线路；preferMirror 时直接走备用线路
+  const sources = options.preferMirror
+    ? MANIFEST_MIRRORS.map((m) => ({ id: m.id, label: m.label, kind: 'manifest', prefix: m.prefix }))
+    : [GITHUB_SOURCE].concat(
+        MANIFEST_MIRRORS.map((m) => ({ id: m.id, label: m.label, kind: 'manifest', prefix: m.prefix }))
+      );
+
+  const errors = [];
+  for (const source of sources) {
+    const url = source.kind === 'github'
+      ? `https://api.github.com/repos/${repo}/releases/latest`
+      : manifestUrl(source.prefix, repo);
+    try {
+      const json = await fetchJson(url, fetchImpl, headers, timeoutMs);
+      const release = source.kind === 'github' ? parseRelease(json) : parseManifest(json, repo);
+      if (!release || !release.version) throw new Error('返回内容不是有效的版本信息');
+      const hasUpdate = compareVersions(release.version, currentVersion) > 0;
+      return {
+        hasUpdate: Boolean(hasUpdate),
+        currentVersion,
+        release,
+        asset: findUpdateAsset(release.assets),
+        source: source.label,
+        sourceId: source.id
+      };
+    } catch (err) {
+      errors.push(source.label + '：' + (err && err.message ? err.message : '未知错误'));
+    }
+  }
+  const error = new Error('所有更新线路都不可用（' + errors.join('；') + '）');
+  error.errors = errors;
+  throw error;
 }
 
 /**
@@ -204,10 +276,13 @@ async function applyUpdateTree(sourceDir, appDir, options = {}) {
 module.exports = {
   REPO,
   UPDATE_ASSET_NAME,
+  MANIFEST_PATH,
+  MANIFEST_MIRRORS,
   LAUNCHER_UPDATE_WHITELIST,
   isPathAllowedForUpdate,
   compareVersions,
   parseRelease,
+  parseManifest,
   findUpdateAsset,
   checkForUpdate,
   checkDownloadAllowed,
