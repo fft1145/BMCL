@@ -19,7 +19,7 @@
 
 [立即下载](https://github.com/fft1145/BMCL/releases/latest) |
 [官方网站](https://bmcl26.netlify.app) |
-[源码包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.2.4.zip)
+[源码包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.2.5.zip)
 
 [提交问题](https://github.com/fft1145/BMCL/issues/new/choose) |
 [更新日志](https://github.com/fft1145/BMCL/releases) |
@@ -53,6 +53,7 @@ BMCL（Better Minecraft Launcher）是一个完全本地运行的 Minecraft 启�
 - **账户系统**：微软正版登录与离线账户，皮肤管理与 4D 实时渲染预览。
 - **Java 与内存**：自动扫描本机 Java，也可手动指定路径与启动参数。
 - **镜像加速**：下载源可在官方与 BMCLAPI 镜像之间切换。
+- **陶瓦联机**：内置 Terracotta / EasyTier，输入大厅编号即可与好友联机，无需端口映射。
 - **自动更新**：从 GitHub Releases 检查更新，只覆盖启动器自身文件。
 - **崩溃自检**：启动器异常退出或游戏崩溃时自动读取日志并给出诊断建议。
 - **公告下发**：官网后台发布的公告会在启动器内同步展示。
@@ -63,7 +64,7 @@ BMCL（Better Minecraft Launcher）是一个完全本地运行的 Minecraft 启�
 |---|---|
 | [GitHub Releases](https://github.com/fft1145/BMCL/releases/latest) | 最新便携版 `Better-MC-Launcher.exe`，解压即用 |
 | [官方网站](https://bmcl26.netlify.app/#download) | 国内访问更稳定的下载页，附校验信息 |
-| [源码包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.2.4.zip) | 当前版本完整源码，供自行构建 |
+| [源码包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.2.5.zip) | 当前版本完整源码，供自行构建 |
 
 启动器为免安装的便携版，首次运行会在自己的数据目录中初始化，不会改动你已有的 `.minecraft`。
 
