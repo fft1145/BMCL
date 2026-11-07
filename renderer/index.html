@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>fft1145</title>
+  <title>BMCL</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="style-bmcl.css">
   <link rel="stylesheet" href="pcl-skin.css">
@@ -642,7 +642,7 @@
             <div class="card-head"><h2>联机</h2><span class="hint">启动器负责端口与玩家上限的默认值</span></div>
             <div class="option-list">
               <label class="option-row"><span>联机方式</span>
-                <select><option>局域网联机</option><option>第三方认证服务器</option></select>
+                <select><option selected>陶瓦联机（Terracotta）</option><option>局域网联机</option></select>
               </label>
               <label class="option-row"><span>监听端口</span><input value="25565"></label>
               <label class="option-row"><span>最大玩家数</span><input value="8"></label>
@@ -650,7 +650,7 @@
           </div>
           <div class="card">
             <div class="card-head"><h2>说明</h2></div>
-            <p class="hint">进入游戏后按 Esc 选择「对局域网开放」，端口与人数会沿用这里的设置。</p>
+            <p class="hint">联机请到「工具 → 大厅」使用陶瓦联机；创建大厅前需在游戏内按 Esc 选择「对局域网开放」并记下端口。</p>
           </div>
         </div>
 
@@ -799,14 +799,14 @@
         <div class="set-sub active" data-subbody="lobby">
           <div class="lobby-tip">
             <span class="lt-ico">ⓘ</span>
-            <span>联机服务对您的网络质量要求较高，如遇连接不上可尝试更换房主</span>
+            <span>陶瓦联机由 Terracotta + EasyTier 提供，首次使用会自动下载联机组件</span>
           </div>
 
           <div class="card">
             <div class="card-head"><h2>加入大厅</h2></div>
-            <p class="about">1、在下方输入朋友发送给你的大厅编号，单击【加入】<br>2、启动游戏，选择【多人游戏】，在局域网游戏中加入大厅</p>
+            <p class="about">1、在下方输入朋友发送给你的陶瓦大厅编号，单击【加入】<br>2、加入成功后，在游戏的【多人游戏 → 直接连接】中输入下方给出的连接地址</p>
             <div class="row">
-              <input class="input" id="lobbyCode" placeholder="编号应该长得像这样：U/NNNN-AAAA-SSSS-EEEE">
+              <input class="input" id="lobbyCode" placeholder="编号应该长得像这样：XXXXX-XXXXX-XXXXX-XXXXX-XXXXX">
               <button class="btn btn-sm" id="btnLobbyClear">清除</button>
               <button class="btn btn-sm" id="btnLobbyPaste">粘贴</button>
               <button class="btn btn-sm btn-primary" id="btnLobbyJoin">加入</button>
@@ -815,12 +815,24 @@
 
           <div class="card">
             <div class="card-head"><h2>创建大厅</h2></div>
-            <p class="about">1、进入世界后，在游戏菜单中选择【对局域网开放】<br>2、在下方选择此游戏实例，单击【创建】<br>3、成功创建大厅后，复制大厅编号并发送给你的朋友</p>
+            <p class="about">1、进入世界后，在游戏菜单中选择【对局域网开放】，记下聊天栏提示的端口<br>2、选择实例并填写该端口，单击【创建】<br>3、把生成的大厅编号发给朋友，朋友加入后即可在多人游戏里直连</p>
             <div class="row">
               <select class="input" id="lobbyInstance" style="flex:1"><option value="">（请选择实例）</option></select>
-              <button class="btn btn-sm" id="btnLobbyManual">手动输入</button>
+              <input class="input" id="lobbyPort" style="width:120px" placeholder="局域网端口" inputmode="numeric">
               <button class="btn btn-sm" id="btnLobbyRefresh">刷新</button>
               <button class="btn btn-sm btn-primary" id="btnLobbyCreate">创建</button>
+            </div>
+          </div>
+
+          <div class="card hidden" id="onlineStatusCard">
+            <div class="card-head"><h2>联机状态</h2><span class="hint" id="onlineStatusText"></span></div>
+            <div class="option-list">
+              <label class="option-row"><span>大厅编号</span><input id="onlineCode" readonly></label>
+              <label class="option-row"><span>连接地址</span><input id="onlineAddress" readonly></label>
+            </div>
+            <div class="row">
+              <button class="btn btn-sm btn-primary" id="btnOnlineCopy">复制编号</button>
+              <button class="btn btn-sm" id="btnOnlineStop">断开联机</button>
             </div>
           </div>
         </div>

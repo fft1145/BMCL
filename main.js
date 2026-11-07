@@ -24,8 +24,10 @@ const repairCore = require('./src/core/repair');
 const tools = require('./src/core/tools');
 const accounts = require('./src/core/accounts');
 const microsoft = require('./src/core/microsoft');
+const terracotta = require('./src/core/terracotta');
+const easytier = require('./src/core/easytier');
 
-const APP_NAME = 'fft1145';
+const APP_NAME = 'BMCL';
 const APP_VERSION = require('./package.json').version;
 const WEBSITE = 'https://bmcl26.netlify.app';
 // 管理员下发公告：优先读 GitHub 原始文件，官网部署后同样可用
@@ -79,6 +81,22 @@ function dataDirs() {
 
 function send(channel, payload) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
+}
+
+function onlineUsername() {
+  const account = accounts.getActiveAccount(userData());
+  return (account && account.name) || getSettings().playerName || 'BMCL';
+}
+
+function machineId() {
+  const file = path.join(userData(), 'easytier-id');
+  try {
+    const saved = fs.readFileSync(file, 'utf8').trim();
+    if (saved) return saved;
+  } catch (err) { /* 首次运行时还没有文件 */ }
+  const id = crypto.randomUUID();
+  try { fs.writeFileSync(file, id, 'utf8'); } catch (err) { /* 忽略写入失败 */ }
+  return id;
 }
 
 function log(message, level) {
@@ -1033,6 +1051,25 @@ function registerIpc() {
     return tools.createShortcut(app.getAppPath(), exe);
   });
 
+  // ===== 陶瓦联机 =====
+  ipcMain.handle('online:join', async (e, code) => {
+    const room = terracotta.parseRoomCode(code);
+    if (!room.ok) throw new Error(room.message);
+    return easytier.join(room, onlineUsername());
+  });
+  ipcMain.handle('online:host', async (e, port) => {
+    const value = Number(port);
+    if (!Number.isInteger(value) || value < 100 || value > 65535) {
+      throw new Error('端口必须是 100-65535 之间的整数');
+    }
+    return easytier.host(value, onlineUsername());
+  });
+  ipcMain.handle('online:stop', () => {
+    easytier.stop();
+    return { ok: true };
+  });
+  ipcMain.handle('online:status', () => easytier.getState());
+
   // ===== 通用下载（自定义文件 / 皮肤）=====
   ipcMain.handle('download:file', async (e, url, destDir, fileName) => {
     const name = fileName || path.basename(new URL(url).pathname) || 'download.bin';
@@ -1047,6 +1084,8 @@ function registerIpc() {
 
 app.whenReady().then(() => {
   crashGuard.markSessionStart(sessionFile(), { version: APP_VERSION });
+  easytier.configure({ dir: path.join(userData(), 'EasyTier'), machineId: machineId() });
+  easytier.onStatus((value) => send('online:status', value));
   registerIpc();
   createWindow();
   app.on('activate', () => {
@@ -1056,10 +1095,12 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (gameProcess) stopGame();
+  easytier.stop();
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('before-quit', () => {
   if (gameProcess) stopGame();
+  easytier.stop();
   crashGuard.markSessionEnd(sessionFile());
 });

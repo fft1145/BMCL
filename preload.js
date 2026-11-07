@@ -72,6 +72,12 @@ contextBridge.exposeInMainWorld('bmcl', {
   listInstalledMods: (type) => ipcRenderer.invoke('mods:list', type),
   openModsDir: (type) => ipcRenderer.invoke('mods:openDir', type),
 
+  // 陶瓦联机
+  onlineJoin: (code) => ipcRenderer.invoke('online:join', code),
+  onlineHost: (port) => ipcRenderer.invoke('online:host', port),
+  onlineStop: () => ipcRenderer.invoke('online:stop'),
+  onlineStatus: () => ipcRenderer.invoke('online:status'),
+
   // 工具
   cleanJunk: () => ipcRenderer.invoke('tools:cleanJunk'),
   getLaunchCount: () => ipcRenderer.invoke('tools:launchCount'),
@@ -95,5 +101,6 @@ contextBridge.exposeInMainWorld('bmcl', {
   onGameCrash: (handler) => on('game:crash', handler),
   onInstallProgress: (handler) => on('install:progress', handler),
   onUpdateProgress: (handler) => on('update:progress', handler),
-  onDownloadProgress: (handler) => on('download:progress', handler)
+  onDownloadProgress: (handler) => on('download:progress', handler),
+  onOnlineStatus: (handler) => on('online:status', handler)
 });

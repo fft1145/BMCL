@@ -1285,6 +1285,54 @@
     toast('已刷新实例列表（' + state.gameState.versions.length + ' 个）', 'ok');
   }
 
+  // ===== 陶瓦联机 =====
+  function renderOnlineStatus(s) {
+    const card = $('#onlineStatusCard');
+    if (!card) return;
+    const status = (s && s.status) || 'idle';
+    const text = $('#onlineStatusText');
+    const preparing = status === 'preparing';
+    if (status === 'idle') {
+      card.classList.add('hidden');
+      text.textContent = '';
+      return;
+    }
+    card.classList.remove('hidden');
+    text.textContent = preparing
+      ? (s.message || '正在准备陶瓦联机…') + (s.progress ? ' ' + s.progress + '%' : '')
+      : (s.message || (status === 'running' ? '联机运行中' : '联机异常'));
+    $('#onlineCode').value = s.code || '';
+    $('#onlineAddress').value = s.address || '';
+    $('#btnLobbyJoin').disabled = preparing;
+    $('#btnLobbyCreate').disabled = preparing;
+    $('#btnOnlineCopy').disabled = !s.code;
+  }
+
+  async function joinLobby() {
+    const code = $('#lobbyCode').value.trim();
+    if (!code) { toast('请输入大厅编号', 'error'); return; }
+    try {
+      const result = await bmcl.onlineJoin(code);
+      toast('已加入大厅，连接地址：' + result.address, 'ok');
+    } catch (err) {
+      toast(err.message || '加入大厅失败', 'error');
+    }
+  }
+
+  async function createLobby() {
+    const port = Number($('#lobbyPort').value.trim());
+    if (!Number.isInteger(port) || port < 100 || port > 65535) {
+      toast('请填写游戏内「对局域网开放」给出的端口', 'error');
+      return;
+    }
+    try {
+      const result = await bmcl.onlineHost(port);
+      toast('大厅已创建：' + result.code, 'ok');
+    } catch (err) {
+      toast(err.message || '创建大厅失败', 'error');
+    }
+  }
+
   // ===== 事件绑定 =====
   function bindEvents() {
     document.querySelectorAll('.nav-btn').forEach((btn) => {
@@ -1520,7 +1568,7 @@
     $('#btnRefreshMods').addEventListener('click', refreshModsList);
     $('#btnOpenModsDir').addEventListener('click', () => bmcl.openModsDir(modType()));
 
-    // 联机
+    // 联机（陶瓦联机）
     $('#btnLobbyClear').addEventListener('click', () => { $('#lobbyCode').value = ''; });
     $('#btnLobbyPaste').addEventListener('click', async () => {
       try {
@@ -1528,13 +1576,20 @@
         else toast('无法读取剪贴板，请手动粘贴', 'error');
       } catch { toast('无法读取剪贴板，请手动粘贴', 'error'); }
     });
-    $('#btnLobbyJoin').addEventListener('click', () => {
-      const code = $('#lobbyCode').value.trim();
-      toast(code ? '联机大厅需要 PCL CE 的联机服务，当前版本暂未接入（编号：' + code + '）' : '请输入大厅编号', code ? 'error' : 'error');
-    });
+    $('#btnLobbyJoin').addEventListener('click', joinLobby);
     $('#btnLobbyRefresh').addEventListener('click', refreshLobbyInstances);
-    $('#btnLobbyManual').addEventListener('click', () => toast('手动输入端口功能暂未接入', 'error'));
-    $('#btnLobbyCreate').addEventListener('click', () => toast('创建大厅需要联机服务，当前版本暂未接入', 'error'));
+    $('#btnLobbyCreate').addEventListener('click', createLobby);
+    $('#btnOnlineCopy').addEventListener('click', async () => {
+      const code = $('#onlineCode').value.trim();
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code);
+        toast('大厅编号已复制', 'ok');
+      } catch { toast('复制失败，请手动选择复制', 'error'); }
+    });
+    $('#btnOnlineStop').addEventListener('click', async () => {
+      try { await bmcl.onlineStop(); toast('已断开联机', 'ok'); } catch (err) { toast(err.message, 'error'); }
+    });
 
     // 百宝箱
     $('#btnCleanJunk').addEventListener('click', cleanJunk);
@@ -1589,6 +1644,8 @@
     bmcl.onInstallProgress((p) => showInstallProgress(p.stage, p.done, p.total));
     bmcl.onUpdateProgress((p) => { $('#updateResult').textContent = '正在应用更新 ' + p.done + ' / ' + p.total; });
     bmcl.onDownloadProgress(() => {});
+    bmcl.onOnlineStatus((s) => renderOnlineStatus(s));
+    bmcl.onlineStatus().then(renderOnlineStatus).catch(() => {});
   }
 
   /** 管理员下发公告：读取 notices.json，展示最新一条未被关闭的公告。 */
