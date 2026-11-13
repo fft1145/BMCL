@@ -791,6 +791,11 @@
     }
     setTimeout(refreshAvatar, 800);
     setTimeout(refreshAvatar, 4000);
+    // 切换页面或登录状态变化后，重新用本地皮肤裁头像，覆盖默认网络头像
+    setInterval(refreshAvatar, 15000);
+    document.querySelectorAll('.nav-btn').forEach((btn) => {
+      btn.addEventListener('click', () => setTimeout(refreshAvatar, 400));
+    });
   }
 
   if (document.readyState === 'loading') {

@@ -9,7 +9,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { NtExecutable, NtExecutableResource, Resource } = require('resedit');
 
-const APP_VERSION = require('./package.json').version;
+const APP_VERSION = require('../package.json').version;
 
 exports.default = async function afterPack(context) {
   const appOutDir = context.appOutDir;
@@ -44,13 +44,13 @@ exports.default = async function afterPack(context) {
   }
 
   // 图标
-  const icoPath = path.join(__dirname, 'build', 'icon.ico');
+  const icoPath = path.join(__dirname, '..', 'build', 'icon.ico');
   if (fs.existsSync(icoPath)) {
     try {
       // resedit 的 IconFile 只在 ESM 入口导出，这里动态加载
       const { pathToFileURL } = require('node:url');
       const mod = await import(pathToFileURL(
-        path.join(__dirname, 'node_modules', 'resedit', 'dist', 'data', 'IconFile.js')
+        path.join(__dirname, '..', 'node_modules', 'resedit', 'dist', 'data', 'IconFile.js')
       ).href);
       const ico = mod.default.from(fs.readFileSync(icoPath));
       const icons = ico.icons.map((item) => item.data).filter(Boolean);

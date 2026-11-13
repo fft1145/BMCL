@@ -104,7 +104,12 @@ const PRESETS = {
 };
 
 function list() {
-  return Object.keys(PRESETS).map((key) => ({ key, label: PRESETS[key].label, dark: PRESETS[key].dark }));
+  return Object.keys(PRESETS).map((key) => ({
+    key,
+    label: PRESETS[key].label,
+    dark: PRESETS[key].dark,
+    vars: PRESETS[key].vars
+  }));
 }
 
 function resolve(preset, customTheme) {
