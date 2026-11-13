@@ -5,7 +5,7 @@
  * 所有业务逻辑放在 src/core 下的纯模块，这里只负责窗口、IPC 与进程管理。
  */
 
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, session } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const fsp = fs.promises;
@@ -26,6 +26,11 @@ const accounts = require('./src/core/accounts');
 const microsoft = require('./src/core/microsoft');
 const terracotta = require('./src/core/terracotta');
 const easytier = require('./src/core/easytier');
+const javaScan = require('./src/core/java-scan');
+const aiCore = require('./src/core/ai');
+const musicCore = require('./src/core/music');
+const themesCore = require('./src/core/themes');
+const skinStore = require('./src/core/skin-store');
 
 const APP_NAME = 'BMCL';
 const APP_VERSION = require('./package.json').version;
@@ -49,6 +54,33 @@ function settingsFile() {
 }
 function sessionFile() {
   return path.join(userData(), 'session.json');
+}
+function wallpaperDir() {
+  return path.join(userData(), 'wallpapers');
+}
+function skinCacheDir() {
+  return path.join(userData(), 'skins', 'cache');
+}
+
+/** 把玩家选择的背景复制进数据目录，避免原文件被移动后失效 */
+function importWallpaper(source) {
+  const stat = fs.statSync(source);
+  const ext = path.extname(source).toLowerCase();
+  const isVideo = ['.mp4', '.webm', '.ogv', '.mkv', '.mov'].includes(ext);
+  const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif'].includes(ext);
+  if (!isVideo && !isImage) throw new Error('只支持常见图片或视频格式');
+  if (stat.size > 300 * 1024 * 1024) throw new Error('背景文件不能超过 300 MB');
+  const dir = wallpaperDir();
+  fs.mkdirSync(dir, { recursive: true });
+  const target = path.join(dir, 'wallpaper' + ext);
+  // 清掉旧背景，避免堆积
+  for (const file of fs.readdirSync(dir)) {
+    if (file.startsWith('wallpaper')) {
+      try { fs.unlinkSync(path.join(dir, file)); } catch (e) { /* 忽略 */ }
+    }
+  }
+  fs.copyFileSync(source, target);
+  return { path: target, type: isVideo ? 'video' : 'image' };
 }
 
 function getSettings() {
@@ -549,9 +581,20 @@ async function launchGame(versionId) {
   const json = chain.json;
   if (!json.libraries || !json.libraries.length) throw new Error('版本 ' + id + ' 的 json 不完整，请重新安装');
 
-  const javaProbe = await javaCore.probeJava(s.javaPath || 'java');
+  // 优先用玩家指定的 Java；没指定时，按版本需要的 Java 主版本从扫描结果里自动挑
+  const wantedMajor = (json.javaVersion && json.javaVersion.majorVersion) || 8;
+  let javaPath = s.javaPath || '';
+  const usable = (s.javaList || []).filter((j) => j && j.ok);
+  if (usable.length) {
+    const matched = javaPath && usable.find((j) => path.normalize(j.path).toLowerCase() === path.normalize(javaPath).toLowerCase());
+    if (!matched) {
+      const best = javaScan.pickForMajor(usable, wantedMajor);
+      if (best) javaPath = best.path;
+    }
+  }
+  const javaProbe = await javaCore.probeJava(javaPath || 'java');
   if (!javaProbe.ok) {
-    throw new Error('没有找到可用的 Java。请在「设置」里填写 java.exe 的路径（' + javaProbe.message + '）');
+    throw new Error('没有找到可用的 Java。请到「增强 → Java」添加存放 Java 的目录（' + javaProbe.message + '）');
   }
   let activeAccount = accounts.getActiveAccount(userData());
   if (activeAccount && activeAccount.type === 'microsoft') {
@@ -1011,9 +1054,16 @@ function registerIpc() {
       properties: ['openFile']
     });
     if (picked.canceled || !picked.filePaths.length) return null;
-    await microsoft.uploadSkin(account.accessToken, account.uuid, picked.filePaths[0], variant);
+    const file = picked.filePaths[0];
+    await microsoft.uploadSkin(account.accessToken, account.uuid, file, variant);
+    const record = skinStore.add(userData(), file, {
+      name: path.basename(file),
+      variant,
+      source: 'upload',
+      account: account.name
+    });
     log('皮肤已上传：' + account.name, 'ok');
-    return { ok: true, name: account.name };
+    return { ok: true, name: account.name, record };
   });
   ipcMain.handle('account:skinReset', async () => {
     const account = accounts.getActiveAccount(userData());
@@ -1092,12 +1142,202 @@ function registerIpc() {
     const dest = path.join(dataDirs().gameDir, 'skins', playerName + '.png');
     return tools.downloadSkin(playerName, dest);
   });
+
+  // ===== 2.3.0 Java 环境目录 =====
+  ipcMain.handle('java:list', () => getSettings().javaList || []);
+  ipcMain.handle('java:pickDirs', async () => {
+    const picked = await dialog.showOpenDialog(win, {
+      title: '选择存放 Java 的目录（会自动找出目录下所有 Java）',
+      properties: ['openDirectory', 'multiSelections']
+    });
+    if (picked.canceled || !picked.filePaths.length) return { canceled: true, added: [] };
+    return { canceled: false, added: picked.filePaths };
+  });
+  ipcMain.handle('java:scanDir', async (e, dir) => {
+    const target = String(dir || '').trim();
+    if (!target) throw new Error('目录不能为空');
+    const s = getSettings();
+    const found = await javaScan.scanJavaDir(target);
+    const merged = javaScan.mergeScans(s.javaList, found);
+    const dirs = Array.from(new Set([].concat(s.javaDirs || [], [target])));
+    settingsCore.save(settingsFile(), Object.assign(s, { javaDirs: dirs, javaList: merged }));
+    log('扫描 Java 目录：' + target + '，找到 ' + found.length + ' 个', 'ok');
+    return { found: found.length, list: merged };
+  });
+  ipcMain.handle('java:rescan', async () => {
+    const s = getSettings();
+    let merged = [];
+    for (const dir of s.javaDirs || []) {
+      const found = await javaScan.scanJavaDir(dir);
+      merged = javaScan.mergeScans(merged, found);
+    }
+    settingsCore.save(settingsFile(), Object.assign(s, { javaList: merged }));
+    return merged;
+  });
+  ipcMain.handle('java:removeDir', (e, dir) => {
+    const s = getSettings();
+    const target = String(dir || '').trim();
+    const dirs = (s.javaDirs || []).filter((d) => d !== target);
+    const list = (s.javaList || []).filter((j) => !String(j.path).toLowerCase().startsWith(target.toLowerCase()));
+    settingsCore.save(settingsFile(), Object.assign(s, { javaDirs: dirs, javaList: list }));
+    return { javaDirs: dirs, javaList: list };
+  });
+  ipcMain.handle('java:setDefault', (e, javaPath) => {
+    const s = getSettings();
+    return settingsCore.save(settingsFile(), Object.assign(s, { javaPath: String(javaPath || '') }));
+  });
+
+  // ===== 2.3.0 AI 助手 =====
+  ipcMain.handle('ai:chat', (e, payload) => {
+    const s = getSettings();
+    const p = payload || {};
+    return aiCore.chat({
+      apiKey: p.apiKey || s.aiApiKey,
+      model: p.model || s.aiModel,
+      baseUrl: p.baseUrl || s.aiBaseUrl,
+      messages: p.messages
+    });
+  });
+  ipcMain.handle('ai:crash', async (e, payload) => {
+    const s = getSettings();
+    const p = payload || {};
+    const report = p.report || crashGuard.diagnoseGameDir(instanceDataDir(), { exitCode: p.exitCode });
+    const logFile = path.join(instanceDataDir(), 'logs', 'latest.log');
+    const question = aiCore.buildCrashQuestion(Object.assign({}, report, {
+      logTail: crashGuard.readTail(logFile, 120)
+    }));
+    const result = await aiCore.chat({
+      apiKey: s.aiApiKey,
+      model: s.aiModel,
+      baseUrl: s.aiBaseUrl,
+      messages: [{ role: 'user', content: question }]
+    });
+    return Object.assign({ question }, result, { report });
+  });
+
+  // ===== 2.3.0 音乐播放器 =====
+  ipcMain.handle('music:search', (e, keyword, page) => musicCore.search(keyword, page));
+  ipcMain.handle('music:resolve', (e, bvid) => musicCore.resolveAudio(bvid));
+
+  // ===== 2.3.0 主题与背景 =====
+  ipcMain.handle('theme:presets', () => themesCore.list());
+  ipcMain.handle('wallpaper:pick', async () => {
+    const picked = await dialog.showOpenDialog(win, {
+      title: '选择背景：图片或视频（动态壁纸）',
+      filters: [
+        { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'avif'] },
+        { name: '视频', extensions: ['mp4', 'webm', 'ogv', 'mkv', 'mov'] }
+      ],
+      properties: ['openFile']
+    });
+    if (picked.canceled || !picked.filePaths.length) return { canceled: true };
+    const imported = importWallpaper(picked.filePaths[0]);
+    const s = getSettings();
+    settingsCore.save(settingsFile(), Object.assign(s, {
+      wallpaper: Object.assign({}, s.wallpaper, imported)
+    }));
+    return Object.assign({ canceled: false }, imported);
+  });
+  ipcMain.handle('wallpaper:clear', () => {
+    const s = getSettings();
+    const dir = wallpaperDir();
+    try {
+      for (const file of fs.readdirSync(dir)) fs.unlinkSync(path.join(dir, file));
+    } catch (e) { /* 目录可能不存在 */ }
+    return settingsCore.save(settingsFile(), Object.assign(s, {
+      wallpaper: Object.assign({}, s.wallpaper, { type: 'none', path: '' })
+    }));
+  });
+
+  // ===== 2.3.0 皮肤 / 披风历史 =====
+  ipcMain.handle('skin:history', () => skinStore.list(userData()));
+  ipcMain.handle('skin:removeHistory', (e, id) => skinStore.remove(userData(), id));
+  ipcMain.handle('skin:applyHistory', async (e, id, variant) => {
+    const account = accounts.getActiveAccount(userData());
+    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    const item = skinStore.get(userData(), String(id || ''));
+    if (!item) throw new Error('历史记录不存在');
+    await microsoft.uploadSkin(account.accessToken, account.uuid, item.file, variant || item.variant);
+    const record = skinStore.add(userData(), item.file, {
+      name: item.name,
+      variant: variant || item.variant,
+      source: 'history',
+      account: account.name
+    });
+    log('已切换回历史皮肤：' + item.name, 'ok');
+    return { ok: true, item: record };
+  });
+  ipcMain.handle('skin:capes', async () => {
+    const account = accounts.getActiveAccount(userData());
+    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    const capes = await microsoft.listCapes(account.accessToken);
+    return { capes, history: skinStore.listCapeRecords(userData()) };
+  });
+  ipcMain.handle('skin:setCape', async (e, capeId) => {
+    const account = accounts.getActiveAccount(userData());
+    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    const capes = await microsoft.listCapes(account.accessToken);
+    const target = capes.find((c) => c.id === capeId);
+    await microsoft.setCape(account.accessToken, String(capeId || ''));
+    skinStore.addCapeRecord(userData(), {
+      capeId,
+      alias: (target && target.alias) || '',
+      url: (target && target.url) || '',
+      account: account.name
+    });
+    return { ok: true, active: capeId };
+  });
+  ipcMain.handle('skin:clearCape', async () => {
+    const account = accounts.getActiveAccount(userData());
+    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    await microsoft.clearCape(account.accessToken);
+    skinStore.addCapeRecord(userData(), { capeId: '', alias: '关闭披风', account: account.name });
+    return { ok: true };
+  });
+  /** 取当前账号皮肤文件（用于本地裁出大头照 / 3D 模型） */
+  ipcMain.handle('skin:currentFile', async () => {
+    const account = accounts.getActiveAccount(userData());
+    if (!account) return null;
+    const skin = (account.skins || [])[0];
+    const dir = skinCacheDir();
+    fs.mkdirSync(dir, { recursive: true });
+    const cache = path.join(dir, (account.uuid || 'offline') + '.png');
+    if (skin && skin.url) {
+      try {
+        const stat = fs.existsSync(cache) ? fs.statSync(cache) : null;
+        if (!stat || Date.now() - stat.mtimeMs > 6 * 60 * 60 * 1000) {
+          const res = await fetch(skin.url);
+          if (res.ok) {
+            const buf = Buffer.from(await res.arrayBuffer());
+            fs.writeFileSync(cache, buf);
+          }
+        }
+        if (fs.existsSync(cache)) return { file: cache, source: 'mojang', name: account.name };
+      } catch (e) {
+        log('下载皮肤失败：' + e.message, 'warn');
+      }
+    }
+    const history = skinStore.list(userData());
+    if (history.length && fs.existsSync(history[0].file)) {
+      return { file: history[0].file, source: 'history', name: account.name };
+    }
+    return null;
+  });
 }
 
 app.whenReady().then(() => {
   crashGuard.markSessionStart(sessionFile(), { version: APP_VERSION });
   easytier.configure({ dir: path.join(userData(), 'EasyTier'), machineId: machineId() });
   easytier.onStatus((value) => send('online:status', value));
+  // B 站音频直链必须带 Referer，否则 403
+  session.defaultSession.webRequest.onBeforeSendHeaders(
+    { urls: ['*://*.bilivideo.com/*', '*://*.bilivideo.cn/*', '*://*.bilivideo.net/*', '*://*.hdslb.com/*'] },
+    (details, callback) => {
+      details.requestHeaders.Referer = 'https://www.bilibili.com/';
+      details.requestHeaders['User-Agent'] = musicCore.UA;
+      callback({ requestHeaders: details.requestHeaders });
+    }
+  );
   registerIpc();
   createWindow();
   app.on('activate', () => {

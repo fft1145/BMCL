@@ -1,18 +1,18 @@
 {
-  "version": "2.2.6",
-  "name": "BMCL 2.2.6",
-  "tag": "v2.2.6",
-  "publishedAt": "2026-11-12",
+  "version": "2.3.0",
+  "name": "BMCL 2.3.0",
+  "tag": "v2.3.0",
+  "publishedAt": "2026-11-13",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.2.6\n- 修复微软正版登录：Xbox Live 认证补上 RelyingParty 字段，解决登录到最后一步报 HTTP 400\n- 微软登录失败的提示现在会带上具体接口，方便定位问题\n- 版本隔离真正生效：选择「隔离所有实例」后，mods / saves / config / logs 等全部读写 versions/<版本> 下的目录\n- 设置 → 启动 里的版本隔离选项现在会保存，不再只是摆设\n- 更新检查新增备用线路：GitHub 直连失败时自动切换 Raw / gh-proxy / ghproxy.net\n- 设置 → 软件更新新增「备用线路」按钮，可手动强制走镜像\n- 顶部导航新增「联机」按钮，直接打开陶瓦联机大厅，不用再进工具页找",
+  "notes": "2.3.0\n- 崩溃自动分析：游戏异常退出后自动诊断，弹窗列出可能原因，支持一键交给 AI 深入分析\n- 内置 DeepSeek AI 助手：模组冲突、崩溃、Java 版本问题都能问，API Key 只存本机\n- Java 环境目录：只需指定存放 Java 的目录，自动递归识别目录下所有 Java（版本/位数/发行商），启动时按版本需求自动挑选\n- 外观自定义：5 套主题预设 + 自定义配色 + 自定义 CSS，不改核心代码\n- 自定义背景：支持静态图片与视频动态壁纸，可调暗化和模糊\n- 内置音乐播放器：直接搜索 B 站音源播放，支持播放列表与音量记忆\n- 皮肤与披风：3D 皮肤模型渲染，登录后头像使用自己皮肤裁出的大头照，支持更换皮肤/披风并记录历史",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.2.6/Better-MC-Launcher.exe",
-      "size": 74727864,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.3.0/Better-MC-Launcher.exe",
+      "size": 74749811,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.2.6/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.2.6/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.3.0/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.3.0/Better-MC-Launcher.exe"
       ]
     }
   ]

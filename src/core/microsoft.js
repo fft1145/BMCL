@@ -282,6 +282,53 @@ async function resetSkin(mcAccessToken, options = {}) {
   return { ok: true };
 }
 
+/** 读取账号拥有的披风列表（含当前启用状态） */
+async function listCapes(mcAccessToken, options = {}) {
+  if (!mcAccessToken) throw new Error('请先登录正版账号');
+  const res = await fetchOf(options)(MC_PROFILE + '/capes', {
+    headers: { Authorization: 'Bearer ' + mcAccessToken }
+  });
+  const data = await readJson(res);
+  if (!res.ok) throw new Error(data.errorMessage || ('读取披风失败 HTTP ' + res.status));
+  const capes = Array.isArray(data.capes) ? data.capes : [];
+  return capes.map((cape) => ({
+    id: cape.id,
+    alias: cape.alias || '',
+    url: cape.url || '',
+    active: cape.state === 'ACTIVE'
+  }));
+}
+
+/** 启用指定披风 */
+async function setCape(mcAccessToken, capeId, options = {}) {
+  if (!mcAccessToken) throw new Error('请先登录正版账号');
+  if (!capeId) throw new Error('缺少披风 ID');
+  const res = await fetchOf(options)(MC_PROFILE + '/capes/active', {
+    method: 'PUT',
+    headers: {
+      Authorization: 'Bearer ' + mcAccessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ capeId })
+  });
+  if (!res.ok) {
+    const data = await readJson(res);
+    throw new Error(data.errorMessage || ('启用披风失败 HTTP ' + res.status));
+  }
+  return { ok: true, capeId };
+}
+
+/** 关闭当前披风 */
+async function clearCape(mcAccessToken, options = {}) {
+  if (!mcAccessToken) throw new Error('请先登录正版账号');
+  const res = await fetchOf(options)(MC_PROFILE + '/capes/active', {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + mcAccessToken }
+  });
+  if (!res.ok && res.status !== 204) throw new Error('关闭披风失败 HTTP ' + res.status);
+  return { ok: true };
+}
+
 module.exports = {
   DEFAULT_CLIENT_ID,
   resolveClientId,
@@ -296,5 +343,8 @@ module.exports = {
   completeLogin,
   refreshAccount,
   uploadSkin,
-  resetSkin
+  resetSkin,
+  listCapes,
+  setCape,
+  clearCape
 };

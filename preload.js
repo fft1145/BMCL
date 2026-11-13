@@ -94,6 +94,32 @@ contextBridge.exposeInMainWorld('bmcl', {
   winMaximize: () => ipcRenderer.invoke('window:maximize'),
   winClose: () => ipcRenderer.invoke('window:close'),
 
+  // ===== 2.3.0 =====
+  javaList: () => ipcRenderer.invoke('java:list'),
+  javaPickDirs: () => ipcRenderer.invoke('java:pickDirs'),
+  javaScanDir: (dir) => ipcRenderer.invoke('java:scanDir', dir),
+  javaRescan: () => ipcRenderer.invoke('java:rescan'),
+  javaRemoveDir: (dir) => ipcRenderer.invoke('java:removeDir', dir),
+  javaSetDefault: (path) => ipcRenderer.invoke('java:setDefault', path),
+
+  aiChat: (payload) => ipcRenderer.invoke('ai:chat', payload),
+  aiCrash: (payload) => ipcRenderer.invoke('ai:crash', payload),
+
+  musicSearch: (keyword, page) => ipcRenderer.invoke('music:search', keyword, page),
+  musicResolve: (bvid) => ipcRenderer.invoke('music:resolve', bvid),
+
+  themePresets: () => ipcRenderer.invoke('theme:presets'),
+  pickWallpaper: () => ipcRenderer.invoke('wallpaper:pick'),
+  clearWallpaper: () => ipcRenderer.invoke('wallpaper:clear'),
+
+  skinHistory: () => ipcRenderer.invoke('skin:history'),
+  removeSkinHistory: (id) => ipcRenderer.invoke('skin:removeHistory', id),
+  applySkinHistory: (id, variant) => ipcRenderer.invoke('skin:applyHistory', id, variant),
+  skinCapes: () => ipcRenderer.invoke('skin:capes'),
+  setCape: (capeId) => ipcRenderer.invoke('skin:setCape', capeId),
+  clearCape: () => ipcRenderer.invoke('skin:clearCape'),
+  skinCurrentFile: () => ipcRenderer.invoke('skin:currentFile'),
+
   // 事件
   onLog: (handler) => on('app:log', handler),
   onGameLog: (handler) => on('game:log', handler),

@@ -8,8 +8,10 @@
   <link rel="stylesheet" href="style-bmcl.css">
   <link rel="stylesheet" href="pcl-skin.css">
   <link rel="stylesheet" href="bmcl-skin.css">
+  <link rel="stylesheet" href="fx.css">
 </head>
 <body>
+<div class="fx-wall" id="fxWall"></div>
 <div class="app">
 
   <!-- ====== 标题栏 ====== -->
@@ -52,6 +54,10 @@
       <button class="nav-btn" data-page="tools" data-sub="lobby">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
         <span class="pcl-label">联机</span><span class="bmcl-label">联机</span>
+      </button>
+      <button class="nav-btn" data-page="fx">
+        <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" fill="currentColor"/></svg>
+        <span class="pcl-label">增强</span><span class="bmcl-label">增强</span>
       </button>
       <button class="nav-btn" data-page="settings">
         <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
@@ -1168,6 +1174,189 @@
         </main>
       </div>
     </section>
+
+    <!-- ====== 增强（2.3.0）====== -->
+    <section class="page" id="page-fx">
+      <header class="fx-head">
+        <div class="fx-title">
+          <h1>增强功能</h1>
+          <p>AI 助手、音乐、外观、皮肤与 Java 环境</p>
+        </div>
+        <nav class="fx-tabs">
+          <button class="fx-tab on" data-fxtab="ai">AI 助手</button>
+          <button class="fx-tab" data-fxtab="music">音乐</button>
+          <button class="fx-tab" data-fxtab="look">外观</button>
+          <button class="fx-tab" data-fxtab="skin">皮肤</button>
+          <button class="fx-tab" data-fxtab="java">Java</button>
+        </nav>
+      </header>
+
+      <div class="fx-body">
+        <!-- AI -->
+        <div class="fx-pane on" data-fxpane="ai">
+          <div class="fx-ai">
+            <div class="fx-ai-log" id="fxAiLog">
+              <div class="fx-msg bot">
+                <div class="fx-msg-role">BMCL 助手</div>
+                <div class="fx-msg-text">你好，我是内置的 DeepSeek 助手。可以问我模组冲突、崩溃原因、Java 版本、光影设置之类的问题。首次使用请到「设置 → AI 助手」填写 API Key。</div>
+              </div>
+            </div>
+            <div class="fx-ai-input">
+              <textarea id="fxAiInput" placeholder="输入问题，Ctrl + Enter 发送"></textarea>
+              <div class="fx-ai-actions">
+                <button class="fx-btn" id="fxAiCrash">分析上次崩溃</button>
+                <button class="fx-btn" id="fxAiClear">清空</button>
+                <button class="fx-btn fx-btn-primary" id="fxAiSend">发送</button>
+              </div>
+            </div>
+            <div class="fx-row">
+              <input class="fx-input" id="fxAiKey" type="password" placeholder="DeepSeek API Key（sk-...）" style="flex:1;max-width:340px">
+              <button class="fx-btn" id="fxAiKeySave">保存 Key</button>
+              <span class="fx-hint" id="fxAiModel">deepseek-chat</span>
+            </div>
+            <p class="fx-hint" id="fxAiHint">API Key 只保存在本机 settings.json，不会上传。</p>
+          </div>
+        </div>
+
+        <!-- 音乐 -->
+        <div class="fx-pane" data-fxpane="music">
+          <div class="fx-music">
+            <div class="fx-music-search">
+              <input id="fxMusicQuery" placeholder="搜索歌名 / UP 主 / 关键词（音源来自 B 站）">
+              <button class="fx-btn fx-btn-primary" id="fxMusicSearch">搜索</button>
+            </div>
+            <div class="fx-music-list" id="fxMusicList">
+              <p class="fx-hint">搜索后点击任意结果即可播放。音源直接取 B 站音频流，仅供个人收听。</p>
+            </div>
+            <div class="fx-player" id="fxPlayer">
+              <div class="fx-player-left">
+                <img id="fxMpCover" alt="">
+                <div class="fx-player-meta">
+                  <div class="fx-player-title" id="fxMpTitle">未在播放</div>
+                  <div class="fx-player-sub" id="fxMpAuthor">—</div>
+                </div>
+              </div>
+              <div class="fx-player-mid">
+                <button class="fx-icon-btn" id="fxMpPrev" title="上一首">⏮</button>
+                <button class="fx-icon-btn fx-play" id="fxMpPlay" title="播放 / 暂停">▶</button>
+                <button class="fx-icon-btn" id="fxMpNext" title="下一首">⏭</button>
+                <span class="fx-time" id="fxMpTime">0:00 / 0:00</span>
+              </div>
+              <div class="fx-player-right">
+                <span class="fx-vol-label">音量</span>
+                <input type="range" id="fxMpVol" min="0" max="100" value="70">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 外观 -->
+        <div class="fx-pane" data-fxpane="look">
+          <div class="fx-look">
+            <div class="fx-card">
+              <div class="fx-card-title">主题预设</div>
+              <div class="fx-presets" id="fxPresets"></div>
+            </div>
+
+            <div class="fx-card">
+              <div class="fx-card-title">自定义配色</div>
+              <div class="fx-colors">
+                <label>背景<input type="color" id="fxColorBg"></label>
+                <label>卡片<input type="color" id="fxColorCard"></label>
+                <label>文字<input type="color" id="fxColorText"></label>
+                <label>次要文字<input type="color" id="fxColorMuted"></label>
+                <label>强调色<input type="color" id="fxColorAccent"></label>
+                <label>标题左<input type="color" id="fxColorTitleFrom"></label>
+                <label>标题右<input type="color" id="fxColorTitleTo"></label>
+              </div>
+              <div class="fx-row">
+                <button class="fx-btn fx-btn-primary" id="fxThemeSave">保存为自定义主题</button>
+                <button class="fx-btn" id="fxThemeReset">恢复默认</button>
+              </div>
+            </div>
+
+            <div class="fx-card">
+              <div class="fx-card-title">自定义背景</div>
+              <p class="fx-hint">支持图片（PNG / JPG / WEBP / GIF）和视频（MP4 / WEBM），视频会循环静音播放，即动态壁纸。</p>
+              <div class="fx-row">
+                <button class="fx-btn" id="fxWallPick">选择图片或视频</button>
+                <button class="fx-btn" id="fxWallClear">移除背景</button>
+                <span class="fx-hint" id="fxWallName">未设置</span>
+              </div>
+              <label class="fx-slider">暗化 <input type="range" id="fxWallDim" min="0" max="80" value="25"><span id="fxWallDimVal">25%</span></label>
+              <label class="fx-slider">模糊 <input type="range" id="fxWallBlur" min="0" max="24" value="0"><span id="fxWallBlurVal">0px</span></label>
+            </div>
+
+            <div class="fx-card">
+              <div class="fx-card-title">自定义 CSS</div>
+              <p class="fx-hint">只改样式，不动任何核心代码。进阶玩法：调整圆角、字号、隐藏不需要的区块。</p>
+              <textarea id="fxCss" placeholder="例如：.card { border-radius: 10px }"></textarea>
+              <div class="fx-row">
+                <button class="fx-btn fx-btn-primary" id="fxCssApply">应用样式</button>
+                <button class="fx-btn" id="fxCssClear">清空</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 皮肤 -->
+        <div class="fx-pane" data-fxpane="skin">
+          <div class="fx-skin">
+            <div class="fx-card fx-skin-stage">
+              <canvas id="fxSkinCanvas"></canvas>
+              <div class="fx-skin-idle" id="fxSkinIdle">拖动旋转 · 登录后显示你的皮肤</div>
+            </div>
+            <div class="fx-skin-side">
+              <div class="fx-card">
+                <div class="fx-card-title">皮肤</div>
+                <div class="fx-row">
+                  <img class="fx-head-avatar" id="fxSkinHead" alt="">
+                  <select class="fx-input" id="fxSkinVariant" style="max-width:110px">
+                    <option value="classic">经典</option>
+                    <option value="slim">纤细</option>
+                  </select>
+                  <button class="fx-btn fx-btn-primary" id="fxSkinUpload">上传新皮肤</button>
+                </div>
+                <p class="fx-hint">上传成功后会写入 Mojang，并自动记入下方历史。</p>
+              </div>
+              <div class="fx-card">
+                <div class="fx-card-title">披风</div>
+                <div class="fx-capes" id="fxCapeList"><p class="fx-hint">登录正版账号后读取。</p></div>
+                <p class="fx-hint">披风只能使用账号已拥有的款式，Mojang 不开放自定义披风上传。</p>
+              </div>
+            </div>
+            <div class="fx-card fx-history-card">
+              <div class="fx-card-title">换过的皮肤 <button class="fx-btn fx-btn-mini" id="fxSkinRefresh">刷新</button></div>
+              <div class="fx-history" id="fxSkinHistory"><p class="fx-hint">还没有记录。</p></div>
+            </div>
+            <div class="fx-card fx-history-card">
+              <div class="fx-card-title">换过的披风</div>
+              <div class="fx-history" id="fxCapeHistory"><p class="fx-hint">还没有记录。</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Java -->
+        <div class="fx-pane" data-fxpane="java">
+          <div class="fx-java">
+            <div class="fx-card">
+              <div class="fx-card-title">Java 环境目录</div>
+              <p class="fx-hint">只需要给「放 Java 的目录」，启动器会自动找出目录下所有 Java 本体（含子目录），不需要手动指定 java.exe。</p>
+              <div class="fx-row">
+                <button class="fx-btn fx-btn-primary" id="fxJavaAdd">添加目录</button>
+                <button class="fx-btn" id="fxJavaRescan">重新扫描全部</button>
+                <span class="fx-hint" id="fxJavaHint"></span>
+              </div>
+              <div class="fx-dirs" id="fxJavaDirs"></div>
+            </div>
+            <div class="fx-card">
+              <div class="fx-card-title">检测到的 Java</div>
+              <div class="fx-java-list" id="fxJavaList"><p class="fx-hint">还没有扫描过。</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -1176,5 +1365,7 @@
 <script src="app.js"></script>
 <script src="bmcl-dash.js"></script>
 <script src="bmcl-ui.js"></script>
+<script src="skin3d.js"></script>
+<script src="fx.js"></script>
 </body>
 </html>

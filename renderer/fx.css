@@ -1,0 +1,155 @@
+/* ===== BMCL 2.3.0 增强功能 ===== */
+
+/* ---------- 背景层 ---------- */
+.fx-wall{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:transparent}
+.fx-wall img,.fx-wall video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.fx-wall::after{content:"";position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+body.fx-has-wall{background:transparent!important}
+body.fx-has-wall .app{position:relative;z-index:1;background:transparent!important}
+body.fx-has-wall .workspace,
+body.fx-has-wall .page{background:transparent!important}
+body.fx-has-wall .launch-side,
+body.fx-has-wall .card,
+body.fx-has-wall .fx-card,
+body.fx-has-wall .set-group,
+body.fx-has-wall .ac-card{background:rgba(255,255,255,.86)!important;backdrop-filter:blur(8px)}
+body.fx-wall-dark.fx-has-wall .launch-side,
+body.fx-wall-dark.fx-has-wall .card,
+body.fx-wall-dark.fx-has-wall .fx-card,
+body.fx-wall-dark.fx-has-wall .set-group{background:rgba(18,20,26,.82)!important}
+body.fx-has-wall .titlebar{opacity:.97}
+
+/* ---------- 自定义主题覆盖 ---------- */
+html.fx-themed body{background:var(--fx-bg)!important;color:var(--fx-text)}
+html.fx-themed .app,html.fx-themed .workspace,html.fx-themed .page{background:var(--fx-bg)!important}
+html.fx-themed .titlebar{background:linear-gradient(180deg,var(--fx-title-from),var(--fx-title-to))!important}
+html.fx-themed .card,html.fx-themed .set-group,html.fx-themed .fx-card,
+html.fx-themed .ac-card,html.fx-themed .launch-side{background:var(--fx-card)!important;border-color:var(--fx-line)!important;color:var(--fx-text)!important}
+html.fx-themed .nav-btn.active,html.fx-themed .fx-tab.on{color:var(--fx-accent)!important}
+html.fx-themed .btn-primary,html.fx-themed .fx-btn-primary{background:var(--fx-accent)!important;border-color:var(--fx-accent)!important}
+html.fx-themed a{color:var(--fx-accent)}
+html.fx-themed h1,html.fx-themed h2,html.fx-themed h3,
+html.fx-themed .card-title,html.fx-themed .fx-card-title{color:var(--fx-text)!important}
+html.fx-themed .hint,html.fx-themed .fx-hint,html.fx-themed .muted{color:var(--fx-muted)!important}
+html.fx-themed.fx-dark body{background:var(--fx-bg)!important}
+
+/* ---------- 页面骨架 ---------- */
+#page-fx{display:none;flex-direction:column;height:100%;padding:0;overflow:hidden}
+#page-fx.active{display:flex}
+.fx-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:20px 24px 12px;flex-wrap:wrap}
+.fx-title h1{font-size:20px;font-weight:700;letter-spacing:.4px}
+.fx-title p{font-size:12px;color:var(--muted);margin-top:2px}
+.fx-tabs{display:flex;gap:6px;background:var(--card-2);border:1px solid var(--line);padding:4px;border-radius:6px}
+.fx-tab{padding:6px 14px;border-radius:4px;font-size:13px;color:var(--muted);transition:.15s}
+.fx-tab:hover{color:var(--text)}
+.fx-tab.on{background:var(--card);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:600}
+.fx-body{flex:1;overflow:auto;padding:4px 24px 28px}
+.fx-pane{display:none}
+.fx-pane.on{display:block}
+
+.fx-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:14px}
+.fx-card-title{font-weight:700;font-size:13.5px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fx-hint{font-size:12px;color:var(--muted);line-height:1.7}
+.fx-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.fx-btn{padding:6px 14px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:13px;transition:.15s}
+.fx-btn:hover{border-color:var(--blue);color:var(--blue)}
+.fx-btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.fx-btn-primary:hover{background:var(--blue-strong);color:#fff}
+.fx-btn-mini{padding:2px 8px;font-size:11px;font-weight:400}
+.fx-input{height:30px;padding:0 10px;border:1px solid var(--line);border-radius:4px;background:var(--card)}
+
+/* ---------- AI ---------- */
+.fx-ai{display:flex;flex-direction:column;height:calc(100vh - 210px);min-height:380px}
+.fx-ai-log{flex:1;overflow:auto;padding:6px 2px 12px;display:flex;flex-direction:column;gap:10px}
+.fx-msg{max-width:760px;border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.75;white-space:pre-wrap;word-break:break-word}
+.fx-msg.user{align-self:flex-end;background:var(--blue-soft);color:var(--blue-text)}
+.fx-msg.bot{align-self:flex-start;background:var(--card);border:1px solid var(--line)}
+.fx-msg-role{font-size:11px;color:var(--muted);margin-bottom:4px}
+.fx-msg.err{border-color:var(--danger);color:var(--danger)}
+.fx-ai-input{border:1px solid var(--line);border-radius:6px;background:var(--card);padding:8px}
+.fx-ai-input textarea{width:100%;height:76px;border:none;outline:none;resize:none;background:transparent;font-size:13px;line-height:1.6}
+.fx-ai-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.fx-msg-text code{background:rgba(127,127,127,.14);padding:1px 4px;border-radius:3px;font-family:Consolas,monospace;font-size:12px}
+
+/* ---------- 音乐 ---------- */
+.fx-music{display:flex;flex-direction:column;gap:12px}
+.fx-music-search{display:flex;gap:8px}
+.fx-music-search input{flex:1;height:36px;padding:0 12px;border:1px solid var(--line);border-radius:4px;background:var(--card)}
+.fx-music-list{border:1px solid var(--line);border-radius:6px;background:var(--card);max-height:calc(100vh - 380px);overflow:auto}
+.fx-track{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line-soft);cursor:pointer}
+.fx-track:last-child{border-bottom:none}
+.fx-track:hover,.fx-track.on{background:var(--blue-soft)}
+.fx-track-idx{width:24px;text-align:center;font-size:12px;color:var(--muted)}
+.fx-track-main{flex:1;min-width:0}
+.fx-track-title{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-track-sub{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-track-dur{font-size:12px;color:var(--muted)}
+.fx-player{display:flex;align-items:center;gap:14px;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:var(--card);flex-wrap:wrap}
+.fx-player-left{display:flex;align-items:center;gap:10px;min-width:220px;flex:1}
+.fx-player-left img{width:46px;height:46px;border-radius:4px;background:var(--line-soft);object-fit:cover}
+.fx-player-title{font-size:13px;font-weight:600;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-player-sub{font-size:11.5px;color:var(--muted)}
+.fx-player-mid{display:flex;align-items:center;gap:8px}
+.fx-icon-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);font-size:13px;color:var(--text);background:var(--card-2)}
+.fx-icon-btn.fx-play{width:38px;height:38px;background:var(--blue);border-color:var(--blue);color:#fff;font-size:15px}
+.fx-time{font-size:11.5px;color:var(--muted);min-width:86px}
+.fx-player-right{display:flex;align-items:center;gap:8px}
+.fx-vol-label{font-size:12px;color:var(--muted)}
+.fx-player-right input[type=range]{width:110px}
+
+/* ---------- 外观 ---------- */
+.fx-look{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.fx-look .fx-card:first-child{grid-column:1/-1}
+.fx-look .fx-card:nth-child(4){grid-column:1/-1}
+.fx-presets{display:flex;gap:10px;flex-wrap:wrap}
+.fx-preset{width:132px;border:2px solid var(--line);border-radius:6px;padding:8px;cursor:pointer;background:var(--card);transition:.15s}
+.fx-preset:hover{border-color:var(--blue-pill)}
+.fx-preset.on{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
+.fx-preset-swatch{height:42px;border-radius:4px;margin-bottom:6px;overflow:hidden;display:flex}
+.fx-preset-swatch i{flex:1}
+.fx-preset-name{font-size:12px;text-align:center}
+.fx-colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.fx-colors label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.fx-colors input[type=color]{width:100%;height:32px;border:1px solid var(--line);border-radius:4px;background:var(--card);padding:2px}
+.fx-slider{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.fx-slider input{flex:1;max-width:280px}
+.fx-look textarea{width:100%;height:110px;border:1px solid var(--line);border-radius:4px;padding:10px;background:var(--card-2);font-family:Consolas,monospace;font-size:12.5px;resize:vertical;outline:none}
+
+/* ---------- 皮肤 ---------- */
+.fx-skin{display:grid;grid-template-columns:300px 1fr;grid-template-areas:"stage side" "hist hist";gap:14px}
+.fx-skin-stage{grid-area:stage;margin:0;padding:0;position:relative;min-height:420px;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 35%,var(--card-2),var(--card))}
+.fx-skin-stage canvas{width:100%;height:420px;display:block}
+.fx-skin-idle{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:11.5px;color:var(--muted);pointer-events:none}
+.fx-skin-side{grid-area:side;display:flex;flex-direction:column;gap:14px}
+.fx-skin-side .fx-card{margin:0}
+.fx-head-avatar{width:52px;height:52px;border-radius:6px;background:var(--line-soft);image-rendering:pixelated}
+.fx-capes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.fx-cape{border:2px solid var(--line);border-radius:6px;padding:8px;text-align:center;cursor:pointer;background:var(--card)}
+.fx-cape img{width:88px;height:120px;object-fit:contain;image-rendering:pixelated}
+.fx-cape.on{border-color:var(--blue)}
+.fx-cape-name{font-size:11.5px;color:var(--muted);margin-top:4px}
+.fx-history-card{grid-area:hist;margin:0}
+.fx-history{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.fx-hist{border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--card);text-align:center}
+.fx-hist img{width:64px;height:64px;image-rendering:pixelated}
+.fx-hist-name{font-size:11px;color:var(--muted);margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-hist-actions{display:flex;gap:4px;justify-content:center}
+.fx-hist-actions button{font-size:11px;padding:2px 6px;border:1px solid var(--line);border-radius:3px;background:var(--card-2);color:var(--text)}
+
+/* ---------- Java ---------- */
+.fx-dirs{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.fx-dir{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card-2);font-size:12.5px}
+.fx-dir path,.fx-dir span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-java-list{display:flex;flex-direction:column;gap:6px}
+.fx-java{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:4px;background:var(--card-2)}
+.fx-java-badge{font-size:11px;padding:2px 7px;border-radius:10px;background:var(--blue-soft);color:var(--blue-text);font-weight:600}
+.fx-java-badge.bad{background:#fde8e8;color:var(--danger)}
+.fx-java-main{flex:1;min-width:0}
+.fx-java-path{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-java.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue-soft)}
+
+@media (max-width:1100px){
+  .fx-look{grid-template-columns:1fr}
+  .fx-skin{grid-template-columns:1fr;grid-template-areas:"stage" "side" "hist"}
+}
