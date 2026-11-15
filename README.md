@@ -1,4 +1,4 @@
-**简体中文** | [官方网站](https://bmcl26.netlify.app)
+[**简体中文**](README.md) | [繁體中文（香港／澳門）](README.zh-HK.md) | [繁體中文（台灣）](README.zh-TW.md) | [English (US)](README.en-US.md) | [English (USA)](README.en-USA.md) | [官方网站](https://bmcl26.netlify.app)
 
 <div align="center">
 
@@ -19,7 +19,7 @@
 
 [立即下载](https://github.com/fft1145/BMCL/releases/latest) |
 [官方网站](https://bmcl26.netlify.app) |
-[源码包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.2.5.zip)
+[源码包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.3.0.zip)
 
 [提交问题](https://github.com/fft1145/BMCL/issues/new/choose) |
 [更新日志](https://github.com/fft1145/BMCL/releases) |
@@ -64,7 +64,7 @@ BMCL（Better Minecraft Launcher）是一个完全本地运行的 Minecraft 启�
 |---|---|
 | [GitHub Releases](https://github.com/fft1145/BMCL/releases/latest) | 最新便携版 `Better-MC-Launcher.exe`，解压即用 |
 | [官方网站](https://bmcl26.netlify.app/#download) | 国内访问更稳定的下载页，附校验信息 |
-| [源码包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.2.5.zip) | 当前版本完整源码，供自行构建 |
+| [源码包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.3.0.zip) | 当前版本完整源码，供自行构建 |
 
 启动器为免安装的便携版，首次运行会在自己的数据目录中初始化，不会改动你已有的 `.minecraft`。
 
@@ -80,7 +80,7 @@ BMCL（Better Minecraft Launcher）是一个完全本地运行的 Minecraft 启�
 
 ```bash
 npm install
-npm start        # 启动 GUI（窗口标题 fft1145）
+npm start        # 启动 GUI（窗口标题 BMCL）
 npm test         # 运行核心模块单元测试（无需 Electron）
 npm run dist     # 打包 Windows 便携版
 ```
@@ -109,7 +109,9 @@ npm run dist     # 打包 Windows 便携版
 
 ## 📄 许可证
 
-本仓库暂未附带开源许可证文件。除另有说明外，代码与资源保留所有权利，公开可见仅供学习与参考；如需商业使用或二次分发，请先联系作者获得授权。
+本项目基于 [Apache License 2.0](LICENSE) 开源，与 PCL CE 采用同一许可证。
+
+你可以自由使用、修改、分发本项目（包括商业用途），只需在分发时保留 [LICENSE](LICENSE) 文件与版权声明，并说明你做出的修改。
 
 ---
 
