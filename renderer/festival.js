@@ -83,6 +83,8 @@
   }
 
   function turnOff() {
+    var select = $('#setFestivalMode');
+    if (select) select.value = 'off';
     if (window.bmcl && window.bmcl.saveSettings) {
       window.bmcl.saveSettings({ festivalMode: 'off' }).then(load).catch(load);
     } else {
