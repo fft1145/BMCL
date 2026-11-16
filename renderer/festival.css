@@ -1,0 +1,134 @@
+/* ===== 节日彩蛋：愚人节 / 春节 ===== */
+
+/* 通用角标 */
+.festival-badge{
+  position:fixed;top:54px;right:16px;z-index:200;
+  display:flex;align-items:center;gap:8px;
+  padding:5px 6px 5px 12px;border-radius:999px;
+  background:rgba(24,28,34,.86);color:#fff;
+  font-size:12px;font-weight:600;letter-spacing:.3px;
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:0 6px 18px rgba(0,0,0,.22);
+  backdrop-filter:blur(6px);
+}
+.festival-badge button{
+  height:22px;padding:0 10px;border-radius:999px;
+  background:rgba(255,255,255,.16);color:#fff;font-size:11px;
+}
+.festival-badge button:hover{background:rgba(255,255,255,.3)}
+
+/* ---------- 愚人节 ---------- */
+.festival-jitter{animation:festivalJitter .28s ease-in-out 4}
+@keyframes festivalJitter{
+  0%{transform:translate(0,0)}
+  30%{transform:translate(3px,-3px)}
+  60%{transform:translate(-2px,2px)}
+  100%{transform:translate(0,0)}
+}
+.april-ghost-cursor{
+  position:fixed;left:-40px;top:-40px;width:14px;height:20px;z-index:9999;
+  pointer-events:none;opacity:.55;
+  background:#fff;clip-path:polygon(0 0,0 76%,26% 58%,44% 100%,58% 92%,40% 52%,72% 52%);
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));
+  transition:left .08s linear,top .08s linear;
+}
+
+/* ---------- 春节：整体暖色 ---------- */
+body.festival-spring:not(.theme-bmcl) .titlebar{
+  background:linear-gradient(180deg,#c8161d 0%,#8f0d14 100%);
+  border-bottom-color:#6d090f;
+}
+body.festival-spring:not(.theme-bmcl) .nav-btn.active{color:#a30d15}
+body.festival-spring:not(.theme-bmcl) .launch-side{
+  background:linear-gradient(180deg,#fdeeee 0%,#f8dede 100%);
+  border-right-color:#f0cfcf;
+}
+body.festival-spring:not(.theme-bmcl) .card{border-color:#eddcdc}
+body.festival-spring:not(.theme-bmcl) .avatar-shell{
+  background:linear-gradient(145deg,#ffe2b8,#f3c47a);
+  box-shadow:inset 0 0 0 1px #e2b566,0 4px 12px rgba(180,60,40,.18);
+}
+
+/* 灯笼 */
+.festival-lanterns{position:fixed;inset:0;z-index:78;pointer-events:none}
+.festival-lantern{
+  position:absolute;top:52px;width:26px;height:34px;border-radius:50% 50% 46% 46%;
+  background:radial-gradient(circle at 32% 30%,#ff6a5f,#c8151d 62%,#8e0a11);
+  box-shadow:0 0 16px rgba(255,80,60,.55),inset 0 -4px 6px rgba(0,0,0,.22);
+  transform-origin:50% -16px;
+  animation:lanternSway 4.6s ease-in-out infinite;
+}
+.festival-lantern::before{
+  content:'';position:absolute;left:50%;top:-16px;width:1px;height:16px;
+  background:linear-gradient(#f6d67a,rgba(246,214,122,.2));
+}
+.festival-lantern::after{
+  content:'';position:absolute;left:50%;bottom:-13px;width:2px;height:13px;
+  background:#f6d67a;transform:translateX(-50%);
+  box-shadow:0 0 6px rgba(246,214,122,.8);
+}
+.festival-lantern.left{left:4.5%;animation-delay:-1.2s}
+.festival-lantern.right{right:4.5%;animation-delay:-2.6s}
+@keyframes lanternSway{
+  0%,100%{transform:rotate(-5deg)}
+  50%{transform:rotate(5deg)}
+}
+
+/* 祝福横幅 */
+.festival-banner{
+  position:fixed;top:56px;left:50%;transform:translateX(-50%);
+  z-index:85;pointer-events:none;max-width:min(620px,72vw);
+  border-radius:10px;padding:9px 22px 8px;
+  background:linear-gradient(135deg,rgba(200,22,29,.95),rgba(137,10,17,.95));
+  border:1px solid rgba(246,214,122,.75);
+  box-shadow:0 8px 26px rgba(120,10,10,.28),inset 0 0 0 1px rgba(255,255,255,.06);
+  animation:bannerGlow 3.6s ease-in-out infinite;
+}
+.festival-banner-inner{text-align:center}
+.festival-greet{
+  font-size:15px;font-weight:800;letter-spacing:.6px;
+  color:#ffe9b0;text-shadow:0 1px 0 rgba(90,0,0,.6);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.festival-greet.in{animation:greetIn .5s ease}
+.festival-sub{margin-top:1px;font-size:11px;color:rgba(255,232,190,.72);letter-spacing:1.4px}
+@keyframes greetIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes bannerGlow{
+  0%,100%{box-shadow:0 8px 26px rgba(120,10,10,.28),inset 0 0 0 1px rgba(255,255,255,.06)}
+  50%{box-shadow:0 8px 32px rgba(230,80,40,.45),inset 0 0 0 1px rgba(255,220,150,.22)}
+}
+
+/* 动态贺卡 */
+.festival-card{
+  position:fixed;right:18px;bottom:96px;z-index:86;
+  width:300px;border-radius:10px;overflow:hidden;
+  background:#140607;border:1px solid rgba(246,214,122,.55);
+  box-shadow:0 12px 34px rgba(0,0,0,.35);
+}
+.festival-card-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;font-size:11px;color:#ffe9b0;
+  background:linear-gradient(90deg,rgba(200,22,29,.9),rgba(120,8,14,.9));
+  border-bottom:1px solid rgba(246,214,122,.3);
+}
+.festival-card-tip{color:rgba(255,233,176,.62);font-size:10px;letter-spacing:1px}
+.festival-card-stage{position:relative;width:100%;height:168px;background:#0c0304}
+.festival-card-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.festival-card-stage video{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;
+  transition:opacity .4s;
+}
+.festival-card-stage video.on{opacity:1}
+.festival-card-foot{
+  padding:5px 10px 6px;font-size:10.5px;color:rgba(255,233,176,.7);
+  background:rgba(30,6,8,.92);border-top:1px solid rgba(246,214,122,.16);
+}
+
+@media (max-width:1040px){
+  .festival-card{width:236px;bottom:88px}
+  .festival-card-stage{height:132px}
+  .festival-banner{max-width:58vw;padding:8px 14px}
+  .festival-greet{font-size:13px}
+  .festival-lantern.left{left:2.5%}
+  .festival-lantern.right{right:2.5%}
+}

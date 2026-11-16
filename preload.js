@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('bmcl', {
   info: () => ipcRenderer.invoke('app:info'),
   preflight: () => ipcRenderer.invoke('preflight'),
   getNotices: () => ipcRenderer.invoke('notices:fetch'),
+  getFestival: () => ipcRenderer.invoke('festival:get'),
 
   // 设置
   getSettings: () => ipcRenderer.invoke('settings:get'),

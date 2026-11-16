@@ -32,6 +32,7 @@ const aiCore = require('./src/core/ai');
 const musicCore = require('./src/core/music');
 const themesCore = require('./src/core/themes');
 const skinStore = require('./src/core/skin-store');
+const seasonal = require('./src/core/seasonal');
 
 const APP_NAME = 'BMCL';
 const APP_VERSION = require('./package.json').version;
@@ -743,7 +744,7 @@ async function preflight() {
   if (s.checkDownloads) {
     out.download = await updater.checkDownloadAllowed({});
   }
-  if (s.autoUpdate && (!out.download || out.download.allowed)) {
+  if (s.autoUpdate) {
     try {
       out.update = await updater.checkForUpdate({ currentVersion: APP_VERSION });
     } catch (e) {
@@ -753,29 +754,81 @@ async function preflight() {
   return out;
 }
 
+/** Windows 便携版自替换脚本：等旧进程退出 → 覆盖 exe → 重新启动 */
+function windowsUpdateScript(newExe, targetExe) {
+  const lines = [
+    '@echo off',
+    'chcp 65001 >nul',
+    'for /l %%i in (1,1,60) do (',
+    '  move /y "' + newExe + '" "' + targetExe + '" >nul 2>&1',
+    '  if not exist "' + newExe + '" goto done',
+    '  timeout /t 1 /nobreak >nul',
+    ')',
+    ':done',
+    'start "" "' + targetExe + '"',
+    'del "%~f0"'
+  ];
+  return lines.join('\r\n');
+}
+
 async function applyUpdate(release) {
   if (!release || !release.asset) throw new Error('该版本没有可下载的更新包');
-  if (app.isPackaged || !/\.zip$/i.test(release.asset.name)) {
-    // 打包后的 exe 无法原地替换，直接引导到发布页下载新版（永远指向最新 Release）
-    await shell.openExternal(release.htmlUrl);
-    return { redirected: true, url: release.htmlUrl };
+  const asset = release.asset;
+  const isExe = /\.exe$/i.test(asset.name || '');
+  const isZip = /\.zip$/i.test(asset.name || '');
+
+  // 开发环境：直接覆盖启动器源码文件
+  if (!app.isPackaged) {
+    if (!isZip) {
+      await shell.openExternal(release.htmlUrl);
+      return { redirected: true, url: release.htmlUrl };
+    }
+    const appDir = app.getAppPath();
+    const tmpDir = path.join(userData(), 'update-tmp');
+    await fsp.rm(tmpDir, { recursive: true, force: true });
+    await fsp.mkdir(tmpDir, { recursive: true });
+    const zipPath = path.join(tmpDir, 'update.zip');
+    log('正在下载更新包…');
+    await updater.downloadAsset(asset, zipPath, {
+      onProgress: (p) => send('update:progress', p)
+    });
+    const extractDir = path.join(tmpDir, 'extracted');
+    await extractZip(zipPath, extractDir);
+    const result = await updater.applyUpdateTree(extractDir, appDir, {
+      onProgress: (p) => send('update:progress', Object.assign({ stage: 'apply' }, p))
+    });
+    log('启动器已更新 ' + result.updated + ' 个文件（未触碰任何游戏文件）', 'ok');
+    return { updated: result.updated };
   }
-  const appDir = app.getAppPath();
-  const tmpDir = path.join(userData(), 'update-tmp');
-  await fsp.rm(tmpDir, { recursive: true, force: true });
-  await fsp.mkdir(tmpDir, { recursive: true });
-  const zipPath = path.join(tmpDir, 'update.zip');
-  log('正在下载更新包…');
-  const res = await fetch(release.asset.url, { headers: { 'User-Agent': 'fft1145-bmcl-updater' } });
-  if (!res.ok) throw new Error('更新包下载失败：HTTP ' + res.status);
-  await fsp.writeFile(zipPath, Buffer.from(await res.arrayBuffer()));
-  const extractDir = path.join(tmpDir, 'extracted');
-  await extractZip(zipPath, extractDir);
-  const result = await updater.applyUpdateTree(extractDir, appDir, {
-    onProgress: (p) => send('update:progress', p)
-  });
-  log('启动器已更新 ' + result.updated + ' 个文件（未触碰任何游戏文件）', 'ok');
-  return { updated: result.updated };
+
+  // 便携版 exe：下载新版 → 退出 → 脚本替换 → 自动重启
+  if (isExe && process.platform === 'win32') {
+    const target = process.execPath;
+    const tmpDir = path.join(userData(), 'update-tmp');
+    await fsp.rm(tmpDir, { recursive: true, force: true });
+    await fsp.mkdir(tmpDir, { recursive: true });
+    const newExe = path.join(tmpDir, asset.name || 'BMCL-update.exe');
+    log('正在下载更新包（' + Math.round((Number(asset.size) || 0) / 1048576) + ' MB）…');
+    const result = await updater.downloadAsset(asset, newExe, {
+      onProgress: (p) => send('update:progress', p)
+    });
+    // 校验 PE 文件头，防止把 HTML 错误页当成 exe
+    const head = Buffer.alloc(2);
+    const fd = fs.openSync(newExe, 'r');
+    try { fs.readSync(fd, head, 0, 2, 0); } finally { fs.closeSync(fd); }
+    if (head.toString('latin1') !== 'MZ') throw new Error('更新包不是有效的 Windows 程序');
+    const batPath = path.join(tmpDir, 'apply-update.bat');
+    fs.writeFileSync(batPath, windowsUpdateScript(newExe, target), 'utf8');
+    log('更新已就绪，正在重启启动器完成替换…', 'ok');
+    const child = spawn('cmd.exe', ['/c', batPath], { detached: true, stdio: 'ignore', windowsHide: true });
+    child.unref();
+    setTimeout(() => { try { app.exit(0); } catch (_) { /* 已退出 */ } }, 900);
+    return { restarting: true, size: result.size, url: result.url };
+  }
+
+  // 其他情况（zip / 非 Windows）：引导到发布页
+  await shell.openExternal(release.htmlUrl);
+  return { redirected: true, url: release.htmlUrl };
 }
 
 function createWindow() {
@@ -852,6 +905,7 @@ async function fetchNotices() {
 
 function registerIpc() {
   ipcMain.handle('app:info', () => ({ name: APP_NAME, version: APP_VERSION, website: WEBSITE, packaged: app.isPackaged }));
+  ipcMain.handle('festival:get', () => seasonal.resolveFestival(getSettings().festivalMode));
   ipcMain.handle('notices:fetch', () => fetchNotices());
   ipcMain.handle('preflight', () => preflight());
   ipcMain.handle('settings:get', () => getSettings());

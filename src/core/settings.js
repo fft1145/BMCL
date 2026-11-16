@@ -43,7 +43,8 @@ const DEFAULTS = {
   musicAutoplay: false,
   aiApiKey: '',              // DeepSeek API Key
   aiModel: 'deepseek-chat',
-  aiBaseUrl: 'https://api.deepseek.com'
+  aiBaseUrl: 'https://api.deepseek.com',
+  festivalMode: 'auto'       // auto | off | april | spring
 };
 
 function clampNumber(value, min, max, fallback) {
@@ -107,6 +108,7 @@ function normalize(input) {
   out.aiBaseUrl = typeof out.aiBaseUrl === 'string' && /^https?:\/\//.test(out.aiBaseUrl)
     ? out.aiBaseUrl.replace(/\/+$/, '')
     : DEFAULTS.aiBaseUrl;
+  out.festivalMode = ['off', 'april', 'spring'].includes(out.festivalMode) ? out.festivalMode : 'auto';
   return out;
 }
 
