@@ -11,11 +11,15 @@
     presets: [],
     tracks: [],
     trackIndex: -1,
+    musicView: 'search',
+    searchResults: [],
     aiHistory: [],
     viewer: null,
     audio: null,
     skinFile: null,
-    crashReport: null
+    crashReport: null,
+    javaRuntimes: null,
+    javaDir: ''
   };
 
   function esc(text) {
@@ -53,13 +57,19 @@
   }
 
   /* ---------------- 导航与标签 ---------------- */
+  // 供其它页面调用：打开增强页的指定页签
+  window.bmclOpenFxTab = function (name) {
+    const tab = $('.fx-tab[data-fxtab="' + name + '"]');
+    if (tab) tab.click();
+  };
+
   function initTabs() {
     $$('.fx-tab').forEach((tab) => {
       tab.addEventListener('click', () => {
         $$('.fx-tab').forEach((t) => t.classList.toggle('on', t === tab));
         $$('.fx-pane').forEach((p) => p.classList.toggle('on', p.dataset.fxpane === tab.dataset.fxtab));
         if (tab.dataset.fxtab === 'skin') refreshSkinPane();
-        if (tab.dataset.fxtab === 'java') renderJava();
+        if (tab.dataset.fxtab === 'java') { renderJava(); loadJavaRuntimes(); }
         if (tab.dataset.fxtab === 'look') renderLook();
       });
     });
@@ -364,6 +374,89 @@
     return audio;
   }
 
+  const FAV_KEY = 'bmcl_music_favs';
+
+  function loadFavs() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+      return Array.isArray(arr) ? arr.filter((t) => t && t.bvid) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveFavs(list) {
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch (e) { /* 忽略配额错误 */ }
+    renderFavCount();
+  }
+
+  function renderFavCount() {
+    const el = $('#fxFavCount');
+    if (el) el.textContent = String(loadFavs().length);
+  }
+
+  function toggleFav(track) {
+    if (!track || !track.bvid) return;
+    const list = loadFavs();
+    const index = list.findIndex((t) => t.bvid === track.bvid);
+    if (index >= 0) {
+      list.splice(index, 1);
+      toast('已取消收藏', 'ok');
+    } else {
+      list.push({
+        bvid: track.bvid,
+        title: track.title,
+        author: track.author,
+        cover: track.cover || '',
+        duration: Number(track.duration) || 0
+      });
+      toast('已收藏到「我的收藏」', 'ok');
+    }
+    saveFavs(list);
+    renderMusicView();
+  }
+
+  function renderMusicView() {
+    const listBox = $('#fxMusicList');
+    if (!listBox) return;
+    const favs = loadFavs();
+    const favSet = new Set(favs.map((t) => t.bvid));
+    const items = state.musicView === 'favs' ? favs : (state.searchResults || []);
+    state.tracks = items;
+    if (!items.length) {
+      listBox.innerHTML = state.musicView === 'favs'
+        ? '<p class="fx-hint" style="padding:12px">还没有收藏。在搜索结果里点 ★ 即可收藏。</p>'
+        : '<p class="fx-hint" style="padding:12px">搜索后点击任意结果即可播放。音源直接取 B 站音频流，仅供个人收听。</p>';
+      return;
+    }
+    listBox.innerHTML = items.map((item, i) =>
+      '<div class="fx-track" data-index="' + i + '">' +
+      '<div class="fx-track-idx">' + (i + 1) + '</div>' +
+      '<div class="fx-track-main"><div class="fx-track-title">' + esc(item.title) + '</div>' +
+      '<div class="fx-track-sub">' + esc(item.author) + '</div></div>' +
+      '<div class="fx-track-dur">' + fmt(item.duration) + '</div>' +
+      '<button class="fx-track-fav' + (favSet.has(item.bvid) ? ' on' : '') + '" data-fav="' + esc(item.bvid) + '" title="收藏 / 取消收藏">★</button>' +
+      '</div>'
+    ).join('');
+    $$('.fx-track', listBox).forEach((node) => {
+      node.addEventListener('click', () => playTrack(Number(node.dataset.index)));
+    });
+    $$('[data-fav]', listBox).forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const track = items[Number(btn.closest('.fx-track').dataset.index)];
+        if (track) toggleFav(track);
+      });
+    });
+    const playing = state.tracks[state.trackIndex];
+    if (playing) {
+      $$('.fx-track', listBox).forEach((node) => {
+        const track = items[Number(node.dataset.index)];
+        node.classList.toggle('on', Boolean(track && track.bvid === playing.bvid));
+      });
+    }
+  }
+
   async function searchMusic() {
     const input = $('#fxMusicQuery');
     const keyword = input ? input.value.trim() : '';
@@ -372,21 +465,14 @@
     list.innerHTML = '<p class="fx-hint" style="padding:12px">正在搜索 B 站…</p>';
     try {
       const results = await bmcl.musicSearch(keyword, 1);
-      if (!results.length) {
+      state.searchResults = results || [];
+      if (!state.searchResults.length) {
         list.innerHTML = '<p class="fx-hint" style="padding:12px">没有找到结果，换个关键词试试。</p>';
         return;
       }
-      list.innerHTML = results.map((item, i) =>
-        '<div class="fx-track" data-index="' + i + '">' +
-        '<div class="fx-track-idx">' + (i + 1) + '</div>' +
-        '<div class="fx-track-main"><div class="fx-track-title">' + esc(item.title) + '</div>' +
-        '<div class="fx-track-sub">' + esc(item.author) + '</div></div>' +
-        '<div class="fx-track-dur">' + fmt(item.duration) + '</div></div>'
-      ).join('');
-      state.tracks = results;
-      $$('.fx-track', list).forEach((node) => {
-        node.addEventListener('click', () => playTrack(Number(node.dataset.index)));
-      });
+      state.musicView = 'search';
+      $$('.fx-mtab').forEach((tab) => tab.classList.toggle('on', tab.dataset.mview === 'search'));
+      renderMusicView();
     } catch (err) {
       list.innerHTML = '<p class="fx-hint" style="padding:12px;color:var(--danger)">' + esc(err.message) + '</p>';
     }
@@ -570,6 +656,21 @@
             }
           });
         });
+        if (capes.some((cape) => cape.active)) {
+          const clear = document.createElement('div');
+          clear.className = 'fx-cape';
+          clear.innerHTML = '<div class="fx-cape-name">不使用披风</div>';
+          clear.addEventListener('click', async () => {
+            try {
+              await bmcl.clearCape();
+              toast('已关闭披风', 'ok');
+              refreshCapes();
+            } catch (err) {
+              toast(err.message, 'error');
+            }
+          });
+          box.appendChild(clear);
+        }
       }
       if (hist) {
         const items = data.history || [];
@@ -645,6 +746,94 @@
     renderJava();
   }
 
+  /* ---------------- Java 运行时下载 ---------------- */
+  function renderJavaDirLabel() {
+    const label = $('#fxJavaDlDir');
+    if (!label) return;
+    label.textContent = state.javaDir ? '下载目录：' + state.javaDir : '下载目录：未选择';
+    label.title = state.javaDir || '';
+  }
+
+  const JAVA_DIR_KEY = 'bmcl_java_dl_dir';
+
+  function loadJavaDir() {
+    if (state.javaDir) return;
+    try { state.javaDir = localStorage.getItem(JAVA_DIR_KEY) || ''; } catch (e) { /* 忽略 */ }
+  }
+
+  async function loadJavaRuntimes() {
+    const select = $('#fxJavaRuntime');
+    if (!select) return;
+    if (state.javaRuntimes) return;
+    try {
+      const list = await bmcl.javaRuntimes();
+      state.javaRuntimes = list || [];
+      select.innerHTML = state.javaRuntimes.length
+        ? state.javaRuntimes.map((item) =>
+          '<option value="' + esc(item.name) + '">' + esc(item.label) +
+          (item.version ? ' · ' + esc(item.version) : '') + '</option>').join('')
+        : '<option value="">当前平台没有可下载的 Java</option>';
+    } catch (err) {
+      select.innerHTML = '<option value="">读取失败：' + esc(err.message) + '</option>';
+    }
+  }
+
+  async function pickJavaDownloadDir() {
+    try {
+      const dir = await bmcl.pickDirectory('选择 Java 下载目录（目录里已有的 Java 会被直接复用）');
+      if (!dir) return;
+      state.javaDir = dir;
+      try { localStorage.setItem(JAVA_DIR_KEY, dir); } catch (e) { /* 忽略 */ }
+      renderJavaDirLabel();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  async function downloadJava() {
+    const select = $('#fxJavaRuntime');
+    const btn = $('#fxJavaDownload');
+    const progress = $('#fxJavaProgress');
+    const text = $('#fxJavaProgressText');
+    const name = select ? select.value : '';
+    if (!name) {
+      toast('请先选择要下载的 Java 版本', 'error');
+      return;
+    }
+    if (!state.javaDir) {
+      try { state.javaDir = await bmcl.javaDefaultDir(); } catch (e) { /* 保持为空 */ }
+      renderJavaDirLabel();
+    }
+    if (!state.javaDir) {
+      toast('请先选择下载目录', 'error');
+      return;
+    }
+    const item = (state.javaRuntimes || []).find((r) => r.name === name) || {};
+    const majorMatch = String(item.label || '').match(/Java\s*(\d+)/i);
+    const major = majorMatch ? Number(majorMatch[1]) : 0;
+    if (btn) btn.disabled = true;
+    if (progress) progress.classList.remove('hidden');
+    if (text) text.textContent = '正在准备下载…';
+    try {
+      const res = await bmcl.javaDownload({ name, dir: state.javaDir, major });
+      state.settings.javaDirs = Array.from(new Set((state.settings.javaDirs || []).concat([state.javaDir])));
+      state.settings.javaList = res.list || [];
+      state.settings.javaPath = res.javaPath || state.settings.javaPath;
+      renderJava();
+      if (res.reused) {
+        toast('目录中已有 Java ' + (res.java.major || '') + '，已直接使用', 'ok');
+      } else {
+        toast('Java 下载完成并已设为默认', 'ok');
+      }
+      if (progress) progress.classList.add('hidden');
+    } catch (err) {
+      toast('Java 下载失败：' + err.message, 'error');
+      if (text) text.textContent = '下载失败：' + err.message;
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
   /* ---------------- 初始化 ---------------- */
   function bindEvents() {
     $('#fxAiSend').addEventListener('click', () => {
@@ -673,6 +862,14 @@
     });
 
     $('#fxMusicSearch').addEventListener('click', searchMusic);
+    $$('.fx-mtab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        state.musicView = tab.dataset.mview === 'favs' ? 'favs' : 'search';
+        $$('.fx-mtab').forEach((t) => t.classList.toggle('on', t === tab));
+        renderMusicView();
+      });
+    });
+    renderFavCount();
     $('#fxMusicQuery').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') searchMusic();
     });
@@ -745,6 +942,24 @@
     $('#fxSkinRefresh').addEventListener('click', refreshSkinPane);
 
     $('#fxJavaAdd').addEventListener('click', addJavaDirs);
+    $('#fxJavaPickDir').addEventListener('click', pickJavaDownloadDir);
+    $('#fxJavaDownload').addEventListener('click', downloadJava);
+    if (bmcl.onJavaProgress) {
+      bmcl.onJavaProgress((prog) => {
+        const bar = $('#fxJavaProgressBar');
+        const text = $('#fxJavaProgressText');
+        const box = $('#fxJavaProgress');
+        if (box) box.classList.remove('hidden');
+        if (bar) bar.style.width = Math.max(2, Number(prog.percent) || 0) + '%';
+        if (text) {
+          text.textContent = prog.stage === 'prepare'
+            ? '正在准备下载…'
+            : '正在下载 ' + (prog.done || 0) + ' / ' + (prog.total || 0) + ' 个文件（' + (prog.percent || 0) + '%）';
+        }
+      });
+    }
+    loadJavaDir();
+    renderJavaDirLabel();
     $('#fxJavaRescan').addEventListener('click', async () => {
       const hint = $('#fxJavaHint');
       if (hint) hint.textContent = '正在重新扫描…';

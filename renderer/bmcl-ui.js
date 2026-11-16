@@ -20,6 +20,7 @@
     selected: null,
     saves: [],
     mods: [],
+    modCounts: {},
     packs: [],
     page: 1,
     pageSize: 7,
@@ -375,14 +376,14 @@
 
   var btnCape = $('#acBtnCape');
   if (btnCape) {
-    btnCape.addEventListener('click', async function () {
-      if (!API) return;
-      try {
-        var file = await API.pickFile('选择披风 PNG（64×32）');
-        if (!file) return;
-        if ($('#acSkinPrev')) $('#acSkinPrev').textContent = '披风文件：' + file.split(/[\\/]/).pop();
-        toast('已选择披风文件；正版披风需在 Mojang 后台审核后写入', 'ok');
-      } catch (err) { toast(err.message, 'error'); }
+    btnCape.addEventListener('click', function () {
+      // 正版披风只能使用账号已拥有的款式，跳到「增强 → 皮肤」里切换或关闭披风
+      if ($('#accountPanel')) $('#accountPanel').classList.add('hidden');
+      var nav = document.querySelector('.nav-btn[data-page="tools"]');
+      if (nav) nav.click();
+      if (window.bmclOpenFxTab) window.bmclOpenFxTab('skin');
+      var box = $('#fxCapeList');
+      if (box && box.scrollIntoView) box.scrollIntoView({ block: 'center', behavior: 'smooth' });
     });
   }
 
@@ -535,9 +536,22 @@
 
   async function loadMods() {
     if (!API) return;
+    // 版本隔离后每个实例的 mod 位于各自版本文件夹，不能共用一个全局列表
+    var counts = {};
+    await Promise.all((ui.versions || []).map(async function (v) {
+      try { counts[v.id] = (await API.listInstalledMods('mod', v.id) || []).length; }
+      catch (e) { counts[v.id] = 0; }
+    }));
+    ui.modCounts = counts;
+    await loadModsForSelected();
+  }
+
+  async function loadModsForSelected() {
+    if (!API) return;
+    var vid = ui.selected && ui.selected.id;
     try {
-      ui.mods = await API.listInstalledMods('mod') || [];
-      ui.packs = await API.listInstalledMods('resourcepack') || [];
+      ui.mods = await API.listInstalledMods('mod', vid) || [];
+      ui.packs = await API.listInstalledMods('resourcepack', vid) || [];
     } catch (e) { ui.mods = []; ui.packs = []; }
     renderModLists();
     renderVersionList();
@@ -559,7 +573,7 @@
           '<button class="mg-del" data-vdel="' + esc(v.id) + '">删除</button>' +
         '</div>' +
         '<div class="mg-row-meta">' +
-          '<span class="mg-chip">mod ' + ui.mods.length + '</span>' +
+          '<span class="mg-chip">mod ' + ((ui.modCounts && ui.modCounts[v.id]) || 0) + '</span>' +
           '<span class="mg-chip dim">存档 ' + ui.saves.length + '</span>' +
           '<span class="mg-chip dim">' + esc(v.type || 'release') + '</span>' +
         '</div>' +
@@ -659,6 +673,7 @@
       renderVersionList();
       renderManageDetail();
       resizeModel();
+      await loadModsForSelected();
       return;
     }
 

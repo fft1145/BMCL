@@ -149,8 +149,8 @@
     constructor(canvas) {
       this.canvas = canvas;
       this.gl = canvas.getContext('webgl', { alpha: true, antialias: true });
-      this.rotation = -0.5;
-      this.pitch = -0.12;
+      this.rotation = -0.55;
+      this.pitch = -0.06;
       this.autoRotate = true;
       this.dragging = false;
       this.lastX = 0;
@@ -290,8 +290,10 @@
       gl.uniform1i(this.uTex, 0);
       gl.uniform1f(this.uAlpha, 1);
 
-      const shades = [1.0, 0.72, 0.84, 0.84, 1.08, 0.62];
-      const bob = Math.sin(Date.now() / 700) * 0.35;
+      const shades = [1.0, 0.74, 0.86, 0.86, 1.06, 0.64];
+      // 与 LittleSkin 的待机预览一致：身体轻微起伏，头部多一点点，不做夸张弹跳
+      const t = Date.now() / 950;
+      const bob = Math.sin(t) * 0.45;
       this.parts.forEach((part, i) => {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers[i]);
         gl.enableVertexAttribArray(this.aPos);
@@ -300,7 +302,8 @@
         gl.vertexAttribPointer(this.aUV, 2, gl.FLOAT, false, 20, 12);
 
         rotateY(this.tmpB, this.rotation);
-        const offsetY = part.name === 'head' ? bob * 0.3 : 0;
+        const headExtra = part.name === 'head' ? Math.sin(t + 0.6) * 0.12 : 0;
+        const offsetY = bob * 0.5 + headExtra;
         translate(this.tmpA, part.x * this.scale, part.y * this.scale + offsetY * this.scale, part.z * this.scale);
         multiply(this.model, this.tmpB, this.tmpA);
         multiply(this.model, this.model, this.tmpA);
@@ -324,7 +327,7 @@
     start() {
       if (this.raf) return;
       const loop = () => {
-        if (this.autoRotate && !this.dragging) this.rotation += 0.008;
+        if (this.autoRotate && !this.dragging) this.rotation += 0.0035;
         this.draw();
         this.raf = requestAnimationFrame(loop);
       };

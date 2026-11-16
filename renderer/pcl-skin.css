@@ -91,9 +91,14 @@ body:not(.theme-bmcl) .launch-side{
   box-shadow:4px 0 12px -6px rgba(0,0,0,.10);
 }
 
-/* 账号区（PanLogin） */
+/* 账号区（PanLogin）：头像为方形，和 PCL 一致 */
 body:not(.theme-bmcl) .player-box{gap:4px;padding:14px 0 0}
-body:not(.theme-bmcl) .avatar-shell{width:64px;height:64px;border-radius:50%;overflow:hidden}
+body:not(.theme-bmcl) .avatar-shell{
+  width:66px;height:66px;border-radius:10px;padding:3px;overflow:hidden;
+}
+body:not(.theme-bmcl) .avatar-shell .avatar{
+  width:100%;height:100%;border-radius:7px;object-fit:cover;
+}
 body:not(.theme-bmcl) .player-name{font-size:15px;font-weight:700;color:var(--pcl-1);margin-top:8px}
 body:not(.theme-bmcl) .player-tag{
   font-size:11px;color:var(--pcl-gray);

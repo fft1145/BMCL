@@ -536,6 +536,30 @@
     $('#packForm').classList.remove('hidden');
     $('#btnPackOpenSite').onclick = () => bmcl.openExternal(info.url);
     populatePackGames();
+    // 还没有任何版本可选时自动拉取远程列表，避免「模组加载器列表加载不出来」
+    const sel = $('#packGame');
+    if (sel && sel.options.length <= 1) {
+      $('#packStatus').textContent = '正在获取游戏版本列表…';
+      loadRemoteVersions()
+        .then(() => {
+          populatePackGames();
+          autoPickPackGame();
+        })
+        .catch((err) => {
+          $('#packStatus').textContent = '获取游戏版本失败：' + err.message;
+        });
+    } else {
+      autoPickPackGame();
+    }
+  }
+
+  function autoPickPackGame() {
+    const sel = $('#packGame');
+    if (!sel || sel.value) return;
+    const first = Array.prototype.slice.call(sel.options).find((o) => o.value);
+    if (!first) return;
+    sel.value = first.value;
+    loadPackLoaders();
   }
 
   function populatePackGames() {
@@ -1203,9 +1227,18 @@
     const list = $('#installedMods');
     if (!list) return;
     const meta = modMeta(modType());
+    const vid = state.settings.versionId ||
+      ((state.gameState.versions[0] && state.gameState.versions[0].id) || '');
     try {
-      const mods = await bmcl.listInstalledMods(modType());
-      if (!mods.length) { list.innerHTML = '<p class="empty">尚未安装任何' + meta.title + '。</p>'; return; }
+      const mods = await bmcl.listInstalledMods(modType(), vid);
+      if (!mods.length) {
+        list.innerHTML = '<p class="empty">当前实例（' + esc(vid || '未选择版本') +
+          '）的 ' + esc(meta.title) + ' 目录里没有文件。' +
+          (state.settings.versionIsolation === 'all'
+            ? '已开启版本隔离，请在 versions/' + esc(vid || '<版本>') + '/' + meta.dir + ' 中查看。'
+            : '') + '</p>';
+        return;
+      }
       list.innerHTML = mods.map((m) =>
         '<div class="version-item">' +
           '<div class="v-left"><span class="v-id">' + esc(m.name) + '</span>' +
@@ -1374,7 +1407,23 @@
         setModType('mod');
         renderFavorites();
       },
-      fabric: () => { showDlPanel('#loaderPanel'); populateFabricGames(); },
+      fabric: () => {
+        showDlPanel('#loaderPanel');
+        populateFabricGames();
+        const sel = $('#fabricGame');
+        if (sel && sel.options.length <= 1) {
+          loadRemoteVersions().then(() => {
+            populateFabricGames();
+            if (!sel.value && sel.options.length > 1) {
+              sel.value = sel.options[1].value;
+              loadFabricLoaders();
+            }
+          }).catch(() => {});
+        } else if (sel && !sel.value && sel.options.length > 1) {
+          sel.value = sel.options[1].value;
+          loadFabricLoaders();
+        }
+      },
       forge: () => { showDlPanel('#packNoticePanel'); showPackNotice('forge'); },
       neoforge: () => { showDlPanel('#packNoticePanel'); showPackNotice('neoforge'); },
       optifine: () => { showDlPanel('#packNoticePanel'); showPackNotice('optifine'); }
@@ -1442,14 +1491,25 @@
       populateFabricGames();
     });
     $('#btnFabricLoaders').addEventListener('click', loadFabricLoaders);
+    if ($('#fabricGame')) {
+      $('#fabricGame').addEventListener('change', () => {
+        if ($('#fabricGame').value) loadFabricLoaders();
+      });
+    }
     $('#btnInstallFabric').addEventListener('click', installFabricFromUi);
 
     // Forge / NeoForge 安装
     $('#btnPackGames').addEventListener('click', async () => {
       await loadRemoteVersions();
       populatePackGames();
+      autoPickPackGame();
     });
     $('#btnPackLoaders').addEventListener('click', loadPackLoaders);
+    if ($('#packGame')) {
+      $('#packGame').addEventListener('change', () => {
+        if ($('#packGame').value) loadPackLoaders();
+      });
+    }
     $('#btnPackInstall').addEventListener('click', installPack);
 
     // 版本列表：安装 / 启动 / 设为当前
@@ -1462,6 +1522,7 @@
       if (launch) {
         state.settings.versionId = launch.dataset.launch;
         syncVersionLabel();
+        refreshModsList();
         if (!document.body.classList.contains('theme-bmcl')) switchPage('launch');
         launchGame(launch.dataset.launch);
         return;
@@ -1472,6 +1533,7 @@
         bmcl.saveSettings({ versionId: use.dataset.use }).then(() => {
           syncVersionLabel();
           renderInstanceList();
+          refreshModsList();
           toast('当前实例：' + use.dataset.use, 'ok');
         });
         return;
@@ -1628,11 +1690,19 @@
       $('#accountPanel').classList.remove('hidden');
     });
     if ($('#btnSkinUpload')) $('#btnSkinUpload').addEventListener('click', uploadSkinFromTool);
-    if ($('#btnCape')) $('#btnCape').addEventListener('click', () => toast('披风管理将在后续版本接入（支持 LittleSkin）', 'info'));
+    if ($('#btnCape')) $('#btnCape').addEventListener('click', () => {
+      switchPage('tools');
+      if (window.bmclOpenFxTab) window.bmclOpenFxTab('skin');
+      const box = $('#fxCapeList');
+      if (box && box.scrollIntoView) box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
     if ($('#btnProfileEdit')) $('#btnProfileEdit').addEventListener('click', () => {
-      switchPage('launch');
-      $('#accountPanel').classList.remove('hidden');
-      $('#newAccountName').focus();
+      toast('玩家名需要在 Minecraft 官网修改，正在打开…', 'info');
+      bmcl.openExternal('https://www.minecraft.net/zh-hans/msaprofile/mygames/editprofile').catch(() => {});
+    });
+    if ($('#btnEditPassword')) $('#btnEditPassword').addEventListener('click', () => {
+      toast('密码是登录 Minecraft 官网的微软账号密码，正在打开安全设置…', 'info');
+      bmcl.openExternal('https://account.microsoft.com/security').catch(() => {});
     });
     if ($('#btnBackup')) $('#btnBackup').addEventListener('click', () => toast('游戏目录备份功能开发中', 'info'));
     if ($('#btnRestore')) $('#btnRestore').addEventListener('click', () => toast('还原备份功能开发中', 'info'));

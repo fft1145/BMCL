@@ -27,6 +27,7 @@ const microsoft = require('./src/core/microsoft');
 const terracotta = require('./src/core/terracotta');
 const easytier = require('./src/core/easytier');
 const javaScan = require('./src/core/java-scan');
+const javaDownload = require('./src/core/java-download');
 const aiCore = require('./src/core/ai');
 const musicCore = require('./src/core/music');
 const themesCore = require('./src/core/themes');
@@ -1096,10 +1097,10 @@ function registerIpc() {
       onProgress: (p) => send('download:progress', p)
     })
   );
-  ipcMain.handle('mods:list', (e, type) => tools.listInstalledMods(instanceDataDir(), type));
-  ipcMain.handle('mods:openDir', (e, type) => {
+  ipcMain.handle('mods:list', (e, type, versionId) => tools.listInstalledMods(instanceDataDir(versionId), type));
+  ipcMain.handle('mods:openDir', (e, type, versionId) => {
     const dirName = { resourcepack: 'resourcepacks', shader: 'shaderpacks', datapack: 'datapacks', modpack: 'modpacks' }[type] || 'mods';
-    const dir = path.join(instanceDataDir(), dirName);
+    const dir = path.join(instanceDataDir(versionId), dirName);
     fs.mkdirSync(dir, { recursive: true });
     shell.openPath(dir);
     return dir;
@@ -1186,6 +1187,46 @@ function registerIpc() {
     const s = getSettings();
     return settingsCore.save(settingsFile(), Object.assign(s, { javaPath: String(javaPath || '') }));
   });
+  // 可下载的 Java 运行时（照搬 PCL CE 的 java-runtime 清单）
+  ipcMain.handle('java:runtimes', async () => javaDownload.listRuntimes({ source: getSettings().source }));
+  ipcMain.handle('java:defaultDir', () => path.join(userData(), 'java'));
+  ipcMain.handle('java:download', async (e, payload) => {
+    const p = payload || {};
+    const s = getSettings();
+    const dir = String(p.dir || '').trim();
+    if (!dir) throw new Error('请先选择 Java 下载目录');
+    fs.mkdirSync(dir, { recursive: true });
+
+    // 目录中之前下载过 Java：直接复用，不再重复下载
+    const before = await javaScan.scanJavaDir(dir);
+    const wantMajor = Number(p.major) || 0;
+    const usable = before.filter((j) => j.ok);
+    const existing = (wantMajor && usable.find((j) => j.major === wantMajor)) || usable[0];
+    if (existing) {
+      const merged = javaScan.mergeScans(s.javaList, before);
+      const dirs = Array.from(new Set([].concat(s.javaDirs || [], [dir])));
+      settingsCore.save(settingsFile(), Object.assign(s, { javaDirs: dirs, javaList: merged, javaPath: existing.path }));
+      log('Java 下载目录中已有 Java，直接使用：' + existing.path, 'ok');
+      return { reused: true, java: existing, list: merged, javaPath: existing.path };
+    }
+
+    const installed = await javaDownload.installRuntime(p.name, dir, {
+      source: s.source,
+      onProgress: (prog) => send('java:progress', prog)
+    });
+    const after = await javaScan.scanJavaDir(dir);
+    const merged = javaScan.mergeScans(s.javaList, after);
+    const dirs = Array.from(new Set([].concat(s.javaDirs || [], [dir])));
+    const okList = after.filter((j) => j.ok);
+    const pick = (wantMajor && okList.find((j) => j.major === wantMajor)) || okList[0] || null;
+    settingsCore.save(settingsFile(), Object.assign(s, {
+      javaDirs: dirs,
+      javaList: merged,
+      javaPath: pick ? pick.path : s.javaPath
+    }));
+    log('Java 下载完成：' + installed.name + '（' + installed.files + ' 个文件）', 'ok');
+    return { reused: false, java: pick, list: merged, javaPath: pick ? pick.path : s.javaPath, installed };
+  });
 
   // ===== 2.3.0 AI 助手 =====
   ipcMain.handle('ai:chat', (e, payload) => {
@@ -1270,13 +1311,26 @@ function registerIpc() {
   ipcMain.handle('skin:capes', async () => {
     const account = accounts.getActiveAccount(userData());
     if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
-    const capes = await microsoft.listCapes(account.accessToken);
+    let capes = [];
+    try {
+      capes = await microsoft.listCapes(account.accessToken);
+    } catch (err) {
+      log('读取披风列表失败，改用登录时保存的披风：' + err.message, 'warn');
+    }
+    if (!capes.length) {
+      capes = (account.capes || []).map((cape) => ({
+        id: cape.id,
+        alias: cape.alias || '',
+        url: String(cape.url || '').replace(/^http:\/\//i, 'https://'),
+        active: cape.state === 'ACTIVE'
+      }));
+    }
     return { capes, history: skinStore.listCapeRecords(userData()) };
   });
   ipcMain.handle('skin:setCape', async (e, capeId) => {
     const account = accounts.getActiveAccount(userData());
     if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
-    const capes = await microsoft.listCapes(account.accessToken);
+    const capes = await microsoft.listCapes(account.accessToken).catch(() => []);
     const target = capes.find((c) => c.id === capeId);
     await microsoft.setCape(account.accessToken, String(capeId || ''));
     skinStore.addCapeRecord(userData(), {

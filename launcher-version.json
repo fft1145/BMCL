@@ -1,18 +1,18 @@
 {
-  "version": "2.3.0",
-  "name": "BMCL 2.3.0",
-  "tag": "v2.3.0",
-  "publishedAt": "2026-11-13",
+  "version": "2.4.0",
+  "name": "BMCL 2.4.0",
+  "tag": "v2.4.0",
+  "publishedAt": "2026-11-16",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.3.0\n- 崩溃自动分析：游戏异常退出后自动诊断，弹窗列出可能原因，支持一键交给 AI 深入分析\n- 内置 DeepSeek AI 助手：模组冲突、崩溃、Java 版本问题都能问，API Key 只存本机\n- Java 环境目录：只需指定存放 Java 的目录，自动递归识别目录下所有 Java（版本/位数/发行商），启动时按版本需求自动挑选\n- 外观自定义：5 套主题预设 + 自定义配色 + 自定义 CSS，不改核心代码\n- 自定义背景：支持静态图片与视频动态壁纸，可调暗化和模糊\n- 内置音乐播放器：直接搜索 B 站音源播放，支持播放列表与音量记忆\n- 皮肤与披风：3D 皮肤模型渲染，登录后头像使用自己皮肤裁出的大头照，支持更换皮肤/披风并记录历史",
+  "notes": "2.4.0\n- Java 自动补全：指定 Java 下载目录；目录之前下载过 Java 时直接复用，不再重复下载\n- 图标更新：BMCL 导航栏使用 BMCL 商标，PCL 界面玩家头像改为方形并修复变形\n- 下载页图标照搬 PCL CE：原版 / Forge / Fabric / NeoForge / OptiFine / 模组 / 整合包 / 资源包 / 光影 / 存档\n- 修复模组加载器列表：自动拉取游戏版本并加载安装器列表；版本隔离下按当前实例读取已安装模组\n- 音乐播放器新增收藏，可在「我的收藏」中直接播放\n- 3D 皮肤渲染改为 LittleSkin 风格（正面视角、缓慢自转、待机轻微起伏）\n- 披风管理：读取微软账户全部披风，可切换或关闭并记录历史\n- 账户修改：修改玩家名 / 密码跳转 Minecraft 官网与微软安全设置",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.3.0/Better-MC-Launcher.exe",
-      "size": 74750090,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.4.0/Better-MC-Launcher.exe",
+      "size": 74762272,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.3.0/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.3.0/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.4.0/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.4.0/Better-MC-Launcher.exe"
       ]
     }
   ]

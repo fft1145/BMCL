@@ -69,8 +69,8 @@ contextBridge.exposeInMainWorld('bmcl', {
   searchMods: (query, options) => ipcRenderer.invoke('mods:search', query, options),
   getModVersions: (source, projectId, gameVersion) => ipcRenderer.invoke('mods:versions', source, projectId, gameVersion),
   installMod: (modVersion, projectType) => ipcRenderer.invoke('mods:install', modVersion, projectType),
-  listInstalledMods: (type) => ipcRenderer.invoke('mods:list', type),
-  openModsDir: (type) => ipcRenderer.invoke('mods:openDir', type),
+  listInstalledMods: (type, versionId) => ipcRenderer.invoke('mods:list', type, versionId),
+  openModsDir: (type, versionId) => ipcRenderer.invoke('mods:openDir', type, versionId),
 
   // 陶瓦联机
   onlineJoin: (code) => ipcRenderer.invoke('online:join', code),
@@ -101,6 +101,10 @@ contextBridge.exposeInMainWorld('bmcl', {
   javaRescan: () => ipcRenderer.invoke('java:rescan'),
   javaRemoveDir: (dir) => ipcRenderer.invoke('java:removeDir', dir),
   javaSetDefault: (path) => ipcRenderer.invoke('java:setDefault', path),
+  javaRuntimes: () => ipcRenderer.invoke('java:runtimes'),
+  javaDefaultDir: () => ipcRenderer.invoke('java:defaultDir'),
+  javaDownload: (payload) => ipcRenderer.invoke('java:download', payload),
+  onJavaProgress: (handler) => on('java:progress', handler),
 
   aiChat: (payload) => ipcRenderer.invoke('ai:chat', payload),
   aiCrash: (payload) => ipcRenderer.invoke('ai:crash', payload),
