@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>BMCL</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Microsoft YaHei UI","Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(120% 140% at 50% 0%,#16324f 0%,#0b1424 62%,#070d16 100%);
+    color:#e8f1fb;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    overflow:hidden;user-select:none;-webkit-app-region:drag;
+  }
+  .glow{position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(19,112,243,.22);filter:blur(60px);top:-90px;left:50%;transform:translateX(-50%)}
+  .logo{
+    width:88px;height:88px;border-radius:20px;object-fit:contain;background:#fff;padding:6px;
+    box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.18);
+    animation:pop .5s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+  .name{margin-top:14px;font-size:24px;font-weight:800;letter-spacing:5px;color:#fff}
+  .sub{margin-top:4px;font-size:11px;letter-spacing:2px;color:#7fa6cd;text-transform:uppercase}
+  .bar{margin-top:26px;width:250px;height:4px;border-radius:99px;background:rgba(255,255,255,.13);overflow:hidden}
+  .bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#2f8bf7,#7ec4ff);transition:width .28s ease}
+  .meta{margin-top:10px;width:250px;display:flex;justify-content:space-between;font-size:11px;color:#8fb0cf}
+  .ver{position:absolute;bottom:12px;font-size:10px;color:#54728f;letter-spacing:1px}
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <img class="logo" src="../build/icon.png" alt="BMCL">
+  <div class="name">BMCL</div>
+  <div class="sub">Better Minecraft Launcher</div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="meta"><span id="stage">正在启动…</span><span id="percent">0%</span></div>
+  <div class="ver" id="ver"></div>
+<script>
+  (function () {
+    const stages = ['正在加载启动器资源…', '正在检测 Java 环境…', '正在扫描游戏版本…', '准备就绪'];
+    const bar = document.getElementById('bar');
+    const percent = document.getElementById('percent');
+    const stage = document.getElementById('stage');
+    let value = 0;
+    let index = 0;
+    stage.textContent = stages[0];
+    const timer = setInterval(function () {
+      value = Math.min(100, value + Math.max(3, (100 - value) * 0.12));
+      bar.style.width = value.toFixed(1) + '%';
+      percent.textContent = Math.round(value) + '%';
+      const next = Math.min(stages.length - 1, Math.floor(value / 30));
+      if (next !== index) { index = next; stage.textContent = stages[index]; }
+      if (value >= 99.5) {
+        bar.style.width = '100%';
+        percent.textContent = '100%';
+        stage.textContent = stages[stages.length - 1];
+        clearInterval(timer);
+      }
+    }, 110);
+  })();
+</script>
+</body>
+</html>

@@ -1,18 +1,18 @@
 {
-  "version": "2.4.0",
-  "name": "BMCL 2.4.0",
-  "tag": "v2.4.0",
-  "publishedAt": "2026-11-16",
+  "version": "2.6.0",
+  "name": "BMCL 2.6.0",
+  "tag": "v2.6.0",
+  "publishedAt": "2026-11-17",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.4.0\n- Java 自动补全：指定 Java 下载目录；目录之前下载过 Java 时直接复用，不再重复下载\n- 图标更新：BMCL 导航栏使用 BMCL 商标，PCL 界面玩家头像改为方形并修复变形\n- 下载页图标照搬 PCL CE：原版 / Forge / Fabric / NeoForge / OptiFine / 模组 / 整合包 / 资源包 / 光影 / 存档\n- 修复模组加载器列表：自动拉取游戏版本并加载安装器列表；版本隔离下按当前实例读取已安装模组\n- 音乐播放器新增收藏，可在「我的收藏」中直接播放\n- 3D 皮肤渲染改为 LittleSkin 风格（正面视角、缓慢自转、待机轻微起伏）\n- 披风管理：读取微软账户全部披风，可切换或关闭并记录历史\n- 账户修改：修改玩家名 / 密码跳转 Minecraft 官网与微软安全设置",
+  "notes": "2.6.0\n- 多语言界面：简体中文、繁體中文（香港／澳門）、繁體中文（中國台灣）、English (en-US / en-GB / en-AU)、日本語、Deutsch，默认跟随系统\n- GitHub 简介提供 8 种语言版本\n- 节日彩蛋：愚人节 / 春节先检测所在地区，仅中文环境触发；愚人节「王体」手写字并致敬 81192，春节提供 B 站拜年视频\n- 启动器启动画面：显示 BMCL 商标与加载进度\n- 启动 Minecraft 时显示启动进度：读取版本 → 检查 Java → 校验文件 → 构建参数 → 启动进程\n- 地图下载不再显示为 mod，改为引导到 Minecraft Maps / CurseForge Worlds / Modrinth\n- 修复版本扫描：mod 数量按实例独立统计，安装 mod 写入当前实例\n- 版本设置独立：内存 / Java / 玩家名 / 版本隔离可按版本单独配置\n- 启动器版本号升至 2.6.0",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.4.0/Better-MC-Launcher.exe",
-      "size": 74762272,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",
+      "size": 74771205,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.4.0/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.4.0/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe"
       ]
     }
   ]

@@ -1,4 +1,4 @@
-[简体中文](README.md) | [繁體中文（香港／澳門）](README.zh-HK.md) | [繁體中文（台灣）](README.zh-TW.md) | [**English (US)**](README.en-US.md) | [English (USA)](README.en-USA.md) | [Official Website](https://bmcl26.netlify.app)
+[简体中文](README.md) | [繁體中文（香港／澳門）](README.zh-HK.md) | [繁體中文（台灣）](README.zh-TW.md) | [**English (USA)**](README.en-US.md) | [English (UK)](README.en-GB.md) | [English (Australia)](README.en-AU.md) | [日本語](README.ja-JP.md) | [Deutsch](README.de-DE.md) | [Official Website](https://bmcl26.netlify.app)
 
 <div align="center">
 
@@ -19,7 +19,7 @@
 
 [Download](https://github.com/fft1145/BMCL/releases/latest) |
 [Official Website](https://bmcl26.netlify.app) |
-[Source Code](https://github.com/fft1145/BMCL/archive/refs/tags/v2.4.0.zip)
+[Source Code](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.0.zip)
 
 [Report an Issue](https://github.com/fft1145/BMCL/issues/new/choose) |
 [Release Notes](https://github.com/fft1145/BMCL/releases) |
@@ -64,7 +64,7 @@ It ships with vanilla and modpack downloads, mod and loader installation, accoun
 |---|---|
 | [GitHub Releases](https://github.com/fft1145/BMCL/releases/latest) | Latest portable `Better-MC-Launcher.exe`, unzip and run |
 | [Official Website](https://bmcl26.netlify.app/#download) | More stable download page in mainland China, with checksums |
-| [Source Code](https://github.com/fft1145/BMCL/archive/refs/tags/v2.4.0.zip) | Full source for the current version |
+| [Source Code](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.0.zip) | Full source for the current version |
 
 The launcher is portable and needs no installation. On first run it initializes its own data directory and never touches your existing `.minecraft`.
 

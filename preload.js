@@ -13,10 +13,14 @@ contextBridge.exposeInMainWorld('bmcl', {
   info: () => ipcRenderer.invoke('app:info'),
   preflight: () => ipcRenderer.invoke('preflight'),
   getNotices: () => ipcRenderer.invoke('notices:fetch'),
+  seasonalInfo: () => ipcRenderer.invoke('seasonal:info'),
 
   // 设置
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (value) => ipcRenderer.invoke('settings:save', value),
+  getVersionSettings: (versionId) => ipcRenderer.invoke('settings:getVersion', versionId),
+  saveVersionSettings: (versionId, patch) => ipcRenderer.invoke('settings:saveVersion', versionId, patch),
+  clearVersionSettings: (versionId) => ipcRenderer.invoke('settings:clearVersion', versionId),
 
   // 版本
   listInstalled: () => ipcRenderer.invoke('versions:installed'),
@@ -68,7 +72,7 @@ contextBridge.exposeInMainWorld('bmcl', {
   // 模组
   searchMods: (query, options) => ipcRenderer.invoke('mods:search', query, options),
   getModVersions: (source, projectId, gameVersion) => ipcRenderer.invoke('mods:versions', source, projectId, gameVersion),
-  installMod: (modVersion, projectType) => ipcRenderer.invoke('mods:install', modVersion, projectType),
+  installMod: (modVersion, projectType, versionId) => ipcRenderer.invoke('mods:install', modVersion, projectType, versionId),
   listInstalledMods: (type, versionId) => ipcRenderer.invoke('mods:list', type, versionId),
   openModsDir: (type, versionId) => ipcRenderer.invoke('mods:openDir', type, versionId),
 
@@ -128,6 +132,7 @@ contextBridge.exposeInMainWorld('bmcl', {
   onLog: (handler) => on('app:log', handler),
   onGameLog: (handler) => on('game:log', handler),
   onGameState: (handler) => on('game:state', handler),
+  onGameProgress: (handler) => on('game:progress', handler),
   onGameCrash: (handler) => on('game:crash', handler),
   onInstallProgress: (handler) => on('install:progress', handler),
   onUpdateProgress: (handler) => on('update:progress', handler),

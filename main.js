@@ -32,6 +32,7 @@ const aiCore = require('./src/core/ai');
 const musicCore = require('./src/core/music');
 const themesCore = require('./src/core/themes');
 const skinStore = require('./src/core/skin-store');
+const seasonal = require('./src/core/seasonal');
 
 const APP_NAME = 'BMCL';
 const APP_VERSION = require('./package.json').version;
@@ -43,6 +44,8 @@ const NOTICE_URLS = [
 ];
 
 let win = null;
+let splash = null;
+let splashStartedAt = 0;
 let gameProcess = null;
 /** 正在进行中的微软设备码登录：flowId → { deviceCode, clientId, interval, expiresAt } */
 const pendingMsFlows = new Map();
@@ -118,8 +121,11 @@ function dataDirs() {
  * 此时 mods / saves / resourcepacks / config / logs 都在版本文件夹里。
  */
 function instanceDataDir(versionId) {
-  const s = getSettings();
-  return tools.instanceDir(s.gameDir, versionId || s.versionId, s.versionIsolation);
+  const globalSettings = getSettings();
+  const id = versionId || globalSettings.versionId;
+  // 版本隔离方式允许按实例覆盖，取该版本实际生效的设置
+  const s = settingsCore.forVersion(globalSettings, id);
+  return tools.instanceDir(s.gameDir, id, s.versionIsolation);
 }
 
 function send(channel, payload) {
@@ -562,18 +568,22 @@ async function ensureMicrosoftAccount(account) {
 
 async function launchGame(versionId) {
   if (gameProcess) throw new Error('游戏已经在运行中');
-  const s = getSettings();
+  const globalSettings = getSettings();
   const dirs = dataDirs();
   // 没有指定版本时，退回到设置里的版本；再退回到第一个已安装版本
-  let id = versionId || s.versionId;
+  let id = versionId || globalSettings.versionId;
   if (!id || !fs.existsSync(path.join(dirs.versionsDir, id, id + '.json'))) {
     const first = tools.listVersionsIn(dirs.gameDir)[0];
     id = first ? first.id : '';
   }
   if (!id) throw new Error('没有可启动的游戏版本。请先到「下载」页安装，或在「管理」里指定已有的游戏目录');
-  if (id !== s.versionId) {
-    settingsCore.save(settingsFile(), Object.assign(s, { versionId: id }));
+  if (id !== globalSettings.versionId) {
+    settingsCore.save(settingsFile(), Object.assign(globalSettings, { versionId: id }));
   }
+  // 版本级设置（内存 / Java / 玩家名 / 隔离方式）优先于全局设置
+  const s = settingsCore.forVersion(getSettings(), id);
+  const progress = (stage, percent) => send('game:progress', { versionId: id, stage, percent });
+  progress('读取版本信息', 10);
   const versionDir = path.join(dirs.versionsDir, id);
   versionId = id;
   // 版本隔离：游戏数据目录改到 versions/<id>，mods/saves/config 等都跟着走
@@ -582,6 +592,7 @@ async function launchGame(versionId) {
   const json = chain.json;
   if (!json.libraries || !json.libraries.length) throw new Error('版本 ' + id + ' 的 json 不完整，请重新安装');
 
+  progress('检查 Java 环境', 25);
   // 优先用玩家指定的 Java；没指定时，按版本需要的 Java 主版本从扫描结果里自动挑
   const wantedMajor = (json.javaVersion && json.javaVersion.majorVersion) || 8;
   let javaPath = s.javaPath || '';
@@ -606,6 +617,7 @@ async function launchGame(versionId) {
   const accessToken = activeAccount && activeAccount.type === 'microsoft' ? activeAccount.accessToken : '0';
   const userType = activeAccount && activeAccount.type === 'microsoft' ? 'msa' : 'legacy';
   const ctx = { os: require('./src/core/rules').detectContext().os, features: {} };
+  progress('校验游戏文件', 45);
   const libraryPaths = launcherCore.collectLibraryPaths(json, dirs.librariesDir, ctx);
   const clientJar = chain.clientJar || path.join(versionDir, versionId + '.jar');
   let nativesDir = '';
@@ -621,6 +633,7 @@ async function launchGame(versionId) {
     throw new Error('找不到 ' + versionId + ' 的核心 jar（' + clientJar + '）。请重新安装该版本。');
   }
 
+  progress('构建启动参数', 70);
   const classpath = launcherCore.buildClasspath(libraryPaths, clientJar);
   const cmd = launcherCore.buildCommand({
     versionJson: json,
@@ -640,11 +653,13 @@ async function launchGame(versionId) {
     launcherVersion: APP_VERSION
   });
 
+  progress('准备日志与运行目录', 85);
   const logsDir = path.join(instanceDir, 'logs');
   fs.mkdirSync(logsDir, { recursive: true });
   const logFile = path.join(logsDir, 'latest.log');
   fs.writeFileSync(logFile, '', 'utf8');
 
+  progress('启动 Java 进程', 95);
   log('启动命令：' + cmd.javaPath + ' ' + cmd.args.slice(0, 6).join(' ') + ' …');
   gameProcess = spawn(cmd.javaPath, cmd.args, {
     cwd: instanceDir,
@@ -652,6 +667,7 @@ async function launchGame(versionId) {
     env: Object.assign({}, process.env)
   });
   send('game:state', { running: true, versionId });
+  progress('游戏已启动', 100);
   const count = tools.incrementLaunchCount(userData());
   log('启动计数：' + count);
 
@@ -778,6 +794,34 @@ async function applyUpdate(release) {
   return { updated: result.updated };
 }
 
+/** 启动画面：显示 BMCL 商标与加载进度 */
+function createSplash() {
+  if (process.argv.includes('--no-splash')) return;
+  splashStartedAt = Date.now();
+  splash = new BrowserWindow({
+    width: 420,
+    height: 280,
+    frame: false,
+    resizable: false,
+    movable: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: true,
+    backgroundColor: '#0b1424',
+    webPreferences: { contextIsolation: true, nodeIntegration: false }
+  });
+  splash.loadFile(path.join(__dirname, 'renderer', 'splash.html'));
+  splash.center();
+  splash.on('closed', () => { splash = null; });
+}
+
+function closeSplash() {
+  if (!splash) return;
+  const target = splash;
+  splash = null;
+  try { target.close(); } catch (e) { /* 忽略 */ }
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1180,
@@ -788,6 +832,7 @@ function createWindow() {
     icon: path.join(__dirname, 'build', 'icon.png'),
     backgroundColor: '#f3f6fa',
     frame: false,
+    show: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -797,6 +842,14 @@ function createWindow() {
   });
   win.setMenuBarVisibility(false);
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  win.once('ready-to-show', () => {
+    // 保证启动画面至少显示 1.1 秒，避免一闪而过
+    const wait = Math.max(0, 1100 - (Date.now() - splashStartedAt));
+    setTimeout(() => {
+      closeSplash();
+      if (win && !win.isDestroyed()) win.show();
+    }, wait);
+  });
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//.test(url)) shell.openExternal(url);
     return { action: 'deny' };
@@ -851,13 +904,43 @@ async function fetchNotices() {
 }
 
 function registerIpc() {
-  ipcMain.handle('app:info', () => ({ name: APP_NAME, version: APP_VERSION, website: WEBSITE, packaged: app.isPackaged }));
+  ipcMain.handle('app:info', () => ({
+    name: APP_NAME,
+    version: APP_VERSION,
+    website: WEBSITE,
+    packaged: app.isPackaged,
+    locale: app.getLocale(),
+    systemLocale: app.getSystemLocale ? app.getSystemLocale() : app.getLocale()
+  }));
+  ipcMain.handle('seasonal:info', () => seasonal.getInfo({ locale: app.getLocale() }));
   ipcMain.handle('notices:fetch', () => fetchNotices());
   ipcMain.handle('preflight', () => preflight());
   ipcMain.handle('settings:get', () => getSettings());
   ipcMain.handle('settings:save', (e, value) => {
     const saved = settingsCore.save(settingsFile(), Object.assign(getSettings(), value || {}));
     return saved;
+  });
+  ipcMain.handle('settings:getVersion', (e, versionId) =>
+    settingsCore.forVersion(getSettings(), String(versionId || '').trim())
+  );
+  ipcMain.handle('settings:saveVersion', (e, versionId, patch) => {
+    const id = String(versionId || '').trim();
+    if (!id) throw new Error('缺少版本 ID');
+    const s = getSettings();
+    const current = s.versionSettings[id] || {};
+    const allowed = {};
+    for (const key of settingsCore.VERSION_KEYS) {
+      if (patch && Object.prototype.hasOwnProperty.call(patch, key)) allowed[key] = patch[key];
+    }
+    s.versionSettings[id] = Object.assign({}, current, allowed);
+    const saved = settingsCore.save(settingsFile(), s);
+    return settingsCore.forVersion(saved, id);
+  });
+  ipcMain.handle('settings:clearVersion', (e, versionId) => {
+    const id = String(versionId || '').trim();
+    const s = getSettings();
+    delete s.versionSettings[id];
+    return settingsCore.save(settingsFile(), s);
   });
   ipcMain.handle('versions:installed', () => installedVersions());
   ipcMain.handle('versions:delete', async (e, id) => {
@@ -1091,15 +1174,15 @@ function registerIpc() {
       apiKey: s.curseForgeApiKey || ''
     });
   });
-  ipcMain.handle('mods:install', (e, modVersion, projectType) =>
-    tools.installMod(modVersion, instanceDataDir(), {
+  ipcMain.handle('mods:install', (e, modVersion, projectType, versionId) =>
+    tools.installMod(modVersion, instanceDataDir(versionId), {
       projectType,
       onProgress: (p) => send('download:progress', p)
     })
   );
   ipcMain.handle('mods:list', (e, type, versionId) => tools.listInstalledMods(instanceDataDir(versionId), type));
   ipcMain.handle('mods:openDir', (e, type, versionId) => {
-    const dirName = { resourcepack: 'resourcepacks', shader: 'shaderpacks', datapack: 'datapacks', modpack: 'modpacks' }[type] || 'mods';
+    const dirName = { resourcepack: 'resourcepacks', shader: 'shaderpacks', datapack: 'datapacks', modpack: 'modpacks', world: 'saves' }[type] || 'mods';
     const dir = path.join(instanceDataDir(versionId), dirName);
     fs.mkdirSync(dir, { recursive: true });
     shell.openPath(dir);
@@ -1393,6 +1476,7 @@ app.whenReady().then(() => {
     }
   );
   registerIpc();
+  createSplash();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -43,8 +43,40 @@ const DEFAULTS = {
   musicAutoplay: false,
   aiApiKey: '',              // DeepSeek API Key
   aiModel: 'deepseek-chat',
-  aiBaseUrl: 'https://api.deepseek.com'
+  aiBaseUrl: 'https://api.deepseek.com',
+
+  // ===== 2.6.0 新增 =====
+  language: 'auto',          // auto | zh-CN | zh-TW | zh-HK | en-US | en-GB | en-AU | ja-JP | de-DE
+  versionSettings: {}        // 每个版本独立的内存 / Java / 玩家名 / 隔离方式
 };
+
+const LANGUAGES = ['auto', 'zh-CN', 'zh-TW', 'zh-HK', 'en-US', 'en-GB', 'en-AU', 'ja-JP', 'de-DE'];
+const VERSION_KEYS = ['memoryMB', 'javaPath', 'playerName', 'versionIsolation'];
+
+function normalizeVersionSettings(input) {
+  const src = input && typeof input === 'object' ? input : {};
+  const out = {};
+  for (const id of Object.keys(src)) {
+    const item = src[id];
+    if (!id || !item || typeof item !== 'object') continue;
+    const entry = {};
+    if (item.memoryMB != null) entry.memoryMB = Math.max(512, Math.min(32768, Number(item.memoryMB) || DEFAULTS.memoryMB));
+    if (item.javaPath != null) entry.javaPath = typeof item.javaPath === 'string' ? item.javaPath.trim() : '';
+    if (item.playerName != null) entry.playerName = typeof item.playerName === 'string' ? item.playerName.trim().slice(0, 16) : '';
+    if (item.versionIsolation != null) {
+      entry.versionIsolation = ['off', 'version'].includes(item.versionIsolation) ? item.versionIsolation : 'all';
+    }
+    if (Object.keys(entry).length) out[id] = entry;
+  }
+  return out;
+}
+
+/** 把版本级设置合并到全局设置上 */
+function forVersion(settings, versionId) {
+  const base = normalize(settings);
+  if (!versionId || !base.versionSettings[versionId]) return base;
+  return normalize(Object.assign({}, base, base.versionSettings[versionId], { versionSettings: base.versionSettings }));
+}
 
 function clampNumber(value, min, max, fallback) {
   const num = Number(value);
@@ -107,10 +139,21 @@ function normalize(input) {
   out.aiBaseUrl = typeof out.aiBaseUrl === 'string' && /^https?:\/\//.test(out.aiBaseUrl)
     ? out.aiBaseUrl.replace(/\/+$/, '')
     : DEFAULTS.aiBaseUrl;
+  out.language = LANGUAGES.includes(out.language) ? out.language : 'auto';
+  out.versionSettings = normalizeVersionSettings(out.versionSettings);
   return out;
 }
 
-module.exports = { DEFAULTS, normalize, load, save, normalizeTheme, normalizeWallpaper };
+module.exports = {
+  DEFAULTS,
+  LANGUAGES,
+  VERSION_KEYS,
+  normalize,
+  load,
+  save,
+  forVersion,
+  normalizeVersionSettings
+};
 
 function load(file) {
   try {
@@ -126,5 +169,3 @@ function save(file, value) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
   return data;
 }
-
-module.exports = { DEFAULTS, normalize, load, save };

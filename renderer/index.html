@@ -191,6 +191,20 @@
 
       <div class="launch-main">
         <div class="banner hidden" id="banner"></div>
+        <div class="season-banner hidden" id="seasonBanner">
+          <div class="sb-art" id="seasonArt">🎉</div>
+          <div class="sb-main">
+            <div class="sb-title" id="seasonTitle"></div>
+            <div class="sb-body" id="seasonBody"></div>
+          </div>
+          <button class="btn btn-sm btn-primary" id="seasonAction">开启</button>
+          <button class="notice-close" id="seasonClose" title="关闭">×</button>
+        </div>
+
+        <div class="launch-progress hidden" id="launchProgress">
+          <div class="lp-head"><span id="launchProgressStage">准备启动…</span><span id="launchProgressPct">0%</span></div>
+          <div class="lp-bar"><i id="launchProgressBar"></i></div>
+        </div>
 
 
         <section class="dash">
@@ -482,6 +496,32 @@
           </div>
         </div>
 
+        <!-- 地图下载（外部站点） -->
+        <div id="mapPanel" class="hidden">
+          <div class="card">
+            <div class="card-head"><h2>地图下载</h2><span class="hint">地图由 Minecraft Map 等站点提供，下载后解压到 saves</span></div>
+            <p class="about">地图不是模组。以前这里会把地图当成 mod 搜索，现在改为直接跳转到专门的地图站点：</p>
+            <div class="map-links">
+              <button class="map-link" data-open="https://www.minecraftmaps.com/">
+                <b>Minecraft Maps</b>
+                <span>最大的英文地图站，冒险 / 建筑 / 生存地图齐全</span>
+              </button>
+              <button class="map-link" data-open="https://www.curseforge.com/minecraft/worlds">
+                <b>CurseForge Worlds</b>
+                <span>整合包作者发布的官方地图与冒险世界</span>
+              </button>
+              <button class="map-link" data-open="https://modrinth.com/datapack">
+                <b>Modrinth</b>
+                <span>数据包与地图类项目，按版本筛选</span>
+              </button>
+            </div>
+            <div class="row wrap">
+              <button class="btn btn-sm" id="btnOpenSavesDir">打开存档目录</button>
+              <span class="hint">下载的 .zip 地图解压到 saves 文件夹即可在游戏里选择。</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Fabric 安装 -->
         <div id="loaderPanel" class="hidden">
           <div class="card">
@@ -547,6 +587,15 @@
       </aside>
 
       <div class="set-main">
+        <div class="card instance-bar">
+          <div class="instance-bar-main">
+            <span class="instance-bar-label">当前实例</span>
+            <select id="setInstance"><option value="">全局默认</option></select>
+            <span class="hint" id="setInstanceHint">选择实例后，内存 / Java / 玩家名 / 版本隔离只对该实例生效。</span>
+          </div>
+          <button class="btn btn-sm" id="btnResetInstanceSettings">恢复全局设置</button>
+        </div>
+
         <!-- 启动 -->
         <div class="set-sub active" data-subbody="launch">
           <div class="card">
@@ -702,11 +751,22 @@
 
         <!-- 语言 -->
         <div class="set-sub" data-subbody="language">
-          <div class="card">
-            <div class="card-head"><h2>语言</h2></div>
+          <div class="card lang-card">
+            <div class="card-head"><h2>语言</h2><span class="hint">界面语言，切换后立即生效</span></div>
             <label class="option-row"><span>界面语言</span>
-              <select><option>简体中文</option><option>繁體中文</option><option>English</option></select>
+              <select id="setLanguage">
+                <option value="auto">跟随系统</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="zh-TW">繁體中文（中國台灣）</option>
+                <option value="zh-HK">繁體中文（香港、澳門）</option>
+                <option value="en-US">English (en-US)</option>
+                <option value="en-GB">English (en-GB)</option>
+                <option value="en-AU">English (en-AU)</option>
+                <option value="ja-JP">日本語</option>
+                <option value="de-DE">Deutsch</option>
+              </select>
             </label>
+            <p class="hint" id="langHint">「跟随系统」会按系统语言自动选择；繁体中文（香港、澳门）与繁体中文（台湾）使用不同的用词习惯。</p>
           </div>
         </div>
 
@@ -1382,6 +1442,7 @@
 
 <div class="toast-wrap" id="toastWrap"></div>
 
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 <script src="bmcl-dash.js"></script>
 <script src="bmcl-ui.js"></script>

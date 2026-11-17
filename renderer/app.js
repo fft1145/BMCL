@@ -18,6 +18,8 @@
     modResults: [],
     repair: null,
     msLogin: null,
+    seasonal: null,
+    instanceId: '',
     versionShown: { release: 200, snapshot: 200, old: 200, april: 200 }
   };
 
@@ -184,6 +186,50 @@
     ).join('');
   }
 
+  /** 应用界面语言（auto 时按系统语言） */
+  function applyLanguage(setting) {
+    const i18n = window.BMCL_I18N;
+    if (!i18n) return;
+    const system = (state.info && (state.info.systemLocale || state.info.locale)) || navigator.language;
+    i18n.apply(i18n.resolveLocale(setting, system));
+    if ($('#setLanguage')) $('#setLanguage').value = setting || 'auto';
+  }
+
+  /** 设置页的实例下拉：默认「全局」+ 所有已安装版本 */
+  function populateInstanceSelect() {
+    const sel = $('#setInstance');
+    if (!sel) return;
+    const versions = (state.gameState.versions || []).map((v) => v.id);
+    const keep = state.instanceId;
+    sel.innerHTML = '<option value="">全局默认</option>' + versions.map((id) =>
+      '<option value="' + esc(id) + '">' + esc(id) + '</option>'
+    ).join('');
+    if (keep && versions.includes(keep)) {
+      sel.value = keep;
+    } else {
+      sel.value = '';
+      state.instanceId = '';
+    }
+  }
+
+  /** 读取所选实例的覆盖值并填到表单 */
+  async function loadInstanceSettings() {
+    const id = state.instanceId || '';
+    let s = state.settings;
+    if (id && bmcl.getVersionSettings) {
+      try { s = await bmcl.getVersionSettings(id); } catch (_) { s = state.settings; }
+    }
+    $('#setMemory').value = s.memoryMB || 2048;
+    $('#setJava').value = s.javaPath || '';
+    $('#setPlayer').value = s.playerName || '';
+    if ($('#setVersionIsolation')) $('#setVersionIsolation').value = s.versionIsolation || 'all';
+    if ($('#setInstanceHint')) {
+      $('#setInstanceHint').textContent = id
+        ? '已选中实例 ' + id + '：内存 / Java / 玩家名 / 版本隔离只对它的启动生效。'
+        : '当前为全局默认设置，没有单独配置的实例都会使用这里的值。';
+    }
+  }
+
   function applySettingsToForm(s) {
     $('#setPlayer').value = s.playerName || '';
     $('#setMemory').value = s.memoryMB || 2048;
@@ -199,6 +245,9 @@
     applyTheme(s.uiTheme || 'pcl');
     syncAccountCard();
     syncVersionLabel();
+    if ($('#setLanguage')) $('#setLanguage').value = s.language || 'auto';
+    populateInstanceSelect();
+    loadInstanceSettings();
   }
 
   // ===== 游戏目录 / 已安装版本 =====
@@ -259,6 +308,7 @@
 
   function renderInstalled() {
     renderInstanceList();
+    populateInstanceSelect();
     renderGameDirState();
     const list = $('#installedVersions');
     if (list) {
@@ -627,10 +677,31 @@
   }
 
   function showDlPanel(target) {
-    ['#mcPanel', '#modPanel', '#instancePanel', '#loaderPanel', '#packNoticePanel'].forEach((sel) => {
+    ['#mcPanel', '#modPanel', '#mapPanel', '#instancePanel', '#loaderPanel', '#packNoticePanel'].forEach((sel) => {
       const el = $(sel);
       if (el) el.classList.toggle('hidden', sel !== target);
     });
+  }
+
+  function currentVersionId() {
+    return state.settings.versionId ||
+      ((state.gameState.versions[0] && state.gameState.versions[0].id) || '');
+  }
+
+  function showLaunchProgress(stage, percent) {
+    const wrap = $('#launchProgress');
+    if (!wrap) return;
+    wrap.classList.remove('hidden');
+    $('#launchProgressStage').textContent = stage || '准备启动…';
+    const value = Math.max(0, Math.min(100, Number(percent) || 0));
+    $('#launchProgressBar').style.width = value + '%';
+    $('#launchProgressPct').textContent = Math.round(value) + '%';
+  }
+
+  function hideLaunchProgress(delay) {
+    const wrap = $('#launchProgress');
+    if (!wrap) return;
+    setTimeout(() => wrap.classList.add('hidden'), delay == null ? 1200 : delay);
   }
 
   async function launchGame(versionId) {
@@ -638,11 +709,15 @@
     if (!id) { toast('还没有可启动的版本，请先安装或指定游戏目录', 'error'); return; }
     $('#gameLog').textContent = '';
     $('#launchHint').textContent = '正在启动 ' + id + ' …';
+    showLaunchProgress('准备启动 ' + id, 4);
     try {
       await bmcl.launch(id);
       setState(true, '游戏运行中');
+      hideLaunchProgress(1500);
     } catch (err) {
       $('#launchHint').textContent = '';
+      showLaunchProgress('启动失败：' + err.message, 100);
+      hideLaunchProgress(3200);
       toast('启动失败：' + err.message, 'error');
       appendGameLog('[启动失败] ' + err.message + '\n');
     }
@@ -759,9 +834,26 @@
       crashWatch: $('#setCrashWatch').checked,
       checkDownloads: $('#setCheckDownloads').checked,
       uiTheme: (document.querySelector('input[name="uiTheme"]:checked') || {}).value || 'pcl',
+      language: ($('#setLanguage') && $('#setLanguage').value) || state.settings.language || 'auto',
       versionId: state.settings.versionId || ''
     };
-    state.settings = await bmcl.saveSettings(payload);
+    if (state.instanceId && bmcl.saveVersionSettings) {
+      // 实例级：内存 / Java / 玩家名 / 隔离方式只写进该版本，不动全局
+      const patch = {
+        memoryMB: payload.memoryMB,
+        javaPath: payload.javaPath,
+        playerName: payload.playerName,
+        versionIsolation: payload.versionIsolation
+      };
+      delete payload.memoryMB;
+      delete payload.javaPath;
+      delete payload.playerName;
+      delete payload.versionIsolation;
+      state.settings = await bmcl.saveSettings(payload);
+      await bmcl.saveVersionSettings(state.instanceId, patch);
+    } else {
+      state.settings = await bmcl.saveSettings(payload);
+    }
     applySettingsToForm(state.settings);
     // 游戏目录单独走 setGameDir，保证会被校验并立即生效
     const typed = $('#setGameDir').value.trim();
@@ -1213,7 +1305,7 @@
     if (!modVersion || !modVersion.fileUrl) { toast('该文件没有可用的下载地址', 'error'); return; }
     if (btn) { btn.disabled = true; btn.textContent = '下载中…'; }
     try {
-      const r = await bmcl.installMod(modVersion, modVersion.projectType);
+      const r = await bmcl.installMod(modVersion, modVersion.projectType, currentVersionId());
       toast('已安装 ' + modVersion.fileName + '（' + (r.size / 1024 / 1024).toFixed(2) + ' MB）', 'ok');
       await refreshModsList();
     } catch (err) {
@@ -1227,8 +1319,7 @@
     const list = $('#installedMods');
     if (!list) return;
     const meta = modMeta(modType());
-    const vid = state.settings.versionId ||
-      ((state.gameState.versions[0] && state.gameState.versions[0].id) || '');
+    const vid = currentVersionId();
     try {
       const mods = await bmcl.listInstalledMods(modType(), vid);
       if (!mods.length) {
@@ -1400,7 +1491,8 @@
       datapacks: () => { showDlPanel('#modPanel'); setModType('datapack'); },
       resourcepacks: () => { showDlPanel('#modPanel'); setModType('resourcepack'); },
       shaders: () => { showDlPanel('#modPanel'); setModType('shader'); },
-      worlds: () => { showDlPanel('#modPanel'); setModType('world'); },
+      worlds: () => { showDlPanel('#mapPanel'); },
+      maps: () => { showDlPanel('#mapPanel'); },
       favorites: () => {
         showDlPanel('#modPanel');
         state.viewingFavorites = true;
@@ -1598,6 +1690,48 @@
       });
     });
 
+    // 实例级设置
+    if ($('#setInstance')) {
+      $('#setInstance').addEventListener('change', async (e) => {
+        state.instanceId = e.target.value || '';
+        await loadInstanceSettings();
+      });
+    }
+    if ($('#btnResetInstanceSettings')) {
+      $('#btnResetInstanceSettings').addEventListener('click', async () => {
+        if (!state.instanceId) { toast('当前已经是全局默认设置', 'error'); return; }
+        try {
+          await bmcl.clearVersionSettings(state.instanceId);
+          state.settings = await bmcl.getSettings();
+          await loadInstanceSettings();
+          toast('已恢复为全局设置', 'ok');
+        } catch (err) { toast('恢复失败：' + err.message, 'error'); }
+      });
+    }
+    // 界面语言
+    if ($('#setLanguage')) {
+      $('#setLanguage').addEventListener('change', async (e) => {
+        const value = e.target.value;
+        applyLanguage(value);
+        try {
+          state.settings = await bmcl.saveSettings(Object.assign({}, state.settings, { language: value }));
+        } catch (_) { /* 忽略 */ }
+        toast('界面语言已切换', 'ok');
+      });
+    }
+    // 节日彩蛋
+    if ($('#seasonAction')) $('#seasonAction').addEventListener('click', runSeasonAction);
+    if ($('#seasonClose')) {
+      $('#seasonClose').addEventListener('click', () => {
+        $('#seasonBanner').classList.add('hidden');
+        if (state.seasonal) localStorage.setItem(seasonKey(state.seasonal), '1');
+      });
+    }
+    // 地图下载
+    if ($('#btnOpenSavesDir')) {
+      $('#btnOpenSavesDir').addEventListener('click', () => bmcl.openModsDir('world', currentVersionId()));
+    }
+
     // 账号
     $('#btnSwitchAccount').addEventListener('click', () => $('#accountPanel').classList.toggle('hidden'));
     $('#btnAccountClose').addEventListener('click', () => $('#accountPanel').classList.add('hidden'));
@@ -1720,11 +1854,67 @@
       if (!running && payload && payload.code != null && payload.code !== 0) appendGameLog('[游戏异常退出，退出码 ' + payload.code + ']\n');
     });
     bmcl.onGameCrash((report) => { openCrashPanel(report); toast('游戏崩溃，已生成诊断', 'error'); });
+    bmcl.onGameProgress((p) => {
+      if (!p) return;
+      showLaunchProgress(p.stage || '启动中…', p.percent);
+      if (Number(p.percent) >= 100) hideLaunchProgress(1800);
+    });
     bmcl.onInstallProgress((p) => showInstallProgress(p.stage, p.done, p.total));
     bmcl.onUpdateProgress((p) => { $('#updateResult').textContent = '正在应用更新 ' + p.done + ' / ' + p.total; });
     bmcl.onDownloadProgress(() => {});
     bmcl.onOnlineStatus((s) => renderOnlineStatus(s));
     bmcl.onlineStatus().then(renderOnlineStatus).catch(() => {});
+  }
+
+  /** 管理节假彩蛋横幅（愚人节 / 春节，仅中文环境） */
+  function seasonKey(info) {
+    return 'bmcl.season.' + info.season + '.' + new Date().toISOString().slice(0, 10);
+  }
+
+  async function initSeasonal() {
+    if (!bmcl.seasonalInfo) return;
+    let info = null;
+    try { info = await bmcl.seasonalInfo(); } catch (_) { return; }
+    state.seasonal = info;
+    if (!info || !info.active) return;
+    if (localStorage.getItem(seasonKey(info))) return;
+    const banner = $('#seasonBanner');
+    if (!banner) return;
+    if (info.season === 'aprilfools') {
+      $('#seasonArt').textContent = '🛠';
+      $('#seasonTitle').textContent = '愚人节彩蛋 · 已检测到中文环境';
+      $('#seasonBody').textContent = '把启动器按钮换成「王体」手写字，一起致敬 81192：犯我中华者，虽远必诛。';
+      $('#seasonAction').textContent = '开启彩蛋';
+    } else {
+      $('#seasonArt').textContent = '🧧';
+      $('#seasonTitle').textContent = '春节彩蛋 · 已检测到中文环境';
+      $('#seasonBody').textContent = '新的一年，放几段 B 站拜年视频给你，顺便看看今年的拜年祭。';
+      $('#seasonAction').textContent = '看拜年视频';
+    }
+    banner.classList.remove('hidden');
+  }
+
+  function runSeasonAction() {
+    const info = state.seasonal;
+    if (!info) return;
+    if (info.season === 'aprilfools') {
+      document.body.classList.add('egg-april');
+      if (!$('#eggStrip')) {
+        const strip = document.createElement('div');
+        strip.id = 'eggStrip';
+        strip.className = 'egg-strip';
+        strip.textContent = '81192，请你返航 · 犯我中华者，虽远必诛';
+        const banner = $('#seasonBanner');
+        if (banner && banner.parentElement) banner.parentElement.insertBefore(strip, banner.nextSibling);
+      }
+      const banner = $('#seasonBanner');
+      if (banner) banner.classList.add('hidden');
+      toast('愚人节彩蛋已开启', 'ok');
+    } else {
+      bmcl.openExternal('https://search.bilibili.com/all?keyword=' + encodeURIComponent('拜年祭'));
+      localStorage.setItem(seasonKey(info), '1');
+      $('#seasonBanner').classList.add('hidden');
+    }
   }
 
   /** 管理员下发公告：读取 notices.json，展示最新一条未被关闭的公告。 */
@@ -1774,11 +1964,13 @@
     });
     await refreshAccounts();
     loadFavorites();
+    applyLanguage(state.settings.language || 'auto');
     applySettingsToForm(state.settings);
     setState(false, '未启动');
     bindEvents();
     bindBridgeEvents();
     loadAnnouncements();
+    initSeasonal();
     await refreshInstalled(true);
 
     const preflight = await bmcl.preflight();

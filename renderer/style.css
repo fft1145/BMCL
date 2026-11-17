@@ -578,3 +578,80 @@ body.theme-bmcl .option-row:hover{background:rgba(255,255,255,.03)}
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
 }
+
+/* ============================================================
+   2.6.0 新增：节日彩蛋 / 启动进度 / 地图下载 / 实例设置 / 多语言
+   ============================================================ */
+.season-banner{
+  display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;
+  border:1px solid #f0d9a8;border-radius:6px;
+  background:linear-gradient(135deg,#fff8e8,#fff2d8);
+  box-shadow:0 2px 8px rgba(150,110,20,.08);
+}
+body.theme-bmcl .season-banner{
+  border-color:rgba(240,200,120,.32);
+  background:linear-gradient(135deg,rgba(120,80,20,.28),rgba(80,50,10,.22));
+}
+.season-banner.hidden{display:none}
+.sb-art{font-size:26px;line-height:1;flex:0 0 auto}
+.sb-main{flex:1;min-width:0}
+.sb-title{font-size:13.5px;font-weight:700;color:#8a5b12}
+body.theme-bmcl .sb-title{color:#ffd98a}
+.sb-body{font-size:12px;color:#8a6414;line-height:1.6;margin-top:2px}
+body.theme-bmcl .sb-body{color:#e3c98f}
+
+/* 愚人节彩蛋：按钮换成活泼的手写字体 */
+body.egg-april .btn,
+body.egg-april .nav-btn,
+body.egg-april .launch-btn,
+body.egg-april .instance-btn,
+body.egg-april .dl-cat,
+body.egg-april .set-cat,
+body.egg-april .utab,
+body.egg-april .pa-btn,
+body.egg-april .option-row,
+body.egg-april .card-head h2{
+  font-family:"华文行楷","STXingkai","楷体","KaiTi","Segoe UI",cursive !important;
+  letter-spacing:.5px;
+}
+.egg-strip{
+  margin:0 0 14px;padding:8px 14px;border-radius:6px;
+  background:#132033;color:#cfe3ff;font-size:12px;letter-spacing:1px;
+  border:1px solid rgba(120,180,255,.25);
+}
+
+/* 启动进度 */
+.launch-progress{
+  margin:0 0 12px;padding:10px 14px;border:1px solid var(--line);
+  border-radius:6px;background:#fff;box-shadow:0 1px 3px rgba(20,30,40,.05);
+}
+body.theme-bmcl .launch-progress{background:rgba(18,30,48,.72);border-color:rgba(120,170,230,.22)}
+.launch-progress.hidden{display:none}
+.lp-head{display:flex;justify-content:space-between;font-size:12px;color:#5b6673;margin-bottom:7px}
+body.theme-bmcl .lp-head{color:#a8c2dc}
+.lp-bar{height:6px;border-radius:99px;background:#e6ebf1;overflow:hidden}
+body.theme-bmcl .lp-bar{background:rgba(255,255,255,.12)}
+.lp-bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#1370f3,#61b3ff);transition:width .25s ease}
+
+/* 地图下载 */
+.map-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
+.map-link{
+  display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;
+  padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:#fff;
+  transition:border-color .14s,box-shadow .14s,transform .14s;
+}
+body.theme-bmcl .map-link{background:rgba(18,30,48,.66);border-color:rgba(120,170,230,.2)}
+.map-link:hover{border-color:var(--blue);box-shadow:0 4px 14px rgba(19,112,243,.12);transform:translateY(-1px)}
+.map-link b{font-size:13.5px;color:var(--text)}
+.map-link span{font-size:11.5px;color:var(--muted);line-height:1.55}
+
+/* 实例级设置 */
+.instance-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.instance-bar-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.instance-bar-label{font-size:12.5px;font-weight:700;color:#3f4850}
+body.theme-bmcl .instance-bar-label{color:#cfe1f5}
+.instance-bar select{
+  height:32px;min-width:220px;border:1px solid #cfd6dd;border-radius:4px;
+  background:#fff;padding:0 8px;font-size:12.5px;color:#23282e;outline:none;
+}
+body.theme-bmcl .instance-bar select{background:#0f1b2c;border-color:rgba(120,170,230,.28);color:#dce9f7}
