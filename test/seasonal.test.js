@@ -13,6 +13,7 @@ test('4 月 1 日自动识别愚人节', () => {
   assert.ok(festival.toasts.length > 0);
   assert.ok(festival.bugs.length > 0);
   assert.ok(festival.tribute.includes('81192'));
+  assert.strictEqual(festival.martyr, '王伟烈士');
 });
 
 test('自动模式先检测地区，只有中文环境触发', () => {

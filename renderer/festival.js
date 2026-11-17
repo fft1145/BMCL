@@ -13,7 +13,9 @@
     raf: 0,
     nodes: [],
     navOrder: null,
-    versionTexts: null
+    versionTexts: null,
+    buttonOriginals: [],
+    buttonObserver: null
   };
 
   function $(sel) { return document.querySelector(sel); }
@@ -52,6 +54,16 @@
       state.versionTexts.forEach(function (item) { item.el.textContent = item.text; });
       state.versionTexts = null;
     }
+    if (state.buttonObserver) {
+      state.buttonObserver.disconnect();
+      state.buttonObserver = null;
+    }
+    state.buttonOriginals.forEach(function (item) {
+      if (!item.el || !item.el.isConnected) return;
+      if (item.el.textContent !== item.text) return;
+      item.el.innerHTML = item.html;
+    });
+    state.buttonOriginals = [];
     var title = $('.tb-name');
     if (title && title.dataset.festivalOriginal) {
       title.textContent = title.dataset.festivalOriginal;
@@ -187,6 +199,48 @@
     aprilVersionSuffix, aprilTitleGlitch, aprilGhostCursor
   ];
 
+  /* 愚人节：中国区域用户的所有按钮都拼成「王伟烈士」 */
+  var MARTYR_FALLBACK = '王伟烈士';
+  var BUTTON_SELECTOR = 'button, a.btn, .nav-btn, .fx-btn, .pa-btn, .set-cat, .utab, .lang-card, .dl-cat, .dl-bmcl-tab';
+  var BUTTON_SKIP = '.festival-badge, .festival-node, .win-btn, [data-festival-skip]';
+
+  function isChineseLocale(locale) {
+    return !locale || /^zh([-_]|$)/i.test(String(locale));
+  }
+
+  function canRewrite(el) {
+    if (!el || !el.isConnected) return false;
+    if (el.closest(BUTTON_SKIP)) return false;
+    return !state.buttonOriginals.some(function (item) { return item.el === el; });
+  }
+
+  function rewriteButton(el, text) {
+    if (!canRewrite(el)) return;
+    state.buttonOriginals.push({ el: el, html: el.innerHTML, text: text });
+    el.textContent = text;
+  }
+
+  function rewriteTree(root, text) {
+    if (!root || root.nodeType !== 1) return;
+    if (root.matches && root.matches(BUTTON_SELECTOR)) rewriteButton(root, text);
+    if (!root.querySelectorAll) return;
+    Array.prototype.forEach.call(root.querySelectorAll(BUTTON_SELECTOR), function (el) {
+      rewriteButton(el, text);
+    });
+  }
+
+  function martyrAllButtons(text) {
+    rewriteTree(document.body, text);
+    state.buttonObserver = new MutationObserver(function (records) {
+      records.forEach(function (record) {
+        Array.prototype.forEach.call(record.addedNodes, function (node) {
+          if (node.nodeType === 1) rewriteTree(node, text);
+        });
+      });
+    });
+    state.buttonObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
   function aprilTick() {
     if (!state.festival || state.festival.id !== 'april') return;
     if (Math.random() < 0.65) {
@@ -210,6 +264,9 @@
     tribute.textContent = (state.festival && state.festival.tribute) ||
       '81192，请你返航 · 犯我中华者，虽远必诛';
     document.body.appendChild(tribute);
+    if (isChineseLocale(state.festival && state.festival.locale)) {
+      martyrAllButtons((state.festival && state.festival.martyr) || MARTYR_FALLBACK);
+    }
     addBadge('愚人节模式', turnOff);
     ownToast('今天启动器可能有一点点奇怪，别当真。');
     state.aprilTimer = later(aprilTick, 6000);

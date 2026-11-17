@@ -54,6 +54,8 @@ const APRIL_TOASTS = [
 
 /** 致敬 81192 的固定文案 */
 const TRIBUTE = '81192，请你返航 · 犯我中华者，虽远必诛';
+/** 愚人节彩蛋里所有按钮统一显示的名字 */
+const MARTYR = '王伟烈士';
 /** 春节彩蛋里的 B 站拜年视频入口 */
 const SPRING_VIDEO = 'https://search.bilibili.com/all?keyword=' + encodeURIComponent('拜年祭');
 
@@ -111,6 +113,7 @@ function inactive(setting, date, spring, reason) {
     bugs: [],
     toasts: [],
     tribute: '',
+    martyr: '',
     videoUrl: '',
     reason: reason || '',
     locale: '',
@@ -154,6 +157,7 @@ function resolveFestival(mode, now, locale) {
       toasts: APRIL_TOASTS,
       font: 'wang',
       tribute: TRIBUTE,
+      martyr: MARTYR,
       videoUrl: '',
       reason: '',
       locale: locale || '',
@@ -175,6 +179,7 @@ function resolveFestival(mode, now, locale) {
     bugs: [],
     toasts: [],
     tribute: '',
+    martyr: '',
     videoUrl: SPRING_VIDEO,
     reason: '',
     locale: locale || '',
@@ -190,6 +195,7 @@ module.exports = {
   APRIL_BUGS,
   APRIL_TOASTS,
   TRIBUTE,
+  MARTYR,
   SPRING_VIDEO,
   isChineseLocale,
   springWindow,

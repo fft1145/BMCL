@@ -4,12 +4,12 @@
   "tag": "v2.6.0",
   "publishedAt": "2026-11-17",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.6.0\n- 多语言界面：简体中文、繁體中文（香港／澳門）、繁體中文（中國台灣）、English (en-US / en-GB / en-AU)、日本語、Deutsch，默认跟随系统\n- GitHub 简介提供 8 种语言版本\n- 节日彩蛋：愚人节 / 春节先检测所在地区，仅中文环境触发；愚人节「王体」手写字并致敬 81192，春节提供 B 站拜年视频\n- 启动器启动画面：显示 BMCL 商标与加载进度\n- 启动 Minecraft 时显示启动进度：读取版本 → 检查 Java → 校验文件 → 构建参数 → 启动进程\n- 地图下载不再显示为 mod，改为引导到 Minecraft Maps / CurseForge Worlds / Modrinth\n- 修复版本扫描：mod 数量按实例独立统计，安装 mod 写入当前实例\n- 版本设置独立：内存 / Java / 玩家名 / 版本隔离可按版本单独配置\n- 启动器版本号升至 2.6.0",
+  "notes": "2.6.0\n- 多语言界面：简体中文、繁體中文（香港／澳門）、繁體中文（中國台灣）、English (en-US / en-GB / en-AU)、日本語、Deutsch 共 8 种，默认跟随系统，也可在「设置 → 语言」手动切换\n- 多语言简介：GitHub README 同步提供上述 8 种语言版本\n- 节日彩蛋：愚人节与春节先检测系统所在地区，只有中文环境才触发；愚人节当天所有按钮文字都会变成「王伟烈士」，界面换成「王体」手写字，并显示「81192，请你返航 · 犯我中华者，虽远必诛」；春节提供 B 站拜年视频入口\n- 启动画面：打开启动器先显示 BMCL 商标与加载进度，主窗口准备好后再进入\n- 启动进度：启动 Minecraft 时实时显示「读取版本 → 检查 Java → 校验文件 → 构建参数 → 启动进程」进度条\n- 地图下载修复：不再把地图当成 mod 搜索，改为引导到 Minecraft Maps / CurseForge Worlds / Modrinth，并可直接打开 saves 目录\n- 修复版本扫描：mod 数量按实例独立统计，安装 mod 时写入当前实例，不再出现「所有版本设置都一样」\n- 版本设置独立：内存 / Java / 玩家名 / 版本隔离可为每个版本单独配置，未配置的版本继续使用全局设置\n- 启动器版本号升至 2.6.0",
   "assets": [
     {
       "name": "fft1145-portable.exe",
       "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",
-      "size": 74778670,
+      "size": 74778843,
       "mirrors": [
         "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",
         "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",

@@ -134,12 +134,15 @@ body.festival-spring:not(.theme-bmcl) .avatar-shell{
 }
 
 /* ===== 2.6.0：愚人节「王体」手写字与 81192 致敬条 ===== */
+body.festival-wang button,
 body.festival-wang .btn,
 body.festival-wang .fx-btn,
 body.festival-wang .nav-btn,
 body.festival-wang .pa-btn,
 body.festival-wang .set-cat,
 body.festival-wang .utab,
+body.festival-wang .dl-cat,
+body.festival-wang .dl-bmcl-tab,
 body.festival-wang .card-head h2,
 body.festival-wang .festival-badge span{
   font-family:"华文行楷","STXingkai","BiauKai","KaiTi","楷体","Segoe UI",cursive !important;
