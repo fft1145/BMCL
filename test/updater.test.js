@@ -178,6 +178,66 @@ test('applyUpdateTree 正常覆盖启动器文件', async () => {
   assert.strictEqual(fs.readFileSync(path.join(appDir, 'main.js'), 'utf8'), 'new');
 });
 
+test('findUpdateAsset 识别实际打包产物名 Better-MC-Launcher.exe', () => {
+  const asset = updater.findUpdateAsset([
+    { name: 'Better-MC-Launcher.exe', url: 'https://x/bmcl.exe' },
+    { name: 'source.zip', url: 'https://x/src.zip' }
+  ]);
+  assert.strictEqual(asset.name, 'Better-MC-Launcher.exe');
+});
+
+test('assetUrls 合并直链与镜像并去重', () => {
+  const urls = updater.assetUrls({
+    url: 'https://github.com/a.exe',
+    mirrors: ['https://gh-proxy.com/https://github.com/a.exe', 'https://github.com/a.exe']
+  });
+  assert.deepStrictEqual(urls, [
+    'https://github.com/a.exe',
+    'https://gh-proxy.com/https://github.com/a.exe'
+  ]);
+});
+
+test('downloadAsset 直链失败后改用镜像，并校验大小', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bmcl-dl-'));
+  const dest = path.join(dir, 'update.exe');
+  const data = Buffer.from('MZ' + 'x'.repeat(2046));
+  const tried = [];
+  const fetchImpl = async (url) => {
+    tried.push(url);
+    if (String(url).includes('github.com')) throw new Error('ECONNRESET');
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => String(data.length) },
+      arrayBuffer: async () => data
+    };
+  };
+  const result = await updater.downloadAsset(
+    { url: 'https://github.com/a.exe', mirrors: ['https://mirror/a.exe'], size: data.length },
+    dest,
+    { fetchImpl }
+  );
+  assert.strictEqual(result.url, 'https://mirror/a.exe');
+  assert.strictEqual(fs.readFileSync(dest).length, data.length);
+  assert.deepStrictEqual(tried, ['https://github.com/a.exe', 'https://mirror/a.exe']);
+});
+
+test('downloadAsset 大小不符时不会写入文件', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bmcl-dl-bad-'));
+  const dest = path.join(dir, 'bad.exe');
+  const fetchImpl = async () => ({
+    ok: true,
+    status: 200,
+    headers: { get: () => '10' },
+    arrayBuffer: async () => Buffer.from('short')
+  });
+  await assert.rejects(
+    () => updater.downloadAsset({ url: 'https://x/a.exe', size: 100 }, dest, { fetchImpl }),
+    /文件大小不符/
+  );
+  assert.strictEqual(fs.existsSync(dest), false);
+});
+
 test('checkDownloadAllowed：网络异常判定为被禁止，正常响应判定为可用', async () => {
   const failFetch = async () => {
     throw new Error('ECONNREFUSED');

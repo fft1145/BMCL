@@ -18,7 +18,6 @@
     modResults: [],
     repair: null,
     msLogin: null,
-    seasonal: null,
     instanceId: '',
     versionShown: { release: 200, snapshot: 200, old: 200, april: 200 }
   };
@@ -239,6 +238,7 @@
     if ($('#setCurseKey')) $('#setCurseKey').value = s.curseForgeApiKey || '';
     if ($('#setMsClientId')) $('#setMsClientId').value = s.msClientId || '';
     $('#setAutoUpdate').checked = Boolean(s.autoUpdate);
+    if ($('#setFestivalMode')) $('#setFestivalMode').value = s.festivalMode || 'auto';
     if ($('#setVersionIsolation')) $('#setVersionIsolation').value = s.versionIsolation || 'all';
     $('#setCrashWatch').checked = Boolean(s.crashWatch);
     $('#setCheckDownloads').checked = Boolean(s.checkDownloads);
@@ -803,20 +803,54 @@
   async function applyUpdate() {
     if (!state.pendingUpdate || !state.pendingUpdate.hasUpdate) return;
     const btn = $('#btnApplyUpdate');
+    const box = $('#updateProgress');
     btn.disabled = true; btn.textContent = '更新中…';
+    if (box) box.classList.remove('hidden');
+    setUpdateProgress({ stage: 'prepare', percent: 0, message: '准备下载…' });
     try {
       const result = await bmcl.applyUpdate(state.pendingUpdate.release);
-      if (result.redirected) {
+      if (result.restarting) {
+        setUpdateProgress({ stage: 'done', percent: 100, message: '更新完成，正在重启…' });
+        toast('更新完成，启动器即将自动重启', 'ok');
+        $('#updateResult').innerHTML = '<span class="tip">已下载新版（' + Math.round((result.size || 0) / 1048576) + ' MB），启动器会自动重启完成替换。</span>';
+      } else if (result.redirected) {
+        setUpdateProgress({ stage: 'done', percent: 100, message: '已打开发布页' });
         toast('已打开发布页，请下载新版便携版 exe', 'ok');
       } else {
+        setUpdateProgress({ stage: 'done', percent: 100, message: '更新完成' });
         toast('更新完成，重启启动器后生效', 'ok');
         $('#updateResult').innerHTML = '<span class="tip">已更新 ' + result.updated + ' 个启动器文件，未触碰游戏文件。</span>';
         $('#btnApplyUpdate').classList.add('hidden');
       }
     } catch (err) {
+      if (box) box.classList.add('hidden');
+      $('#updateResult').innerHTML = '<span class="cause">更新失败：' + esc(err.message) + '</span>';
       toast('更新失败：' + err.message, 'error');
     } finally {
       btn.disabled = false; btn.textContent = '立即更新';
+    }
+  }
+
+  function setUpdateProgress(p) {
+    if (!p) return;
+    const box = $('#updateProgress');
+    const bar = $('#updateProgressBar');
+    const text = $('#updateProgressText');
+    const percent = $('#updateProgressPercent');
+    if (!box) return;
+    box.classList.remove('hidden');
+    const value = Math.max(0, Math.min(100, Number(p.percent) || 0));
+    if (bar) bar.style.width = value + '%';
+    if (percent) percent.textContent = value + '%';
+    if (text) {
+      let label = p.message || '';
+      if (!label) {
+        if (p.stage === 'download') label = '正在下载更新包' + (p.total ? '（' + (p.received / 1048576).toFixed(1) + ' / ' + (p.total / 1048576).toFixed(1) + ' MB）' : '');
+        else if (p.stage === 'retry') label = '下载中断，正在切换线路…';
+        else if (p.stage === 'apply') label = '正在写入启动器文件（' + (p.done || 0) + ' / ' + (p.total || 0) + '）';
+        else label = '处理中…';
+      }
+      text.textContent = label;
     }
   }
 
@@ -833,6 +867,7 @@
       versionIsolation: $('#setVersionIsolation') ? $('#setVersionIsolation').value : 'all',
       crashWatch: $('#setCrashWatch').checked,
       checkDownloads: $('#setCheckDownloads').checked,
+      festivalMode: $('#setFestivalMode') ? $('#setFestivalMode').value : 'auto',
       uiTheme: (document.querySelector('input[name="uiTheme"]:checked') || {}).value || 'pcl',
       language: ($('#setLanguage') && $('#setLanguage').value) || state.settings.language || 'auto',
       versionId: state.settings.versionId || ''
@@ -855,6 +890,7 @@
       state.settings = await bmcl.saveSettings(payload);
     }
     applySettingsToForm(state.settings);
+    if (typeof window.bmclReloadFestival === 'function') window.bmclReloadFestival();
     // 游戏目录单独走 setGameDir，保证会被校验并立即生效
     const typed = $('#setGameDir').value.trim();
     if (typed && typed !== state.gameState.gameDir) {
@@ -1719,14 +1755,7 @@
         toast('界面语言已切换', 'ok');
       });
     }
-    // 节日彩蛋
-    if ($('#seasonAction')) $('#seasonAction').addEventListener('click', runSeasonAction);
-    if ($('#seasonClose')) {
-      $('#seasonClose').addEventListener('click', () => {
-        $('#seasonBanner').classList.add('hidden');
-        if (state.seasonal) localStorage.setItem(seasonKey(state.seasonal), '1');
-      });
-    }
+    // 节日彩蛋。具体行为见 festival.js
     // 地图下载
     if ($('#btnOpenSavesDir')) {
       $('#btnOpenSavesDir').addEventListener('click', () => bmcl.openModsDir('world', currentVersionId()));
@@ -1860,61 +1889,10 @@
       if (Number(p.percent) >= 100) hideLaunchProgress(1800);
     });
     bmcl.onInstallProgress((p) => showInstallProgress(p.stage, p.done, p.total));
-    bmcl.onUpdateProgress((p) => { $('#updateResult').textContent = '正在应用更新 ' + p.done + ' / ' + p.total; });
+    bmcl.onUpdateProgress((p) => setUpdateProgress(p));
     bmcl.onDownloadProgress(() => {});
     bmcl.onOnlineStatus((s) => renderOnlineStatus(s));
     bmcl.onlineStatus().then(renderOnlineStatus).catch(() => {});
-  }
-
-  /** 管理节假彩蛋横幅（愚人节 / 春节，仅中文环境） */
-  function seasonKey(info) {
-    return 'bmcl.season.' + info.season + '.' + new Date().toISOString().slice(0, 10);
-  }
-
-  async function initSeasonal() {
-    if (!bmcl.seasonalInfo) return;
-    let info = null;
-    try { info = await bmcl.seasonalInfo(); } catch (_) { return; }
-    state.seasonal = info;
-    if (!info || !info.active) return;
-    if (localStorage.getItem(seasonKey(info))) return;
-    const banner = $('#seasonBanner');
-    if (!banner) return;
-    if (info.season === 'aprilfools') {
-      $('#seasonArt').textContent = '🛠';
-      $('#seasonTitle').textContent = '愚人节彩蛋 · 已检测到中文环境';
-      $('#seasonBody').textContent = '把启动器按钮换成「王体」手写字，一起致敬 81192：犯我中华者，虽远必诛。';
-      $('#seasonAction').textContent = '开启彩蛋';
-    } else {
-      $('#seasonArt').textContent = '🧧';
-      $('#seasonTitle').textContent = '春节彩蛋 · 已检测到中文环境';
-      $('#seasonBody').textContent = '新的一年，放几段 B 站拜年视频给你，顺便看看今年的拜年祭。';
-      $('#seasonAction').textContent = '看拜年视频';
-    }
-    banner.classList.remove('hidden');
-  }
-
-  function runSeasonAction() {
-    const info = state.seasonal;
-    if (!info) return;
-    if (info.season === 'aprilfools') {
-      document.body.classList.add('egg-april');
-      if (!$('#eggStrip')) {
-        const strip = document.createElement('div');
-        strip.id = 'eggStrip';
-        strip.className = 'egg-strip';
-        strip.textContent = '81192，请你返航 · 犯我中华者，虽远必诛';
-        const banner = $('#seasonBanner');
-        if (banner && banner.parentElement) banner.parentElement.insertBefore(strip, banner.nextSibling);
-      }
-      const banner = $('#seasonBanner');
-      if (banner) banner.classList.add('hidden');
-      toast('愚人节彩蛋已开启', 'ok');
-    } else {
-      bmcl.openExternal('https://search.bilibili.com/all?keyword=' + encodeURIComponent('拜年祭'));
-      localStorage.setItem(seasonKey(info), '1');
-      $('#seasonBanner').classList.add('hidden');
-    }
   }
 
   /** 管理员下发公告：读取 notices.json，展示最新一条未被关闭的公告。 */
@@ -1970,7 +1948,6 @@
     bindEvents();
     bindBridgeEvents();
     loadAnnouncements();
-    initSeasonal();
     await refreshInstalled(true);
 
     const preflight = await bmcl.preflight();
@@ -1988,19 +1965,22 @@
       $('#crashSettingsResult').innerHTML = '<span class="tip">' + esc(preflight.crash.summary) + '</span>';
     }
     if (preflight.download && !preflight.download.allowed) {
-      showBanner('检测到下载可能被禁止（网络不可用）：已自动跳过更新检查。原因：' + preflight.download.reason, 'error');
+      showBanner('检测到下载可能被禁止（网络不可用）：版本与更新下载可能失败，可在「设置 → 软件更新 → 备用线路」重试。原因：' + preflight.download.reason, 'error');
       $('#netHint').textContent = '下载可能被禁止';
-      $('#updateResult').innerHTML = '<span class="tip">网络不可用，已自动关闭更新检测</span>';
-    } else if (preflight.update) {
+      if (!preflight.update) $('#updateResult').innerHTML = '<span class="tip">网络检测未通过，可点「备用线路」再试一次。</span>';
+    }
+    if (preflight.update) {
       state.pendingUpdate = preflight.update;
       if (preflight.update.hasUpdate) {
         showBanner('发现启动器新版本 ' + preflight.update.release.version + '，可在「设置 → 软件更新」中更新。', 'ok');
         $('#btnApplyUpdate').classList.remove('hidden');
-        $('#updateResult').innerHTML = '<div><b>发现新版本 ' + esc(preflight.update.release.version) + '</b></div>' +
+        $('#updateResult').innerHTML = '<div><b>发现新版本 ' + esc(preflight.update.release.version) + '</b>（当前 v' + esc(preflight.update.currentVersion) + '）</div>' +
           (preflight.update.release.notes ? '<div class="diag-sub">' + esc(preflight.update.release.notes).slice(0, 1000) + '</div>' : '');
       } else {
         $('#updateResult').innerHTML = '<span class="tip">已是最新版本</span>';
       }
+    } else if (preflight.updateError) {
+      $('#updateResult').innerHTML = '<span class="cause">更新检查失败：' + esc(preflight.updateError) + '</span>';
     }
   }
 

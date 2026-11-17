@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="pcl-skin.css">
   <link rel="stylesheet" href="bmcl-skin.css">
   <link rel="stylesheet" href="fx.css">
+  <link rel="stylesheet" href="festival.css">
 </head>
 <body>
 <div class="fx-wall" id="fxWall"></div>
@@ -191,15 +192,6 @@
 
       <div class="launch-main">
         <div class="banner hidden" id="banner"></div>
-        <div class="season-banner hidden" id="seasonBanner">
-          <div class="sb-art" id="seasonArt">🎉</div>
-          <div class="sb-main">
-            <div class="sb-title" id="seasonTitle"></div>
-            <div class="sb-body" id="seasonBody"></div>
-          </div>
-          <button class="btn btn-sm btn-primary" id="seasonAction">开启</button>
-          <button class="notice-close" id="seasonClose" title="关闭">×</button>
-        </div>
 
         <div class="launch-progress hidden" id="launchProgress">
           <div class="lp-head"><span id="launchProgressStage">准备启动…</span><span id="launchProgressPct">0%</span></div>
@@ -779,6 +771,15 @@
               <label class="switch"><input type="checkbox" id="setCheckDownloads"><span>启动时检测下载是否被禁止</span></label>
               <label class="switch"><input type="checkbox" id="setCrashWatch"><span>启动时自动检测上次崩溃</span></label>
             </div>
+            <label class="option-row" style="margin-top:4px"><span>节日彩蛋</span>
+              <select id="setFestivalMode">
+                <option value="auto">自动识别（按日期）</option>
+                <option value="april">愚人节模式</option>
+                <option value="spring">春节模式</option>
+                <option value="off">关闭</option>
+              </select>
+            </label>
+            <p class="hint">节日彩蛋只改界面，不会改动存档或启动参数。愚人节当天启动器可能会莫名其妙一下。</p>
           </div>
           <div class="card">
             <div class="card-head"><h2>一键修复启动器</h2><span class="tag" id="repairState">未扫描</span></div>
@@ -826,7 +827,11 @@
               <button class="btn btn-sm btn-primary hidden" id="btnApplyUpdate">立即更新</button>
             </div>
             <div class="diag small" id="updateResult"></div>
-            <p class="hint">更新只会覆盖启动器自身的程序文件，<b>不会覆盖任何游戏文件</b>。GitHub 直连失败时会自动切换到备用线路。</p>
+            <div class="progress hidden" id="updateProgress">
+              <div class="progress-head"><span id="updateProgressText">准备中…</span><span id="updateProgressPercent">0%</span></div>
+              <div class="bar"><i id="updateProgressBar"></i></div>
+            </div>
+            <p class="hint">更新只会覆盖启动器自身的程序文件，<b>不会覆盖任何游戏文件</b>。便携版会先下载新版本，再自动重启完成替换；GitHub 直连失败时会自动切换到备用线路。</p>
           </div>
         </div>
 
@@ -1448,5 +1453,6 @@
 <script src="bmcl-ui.js"></script>
 <script src="skin3d.js"></script>
 <script src="fx.js"></script>
+<script src="festival.js"></script>
 </body>
 </html>

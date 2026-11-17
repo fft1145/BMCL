@@ -9,10 +9,12 @@
     {
       "name": "fft1145-portable.exe",
       "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",
-      "size": 74771205,
+      "size": 74778670,
       "mirrors": [
         "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe"
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",
+        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe",
+        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.0/Better-MC-Launcher.exe"
       ]
     }
   ]

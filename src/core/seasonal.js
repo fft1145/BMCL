@@ -1,81 +1,198 @@
 'use strict';
 
 /**
- * 节日彩蛋判定。
- * 愚人节（4 月 1 日）与春节（农历正月初一前后）只在中文环境下触发。
+ * 节日彩蛋：愚人节与春节。
+ *
+ * 只做界面层面的小玩笑与装饰，不修改存档、不改变启动参数、
+ * 不写入任何游戏文件。所有效果都能在设置里关闭。
+ *
+ * 自动模式会先检测系统所在地区：只有中文环境才触发彩蛋。
  */
 
-/** 农历春节对应的公历日期（2024 - 2040） */
-const LUNAR_NEW_YEAR = {
-  2024: '02-10',
-  2025: '01-29',
-  2026: '02-17',
-  2027: '02-06',
-  2028: '01-26',
-  2029: '02-13',
-  2030: '02-03',
-  2031: '01-23',
-  2032: '02-11',
-  2033: '01-31',
-  2034: '02-19',
-  2035: '02-08',
-  2036: '01-28',
-  2037: '02-15',
-  2038: '02-04',
-  2039: '01-24',
-  2040: '02-12'
-};
+/** 春节（正月初一）对应的公历日期，覆盖常用年份 */
+const SPRING_FESTIVAL = [
+  '2023-01-22', '2024-02-10', '2025-01-29', '2026-02-17',
+  '2027-02-06', '2028-01-26', '2029-02-13', '2030-02-03',
+  '2031-01-23', '2032-02-11', '2033-01-31', '2034-02-19',
+  '2035-02-08', '2036-01-28', '2037-02-15'
+];
+
+const GREETINGS = [
+  '新春快乐，愿红石永远不炸',
+  '愿你今年的存档永不崩溃',
+  '祝你挖到钻石，也挖到好运',
+  '红灯笼高挂，方块世界也要热闹',
+  '除夕夜，先备份存档再吃饺子',
+  '愿你每一次落地，脚下都刚好有水',
+  '新春吉庆，愿苦力怕离你远远的',
+  '祝你今年附魔全是神级词条',
+  '愿末影龙也给你让一条路',
+  '灯笼亮起，愿你在服务器里被温柔对待',
+  '愿你的帧数稳，延迟低，队友不坑',
+  '新年第一镐，挖到的都是远古残骸'
+];
+
+const APRIL_BUGS = [
+  { id: 'jitter', label: '按钮好像挪了一下' },
+  { id: 'navSwap', label: '导航文字短暂串门' },
+  { id: 'avatarFlip', label: '头像被悄悄照了镜子' },
+  { id: 'versionSuffix', label: '版本号多了个小尾巴' },
+  { id: 'toast', label: '弹出一句没头没尾的话' },
+  { id: 'titleGlitch', label: '标题栏闪了一下' },
+  { id: 'progressTwist', label: '进度文字自己改了台词' },
+  { id: 'cursorGhost', label: '鼠标旁边多了个影子' }
+];
+
+const APRIL_TOASTS = [
+  '刚才那个按钮是不是动了一下？',
+  '你的鼠标没有坏，真的。',
+  '别慌，只是愚人节。',
+  '今天所有 bug 都是特意的。',
+  '这个提示没有含义，就像今天。',
+  '如果哪里不对，明天就对了。'
+];
+
+/** 致敬 81192 的固定文案 */
+const TRIBUTE = '81192，请你返航 · 犯我中华者，虽远必诛';
+/** 春节彩蛋里的 B 站拜年视频入口 */
+const SPRING_VIDEO = 'https://search.bilibili.com/all?keyword=' + encodeURIComponent('拜年祭');
 
 const CHINESE_LOCALES = /^zh(-|_|$)/i;
 
-function pad(value) {
-  return String(value).padStart(2, '0');
+function isChineseLocale(locale) {
+  return CHINESE_LOCALES.test(String(locale || ''));
 }
 
-function dateKey(date) {
-  return pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function dayNumber(date) {
-  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
+function parseDate(value) {
+  const [y, m, d] = String(value).split('-').map((n) => parseInt(n, 10));
+  return new Date(y, (m || 1) - 1, d || 1);
 }
 
-/** 春节窗口：除夕前 1 天到正月初六，共 8 天 */
-function isSpringFestival(date) {
-  const key = LUNAR_NEW_YEAR[date.getFullYear()];
-  if (!key) return false;
-  const [month, day] = key.split('-').map(Number);
-  const start = Date.UTC(date.getFullYear(), month - 1, day) / 86400000;
-  const today = dayNumber(date);
-  return today >= start - 1 && today <= start + 5;
+function dayDiff(a, b) {
+  return Math.round((startOfDay(a) - startOfDay(b)) / 86400000);
+}
+
+function fmtDate(date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+}
+
+/** 春节窗口：除夕到正月十五 */
+function springWindow(date) {
+  const year = date.getFullYear();
+  for (const yearOffset of [-1, 0, 1]) {
+    const entry = SPRING_FESTIVAL.find((item) => parseInt(item.slice(0, 4), 10) === year + yearOffset);
+    if (!entry) continue;
+    const firstDay = parseDate(entry);
+    const start = new Date(firstDay.getFullYear(), firstDay.getMonth(), firstDay.getDate() - 1);
+    const end = new Date(firstDay.getFullYear(), firstDay.getMonth(), firstDay.getDate() + 14);
+    const diff = dayDiff(date, start);
+    if (diff >= 0 && diff <= 15) return { start, end, firstDay, day: diff };
+  }
+  return null;
 }
 
 function isAprilFools(date) {
   return date.getMonth() === 3 && date.getDate() === 1;
 }
 
-function isChineseLocale(locale) {
-  return CHINESE_LOCALES.test(String(locale || ''));
-}
-
-/**
- * @param {{locale?: string, date?: Date}} options
- * @returns {{season: ''|'aprilfools'|'spring', chinese: boolean, locale: string, active: boolean}}
- */
-function getInfo(options = {}) {
-  const date = options.date instanceof Date ? options.date : new Date();
-  const locale = String(options.locale || '');
-  let season = '';
-  if (isAprilFools(date)) season = 'aprilfools';
-  else if (isSpringFestival(date)) season = 'spring';
-  const chinese = isChineseLocale(locale);
+function inactive(setting, date, spring, reason) {
   return {
-    season,
-    chinese,
-    locale,
-    // 只有中文环境才启用彩蛋
-    active: Boolean(season) && chinese
+    id: '',
+    active: false,
+    mode: setting,
+    name: '',
+    greeting: '',
+    greetings: [],
+    bugs: [],
+    toasts: [],
+    tribute: '',
+    videoUrl: '',
+    reason: reason || '',
+    locale: '',
+    date: fmtDate(date),
+    springWindow: spring ? { start: fmtDate(spring.start), end: fmtDate(spring.end) } : null
   };
 }
 
-module.exports = { LUNAR_NEW_YEAR, isChineseLocale, isAprilFools, isSpringFestival, getInfo };
+/**
+ * 解析当前应展示的节日。
+ * mode: auto（按日期自动）| april | spring | off
+ * locale: 系统语言；auto 模式下非中文环境不触发
+ */
+function resolveFestival(mode, now, locale) {
+  const date = now instanceof Date ? now : new Date();
+  const setting = ['auto', 'april', 'spring', 'off'].includes(mode) ? mode : 'auto';
+  const spring = springWindow(date);
+  const april = isAprilFools(date);
+
+  let id = '';
+  if (setting === 'april') id = 'april';
+  else if (setting === 'spring') id = 'spring';
+  else if (setting === 'auto') {
+    // 先检测用户所在地区的语言，只有中文（含所有繁体）才触发
+    if (locale && !isChineseLocale(locale)) return inactive(setting, date, spring, 'region');
+    if (spring) id = 'spring';
+    else if (april) id = 'april';
+  }
+
+  if (!id) return inactive(setting, date, spring, '');
+
+  if (id === 'april') {
+    return {
+      id,
+      active: true,
+      mode: setting,
+      name: '愚人节',
+      greeting: '今天的一切都可能是假的，除了这个提示。',
+      greetings: APRIL_TOASTS,
+      bugs: APRIL_BUGS.map((b) => b.id),
+      toasts: APRIL_TOASTS,
+      font: 'wang',
+      tribute: TRIBUTE,
+      videoUrl: '',
+      reason: '',
+      locale: locale || '',
+      date: fmtDate(date),
+      springWindow: null
+    };
+  }
+
+  // 春节：祝福语按天轮换，避免每次打开都一样
+  const offset = spring ? ((spring.day % GREETINGS.length) + GREETINGS.length) % GREETINGS.length : 0;
+  const rotated = GREETINGS.slice(offset).concat(GREETINGS.slice(0, offset));
+  return {
+    id,
+    active: true,
+    mode: setting,
+    name: '春节',
+    greeting: rotated[0],
+    greetings: rotated,
+    bugs: [],
+    toasts: [],
+    tribute: '',
+    videoUrl: SPRING_VIDEO,
+    reason: '',
+    locale: locale || '',
+    date: fmtDate(date),
+    springWindow: spring ? { start: fmtDate(spring.start), end: fmtDate(spring.end) } : null,
+    day: spring ? spring.day : null
+  };
+}
+
+module.exports = {
+  SPRING_FESTIVAL,
+  GREETINGS,
+  APRIL_BUGS,
+  APRIL_TOASTS,
+  TRIBUTE,
+  SPRING_VIDEO,
+  isChineseLocale,
+  springWindow,
+  isAprilFools,
+  resolveFestival
+};

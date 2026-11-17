@@ -580,45 +580,8 @@ body.theme-bmcl .option-row:hover{background:rgba(255,255,255,.03)}
 }
 
 /* ============================================================
-   2.6.0 新增：节日彩蛋 / 启动进度 / 地图下载 / 实例设置 / 多语言
+   2.6.0 新增：启动进度 / 地图下载 / 实例设置 / 多语言
    ============================================================ */
-.season-banner{
-  display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;
-  border:1px solid #f0d9a8;border-radius:6px;
-  background:linear-gradient(135deg,#fff8e8,#fff2d8);
-  box-shadow:0 2px 8px rgba(150,110,20,.08);
-}
-body.theme-bmcl .season-banner{
-  border-color:rgba(240,200,120,.32);
-  background:linear-gradient(135deg,rgba(120,80,20,.28),rgba(80,50,10,.22));
-}
-.season-banner.hidden{display:none}
-.sb-art{font-size:26px;line-height:1;flex:0 0 auto}
-.sb-main{flex:1;min-width:0}
-.sb-title{font-size:13.5px;font-weight:700;color:#8a5b12}
-body.theme-bmcl .sb-title{color:#ffd98a}
-.sb-body{font-size:12px;color:#8a6414;line-height:1.6;margin-top:2px}
-body.theme-bmcl .sb-body{color:#e3c98f}
-
-/* 愚人节彩蛋：按钮换成活泼的手写字体 */
-body.egg-april .btn,
-body.egg-april .nav-btn,
-body.egg-april .launch-btn,
-body.egg-april .instance-btn,
-body.egg-april .dl-cat,
-body.egg-april .set-cat,
-body.egg-april .utab,
-body.egg-april .pa-btn,
-body.egg-april .option-row,
-body.egg-april .card-head h2{
-  font-family:"华文行楷","STXingkai","楷体","KaiTi","Segoe UI",cursive !important;
-  letter-spacing:.5px;
-}
-.egg-strip{
-  margin:0 0 14px;padding:8px 14px;border-radius:6px;
-  background:#132033;color:#cfe3ff;font-size:12px;letter-spacing:1px;
-  border:1px solid rgba(120,180,255,.25);
-}
 
 /* 启动进度 */
 .launch-progress{

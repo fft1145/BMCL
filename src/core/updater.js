@@ -73,25 +73,41 @@ function parseRelease(json) {
     htmlUrl: json.html_url || `https://github.com/${REPO}/releases`,
     publishedAt: json.published_at || '',
     assets: Array.isArray(json.assets)
-      ? json.assets.map((a) => ({
-          name: a.name,
-          size: a.size,
-          url: a.browser_download_url,
-          contentType: a.content_type
-        }))
+      ? json.assets.map((a) => {
+          const url = a.browser_download_url || '';
+          return {
+            name: a.name,
+            size: a.size,
+            url,
+            // GitHub 直链在国内常不可达，自动附上加速镜像
+            mirrors: /^https:\/\/github\.com\//i.test(url)
+              ? ['https://gh-proxy.com/' + url, 'https://ghproxy.net/' + url]
+              : [],
+            contentType: a.content_type
+          };
+        })
       : []
   };
 }
 
 /** 固定产物名：配合 releases/latest 直链，网站与启动器都无需随版本改链接 */
 const UPDATE_ASSET_NAME = 'fft1145-portable.exe';
+/** 实际打包产物名（electron-builder artifactName），以及历史兼容名 */
+const UPDATE_ASSET_NAMES = [
+  UPDATE_ASSET_NAME,
+  'better-mc-launcher.exe',
+  'bmcl.exe',
+  'better-mc-launcher-portable.exe'
+];
 
 /** 备用线路：仓库里的版本清单，走 Raw / 国内加速镜像，绕开 api.github.com */
 const MANIFEST_PATH = 'launcher-version.json';
 const MANIFEST_MIRRORS = [
   { id: 'raw', label: '备用线路 1（GitHub Raw）', prefix: '' },
   { id: 'gh-proxy', label: '备用线路 2（gh-proxy）', prefix: 'https://gh-proxy.com/' },
-  { id: 'ghproxy-net', label: '备用线路 3（ghproxy.net）', prefix: 'https://ghproxy.net/' }
+  { id: 'ghproxy-net', label: '备用线路 3（ghproxy.net）', prefix: 'https://ghproxy.net/' },
+  { id: 'ghfast', label: '备用线路 4（ghfast）', prefix: 'https://ghfast.top/' },
+  { id: 'moeyy', label: '备用线路 5（moeyy）', prefix: 'https://github.moeyy.xyz/' }
 ];
 
 const GITHUB_SOURCE = { id: 'github', label: 'GitHub 直连', kind: 'github' };
@@ -124,18 +140,90 @@ function parseManifest(json, repo) {
 
 function findUpdateAsset(assets) {
   if (!Array.isArray(assets)) return null;
-  // 优先固定名的便携版 exe
-  const fixed = assets.find((a) => a.name === UPDATE_ASSET_NAME);
-  if (fixed) return fixed;
-  // 兼容历史版本：任意 fft1145/bmcl 的 exe
+  // 优先固定名的便携版 exe（大小写不敏感，兼容 electron-builder 的产物名）
+  const byName = assets.find((a) => UPDATE_ASSET_NAMES.includes(String(a.name || '').toLowerCase()));
+  if (byName) return byName;
+  // 兼容历史版本：任意 fft1145/bmcl/launcher 的 exe
   const exes = assets.filter((a) => /\.exe$/i.test(a.name));
-  const winExe = exes.find((a) => /fft1145|bmcl/i.test(a.name)) || exes[0];
+  const winExe = exes.find((a) => /fft1145|bmcl|launcher/i.test(a.name)) || exes[0];
   if (winExe) return winExe;
   // 再退回 zip（旧版本产物）
   const zips = assets.filter((a) => /\.zip$/i.test(a.name));
   if (!zips.length) return null;
   const win = zips.find((a) => /win|fft1145|bmcl/i.test(a.name));
   return win || zips[0];
+}
+
+/** 一个更新包的候选下载地址：直链 + 清单里的镜像，去重后按顺序尝试 */
+function assetUrls(asset) {
+  if (!asset) return [];
+  const out = [];
+  const push = (url) => {
+    const value = String(url || '').trim();
+    if (/^https?:\/\//i.test(value) && !out.includes(value)) out.push(value);
+  };
+  push(asset.url);
+  (asset.mirrors || []).forEach(push);
+  return out;
+}
+
+/**
+ * 下载更新包，逐个线路尝试；成功返回 {url,size}。
+ * 镜像地址在部分网络下比 github.com 直链更可靠。
+ */
+async function downloadAsset(asset, destPath, options = {}) {
+  const urls = assetUrls(asset);
+  if (!urls.length) throw new Error('更新包没有可用的下载地址');
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  const onProgress = options.onProgress || function () {};
+  const expected = Number(asset.size) || 0;
+  const errors = [];
+  for (const url of urls) {
+    try {
+      const res = await fetchImpl(url, {
+        headers: { 'User-Agent': 'fft1145-bmcl-updater' }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const total = Number(res.headers.get('content-length')) || expected;
+      let received = 0;
+      const chunks = [];
+      if (res.body && typeof res.body.getReader === 'function') {
+        const reader = res.body.getReader();
+        for (;;) {
+          const step = await reader.read();
+          if (step.done) break;
+          const chunk = Buffer.from(step.value);
+          chunks.push(chunk);
+          received += chunk.length;
+          onProgress({ stage: 'download', url, received, total, percent: total ? Math.min(99, Math.round((received / total) * 100)) : 0 });
+        }
+      } else {
+        const buffer = Buffer.from(await res.arrayBuffer());
+        chunks.push(buffer);
+        received = buffer.length;
+        onProgress({ stage: 'download', url, received, total: received, percent: 99 });
+      }
+      const data = Buffer.concat(chunks);
+      if (!data.length) throw new Error('下载内容为空');
+      // 大小校验：大文件允许 0.5% 误差，小文件必须完全一致
+      const tolerance = expected > 1048576 ? expected * 0.005 : 0;
+      if (expected && Math.abs(data.length - expected) > tolerance) {
+        throw new Error('文件大小不符（期望 ' + expected + '，实际 ' + data.length + '）');
+      }
+      await fsp.mkdir(path.dirname(destPath), { recursive: true });
+      const tmp = destPath + '.part';
+      await fsp.writeFile(tmp, data);
+      await fsp.rename(tmp, destPath);
+      onProgress({ stage: 'done', url, received: data.length, total: data.length, percent: 100 });
+      return { url, size: data.length };
+    } catch (err) {
+      errors.push(url + '：' + (err && err.message ? err.message : '未知错误'));
+      onProgress({ stage: 'retry', url, message: String(err && err.message || '') });
+    }
+  }
+  const error = new Error('更新包下载失败（' + errors.join('；') + '）');
+  error.errors = errors;
+  throw error;
 }
 
 async function fetchJson(url, fetchImpl, headers, timeoutMs) {
@@ -276,6 +364,7 @@ async function applyUpdateTree(sourceDir, appDir, options = {}) {
 module.exports = {
   REPO,
   UPDATE_ASSET_NAME,
+  UPDATE_ASSET_NAMES,
   MANIFEST_PATH,
   MANIFEST_MIRRORS,
   LAUNCHER_UPDATE_WHITELIST,
@@ -284,6 +373,8 @@ module.exports = {
   parseRelease,
   parseManifest,
   findUpdateAsset,
+  assetUrls,
+  downloadAsset,
   checkForUpdate,
   checkDownloadAllowed,
   listRelativeFiles,
