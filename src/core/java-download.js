@@ -13,6 +13,7 @@ const path = require('node:path');
 const fsp = require('node:fs/promises');
 const { rewriteUrl } = require('./version-manifest');
 const { downloadFile } = require('./tools');
+const { parseJavaVersion } = require('./java');
 
 // 与 PCL CE 相同的运行时索引
 const RUNTIME_INDEX = 'https://piston-meta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json';
@@ -108,6 +109,33 @@ async function runPool(items, limit, worker) {
   await Promise.all(workers);
 }
 
+/** 某个运行时自身的大版本号（如 java-runtime-delta 的 21.0.3 → 21） */
+function runtimeMajor(runtime) {
+  const version = String((runtime && runtime.version) || '').trim();
+  const info = parseJavaVersion(version);
+  if (info.major) return info.major;
+  // 索引里给的是纯版本号（21.0.3 / 1.8.0_74），没有 version "..." 前缀
+  const nums = version.split('.');
+  if (!nums[0]) return 0;
+  return nums[0] === '1' ? (parseInt(nums[1], 10) || 0) : (parseInt(nums[0], 10) || 0);
+}
+
+/**
+ * 从可下载列表里挑出满足指定大版本的运行时。
+ * 优先完全一致；没有时选更高的；都没有返回 null。
+ */
+function pickRuntimeForMajor(list, major) {
+  const want = Number(major) || 0;
+  const items = Array.isArray(list) ? list.filter((r) => r && r.name) : [];
+  if (!want) return null;
+  const exact = items.find((r) => runtimeMajor(r) === want);
+  if (exact) return exact;
+  const newer = items
+    .filter((r) => runtimeMajor(r) >= want)
+    .sort((a, b) => runtimeMajor(a) - runtimeMajor(b))[0];
+  return newer || null;
+}
+
 /**
  * 下载并解压一个 Java 运行时到目录。
  * @param {string} name - jre-legacy / java-runtime-gamma ...
@@ -173,5 +201,7 @@ module.exports = {
   RUNTIME_LABELS,
   listRuntimes,
   installRuntime,
+  runtimeMajor,
+  pickRuntimeForMajor,
   platformKey
 };

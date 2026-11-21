@@ -222,6 +222,52 @@ function resolveVersionChain(versionsDir, versionId) {
   return { json: merged, levels, clientJar };
 }
 
+/**
+ * 统计已安装版本需要哪些 Java 大版本，哪些已经满足。
+ * 返回 { totalVersions, needed: [{ major, versions, runtime }], satisfied: [...] }
+ */
+async function collectJavaNeeds() {
+  const s = getSettings();
+  const usable = (s.javaList || []).filter((j) => j && j.ok);
+  let ids = [];
+  try {
+    ids = fs.readdirSync(dirs.versionsDir).filter((id) =>
+      fs.existsSync(path.join(dirs.versionsDir, id, id + '.json')));
+  } catch (e) { /* 还没有版本目录 */ }
+
+  const groups = new Map();
+  for (const id of ids) {
+    let major = 8;
+    try {
+      const chain = resolveVersionChain(dirs.versionsDir, id);
+      major = (chain.json && chain.json.javaVersion && chain.json.javaVersion.majorVersion) || 8;
+    } catch (e) {
+      continue;
+    }
+    if (!groups.has(major)) groups.set(major, []);
+    groups.get(major).push(id);
+  }
+
+  let runtimes = [];
+  try {
+    runtimes = await javaDownload.listRuntimes({ source: s.source });
+  } catch (e) {
+    runtimes = [];
+  }
+
+  const needed = [];
+  const satisfied = [];
+  for (const [major, versions] of Array.from(groups.entries()).sort((a, b) => a[0] - b[0])) {
+    const best = javaScan.pickForMajor(usable, major);
+    if (best && best.major >= major) {
+      satisfied.push({ major, versions, java: best });
+      continue;
+    }
+    needed.push({ major, versions, runtime: javaDownload.pickRuntimeForMajor(runtimes, major) });
+  }
+  return { totalVersions: ids.length, needed, satisfied };
+}
+
 async function fetchText(url, timeoutMs) {
   const controller = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = controller ? setTimeout(() => controller.abort(), timeoutMs || 20000) : null;
@@ -626,7 +672,7 @@ async function launchGame(versionId) {
   }
   const javaProbe = await javaCore.probeJava(javaPath || 'java');
   if (!javaProbe.ok) {
-    throw new Error('没有找到可用的 Java。请到「增强 → Java」添加存放 Java 的目录（' + javaProbe.message + '）');
+    throw new Error('没有找到可用的 Java。可到「增强 → Java → 自动补全 Java」一键下载所需的官方运行时，或手动添加 Java 目录（' + javaProbe.message + '）');
   }
   let activeAccount = accounts.getActiveAccount(userData());
   if (activeAccount && activeAccount.type === 'microsoft') {
@@ -1381,6 +1427,66 @@ function registerIpc() {
     }));
     log('Java 下载完成：' + installed.name + '（' + installed.files + ' 个文件）', 'ok');
     return { reused: false, java: pick, list: merged, javaPath: pick ? pick.path : s.javaPath, installed };
+  });
+
+  ipcMain.handle('java:autofillPlan', () => collectJavaNeeds());
+  ipcMain.handle('java:autofill', async (event, payload) => {
+    const p = payload || {};
+    const dir = String(p.dir || '').trim();
+    if (!dir) throw new Error('请先选择 Java 安装目录');
+    fs.mkdirSync(dir, { recursive: true });
+
+    const s = getSettings();
+    const before = (await javaScan.scanJavaDir(dir)).filter((j) => j.ok);
+    const plan = await collectJavaNeeds();
+    const results = [];
+    let index = 0;
+
+    for (const need of plan.needed) {
+      index += 1;
+      const existing = before.find((j) => j.major === need.major) ||
+        before.slice().filter((j) => j.major > need.major).sort((a, b) => a.major - b.major)[0];
+      if (existing) {
+        results.push({ major: need.major, ok: true, reused: true, path: existing.path });
+        continue;
+      }
+      if (!need.runtime) {
+        results.push({
+          major: need.major,
+          ok: false,
+          message: 'Mojang 没有为 Java ' + need.major + ' 提供官方运行时，请手动安装'
+        });
+        continue;
+      }
+      try {
+        await javaDownload.installRuntime(need.runtime.name, dir, {
+          source: s.source,
+          onProgress: (prog) => send('java:autofillProgress', Object.assign({}, prog, {
+            major: need.major,
+            runtime: need.runtime.name,
+            index,
+            total: plan.needed.length
+          }))
+        });
+        results.push({ major: need.major, ok: true, runtime: need.runtime.name });
+      } catch (err) {
+        results.push({ major: need.major, ok: false, message: err.message });
+      }
+    }
+
+    const after = await javaScan.scanJavaDir(dir);
+    const merged = javaScan.mergeScans(s.javaList, after);
+    const javaDirs = Array.from(new Set([].concat(s.javaDirs || [], [dir])));
+    const stillValid = (s.javaPath || '') &&
+      (s.javaList || []).some((j) => j.ok && j.path === s.javaPath);
+    let javaPath = s.javaPath || '';
+    if (!stillValid) {
+      const pick = javaScan.pickForMajor(after.filter((j) => j.ok), plan.needed[0] ? plan.needed[0].major : 8);
+      if (pick) javaPath = pick.path;
+    }
+    settingsCore.save(settingsFile(), Object.assign(s, { javaDirs, javaList: merged, javaPath }));
+    const lastPlan = await collectJavaNeeds();
+    return { results, list: merged, javaPath, plan: lastPlan };
   });
 
   // ===== 2.3.0 AI 助手 =====

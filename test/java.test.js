@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const java = require('../src/core/java');
+const javaDownload = require('../src/core/java-download');
 
 function makeJdk() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bmcl-jdk-'));
@@ -47,4 +48,24 @@ test('probeJava 使用归一化后的可执行文件', async () => {
   assert.strictEqual(result.ok, true);
   assert.strictEqual(result.javaPath, jdk.exe);
   assert.strictEqual(result.major, 17);
+});
+
+test('pickRuntimeForMajor：优先完全一致，其次更高的版本', () => {
+  const runtimes = [
+    { name: 'jre-legacy', label: 'Java 8', version: '1.8.0_74' },
+    { name: 'java-runtime-alpha', label: 'Java 16', version: '16.0.1' },
+    { name: 'java-runtime-beta', label: 'Java 17', version: '17.0.1' },
+    { name: 'java-runtime-gamma', label: 'Java 17', version: '17.0.8' },
+    { name: 'java-runtime-delta', label: 'Java 21', version: '21.0.3' }
+  ];
+  assert.strictEqual(javaDownload.pickRuntimeForMajor(runtimes, 21).name, 'java-runtime-delta');
+  assert.strictEqual(javaDownload.pickRuntimeForMajor(runtimes, 8).name, 'jre-legacy');
+  assert.strictEqual(javaDownload.pickRuntimeForMajor(runtimes, 22), null);
+  assert.strictEqual(javaDownload.pickRuntimeForMajor([], 17), null);
+});
+
+test('runtimeMajor 解析运行时版本号', () => {
+  assert.strictEqual(javaDownload.runtimeMajor({ version: '1.8.0_74' }), 8);
+  assert.strictEqual(javaDownload.runtimeMajor({ version: '21.0.3' }), 21);
+  assert.strictEqual(javaDownload.runtimeMajor({}), 0);
 });

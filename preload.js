@@ -108,7 +108,10 @@ contextBridge.exposeInMainWorld('bmcl', {
   javaRuntimes: () => ipcRenderer.invoke('java:runtimes'),
   javaDefaultDir: () => ipcRenderer.invoke('java:defaultDir'),
   javaDownload: (payload) => ipcRenderer.invoke('java:download', payload),
+  javaAutofillPlan: () => ipcRenderer.invoke('java:autofillPlan'),
+  javaAutofill: (payload) => ipcRenderer.invoke('java:autofill', payload),
   onJavaProgress: (handler) => on('java:progress', handler),
+  onJavaAutofillProgress: (handler) => on('java:autofillProgress', handler),
 
   aiChat: (payload) => ipcRenderer.invoke('ai:chat', payload),
   aiCrash: (payload) => ipcRenderer.invoke('ai:crash', payload),

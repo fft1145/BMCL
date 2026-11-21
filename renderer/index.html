@@ -1411,6 +1411,22 @@
         <div class="fx-pane" data-fxpane="java">
           <div class="fx-java-cards">
             <div class="fx-card">
+              <div class="fx-card-title">自动补全 Java</div>
+              <p class="fx-hint">检查已安装的游戏版本缺少哪个 Java，自动下载对应的 Mojang 官方运行时。下载前可以自己选择安装目录。</p>
+              <div class="fx-row">
+                <button class="fx-btn" id="fxJavaAutoCheck">重新检测</button>
+                <button class="fx-btn" id="fxJavaAutoDirPick">选择安装目录</button>
+                <button class="fx-btn fx-btn-primary" id="fxJavaAutoFill">自动补全</button>
+              </div>
+              <p class="fx-hint" id="fxJavaAutoDir">安装目录：未选择（点「自动补全」时会先让你选）</p>
+              <div class="fx-java-auto-list" id="fxJavaAutoList"><p class="fx-hint">正在检测…</p></div>
+              <p class="fx-hint">说明：只解压到所选目录，不修改系统 PATH，也不会替换电脑上已有的 Java；目录里已有同一大版本的 Java 会直接复用；只有当前没有可用默认 Java 时才会自动设为默认。</p>
+              <div class="fx-java-progress hidden" id="fxJavaAutoProgress">
+                <div class="fx-java-progress-bar"><i id="fxJavaAutoBar"></i></div>
+                <span class="fx-hint" id="fxJavaAutoText"></span>
+              </div>
+            </div>
+            <div class="fx-card">
               <div class="fx-card-title">下载 Java 运行时</div>
               <p class="fx-hint">下载目录由你指定。如果这个目录里之前下载过别的 Java，会直接使用目录中的 Java，不会重复下载。</p>
               <div class="fx-row">

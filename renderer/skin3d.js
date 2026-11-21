@@ -209,8 +209,10 @@
       this.proj = mat4();
       this.view = mat4();
       this.model = mat4();
+      this.partMat = mat4();
       this.tmpA = mat4();
       this.tmpB = mat4();
+      this.tmpC = mat4();
       this.scale = 1 / 16;
     }
 
@@ -273,7 +275,7 @@
       }
       this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
       const aspect = w / h;
-      perspective(this.proj, 0.72, aspect, 1, 200);
+      perspective(this.proj, 0.72, aspect, 0.1, 200);
       this.viewport = { w, h };
     }
 
@@ -284,11 +286,11 @@
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.useProgram(this.prog);
 
-      const dist = 62;
+      // 模型高 2 个世界单位（32 像素 / 16），相机把它放到画面约 75% 的高度
+      const dist = 3.6;
+      const centerY = 1.0;
       identity(this.view);
-      translate(this.tmpA, 0, -19, -dist);
-      multiply(this.view, this.tmpA, this.view);
-      rotateX(this.tmpA, this.pitch);
+      translate(this.tmpA, 0, -centerY, -dist);
       multiply(this.view, this.tmpA, this.view);
 
       gl.uniformMatrix4fv(this.uProj, false, this.proj);
@@ -309,21 +311,27 @@
         gl.vertexAttribPointer(this.aPos, 3, gl.FLOAT, false, 20, 0);
         gl.vertexAttribPointer(this.aUV, 2, gl.FLOAT, false, 20, 12);
 
-        rotateY(this.tmpB, this.rotation);
         const headExtra = part.name === 'head' ? Math.sin(t + 0.6) * 0.12 : 0;
         const offsetY = bob * 0.5 + headExtra;
+        // 部件平移（像素 → 世界单位）后统一缩放
         translate(this.tmpA, part.x * this.scale, part.y * this.scale + offsetY * this.scale, part.z * this.scale);
-        multiply(this.model, this.tmpB, this.tmpA);
-        multiply(this.model, this.model, this.tmpA);
+        identity(this.tmpC);
+        this.tmpC[0] = this.scale;
+        this.tmpC[5] = this.scale;
+        this.tmpC[10] = this.scale;
+        multiply(this.partMat, this.tmpA, this.tmpC);
 
-        // 统一缩放
-        identity(this.tmpB);
-        this.tmpB[0] = this.scale;
-        this.tmpB[5] = this.scale;
-        this.tmpB[10] = this.scale;
-        multiply(this.model, this.tmpB, this.model);
+        // 绕模型中心旋转：拖拽时模型不会从画面里甩出去
+        translate(this.tmpC, 0, centerY, 0);
+        multiply(this.partMat, this.tmpC, this.partMat);
+        rotateY(this.tmpC, this.rotation);
+        multiply(this.partMat, this.tmpC, this.partMat);
+        rotateX(this.tmpC, this.pitch);
+        multiply(this.partMat, this.tmpC, this.partMat);
+        translate(this.tmpC, 0, -centerY, 0);
+        multiply(this.partMat, this.tmpC, this.partMat);
 
-        gl.uniformMatrix4fv(this.uModel, false, this.model);
+        gl.uniformMatrix4fv(this.uModel, false, this.partMat);
         // 六个面分别上色（每面 6 个顶点）
         for (let f = 0; f < 6; f++) {
           gl.uniform1f(this.uShade, shades[f]);

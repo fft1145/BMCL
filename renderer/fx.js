@@ -69,7 +69,7 @@
         $$('.fx-tab').forEach((t) => t.classList.toggle('on', t === tab));
         $$('.fx-pane').forEach((p) => p.classList.toggle('on', p.dataset.fxpane === tab.dataset.fxtab));
         if (tab.dataset.fxtab === 'skin') refreshSkinPane();
-        if (tab.dataset.fxtab === 'java') { renderJava(); loadJavaRuntimes(); }
+        if (tab.dataset.fxtab === 'java') { renderJava(); loadJavaRuntimes(); refreshJavaAutofill(); }
         if (tab.dataset.fxtab === 'look') renderLook();
       });
     });
@@ -732,6 +732,101 @@
     });
   }
 
+  /* ---------------- 自动补全 Java ---------------- */
+  const JAVA_AUTO_DIR_KEY = 'bmcl_java_auto_dir';
+
+  function renderJavaAutoDir() {
+    const label = $('#fxJavaAutoDir');
+    if (!label) return;
+    label.textContent = state.javaAutoDir
+      ? '安装目录：' + state.javaAutoDir
+      : '安装目录：未选择（点「自动补全」时会先让你选）';
+    label.title = state.javaAutoDir || '';
+  }
+
+  function renderJavaAutoPlan(plan) {
+    const box = $('#fxJavaAutoList');
+    if (!box) return;
+    if (!plan || !plan.totalVersions) {
+      box.innerHTML = '<p class="fx-hint">还没有安装游戏版本，先在「下载」页安装一个。</p>';
+      return;
+    }
+    if (!plan.needed.length) {
+      box.innerHTML = '<p class="fx-hint">已安装版本需要的 Java 都已具备，无需补全。</p>';
+      return;
+    }
+    box.innerHTML = plan.needed.map((n) => {
+      const runtime = n.runtime
+        ? n.runtime.label + (n.runtime.version ? ' · ' + n.runtime.version : '')
+        : '没有对应的官方运行时，需要手动安装';
+      return '<div class="fx-java">' +
+        '<span class="fx-java-badge' + (n.runtime ? '' : ' bad') + '">Java ' + n.major + '</span>' +
+        '<div class="fx-java-main"><div>需要它的版本：' + esc(n.versions.join('、')) + '</div>' +
+        '<div class="fx-java-path">将安装：' + esc(runtime) + '</div></div></div>';
+    }).join('');
+  }
+
+  async function refreshJavaAutofill() {
+    const box = $('#fxJavaAutoList');
+    if (!box) return;
+    box.innerHTML = '<p class="fx-hint">正在检测…</p>';
+    try {
+      const plan = await bmcl.javaAutofillPlan();
+      state.javaAutoPlan = plan;
+      renderJavaAutoPlan(plan);
+    } catch (err) {
+      box.innerHTML = '<p class="fx-hint">检测失败：' + esc(err.message) + '</p>';
+    }
+  }
+
+  async function pickJavaAutoDir() {
+    const dir = await bmcl.pickDirectory('选择自动补全 Java 的安装目录（只解压到这里，不影响系统 Java）');
+    if (!dir) return '';
+    state.javaAutoDir = dir;
+    try { localStorage.setItem(JAVA_AUTO_DIR_KEY, dir); } catch (e) { /* 忽略 */ }
+    renderJavaAutoDir();
+    return dir;
+  }
+
+  async function runJavaAutofill() {
+    if (!state.javaAutoDir) {
+      const dir = await pickJavaAutoDir();
+      if (!dir) return;
+    }
+    if (!state.javaAutoPlan) await refreshJavaAutofill();
+    if (!state.javaAutoPlan || !state.javaAutoPlan.needed.length) {
+      toast('没有需要补全的 Java', 'ok');
+      return;
+    }
+    const btn = $('#fxJavaAutoFill');
+    const box = $('#fxJavaAutoProgress');
+    const bar = $('#fxJavaAutoBar');
+    const text = $('#fxJavaAutoText');
+    if (btn) btn.disabled = true;
+    if (box) box.classList.remove('hidden');
+    if (bar) bar.style.width = '2%';
+    if (text) text.textContent = '正在准备下载…';
+    try {
+      const res = await bmcl.javaAutofill({ dir: state.javaAutoDir });
+      state.settings.javaList = res.list;
+      state.settings.javaPath = res.javaPath;
+      state.javaAutoPlan = res.plan || null;
+      renderJavaAutoPlan(res.plan);
+      renderJava();
+      const failed = (res.results || []).filter((r) => !r.ok);
+      if (failed.length) {
+        toast('已补全 ' + (res.results.length - failed.length) + ' 个，' + failed.length + ' 个失败：' + failed[0].message, 'error');
+      } else {
+        toast('Java 已补全', 'ok');
+      }
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+      if (box) box.classList.add('hidden');
+    }
+  }
+
   async function addJavaDirs() {
     const picked = await bmcl.javaPickDirs();
     if (!picked || picked.canceled) return;
@@ -966,6 +1061,30 @@
     }
     loadJavaDir();
     renderJavaDirLabel();
+
+    try { state.javaAutoDir = localStorage.getItem(JAVA_AUTO_DIR_KEY) || ''; } catch (e) { state.javaAutoDir = ''; }
+    renderJavaAutoDir();
+    const autoCheck = $('#fxJavaAutoCheck');
+    const autoPick = $('#fxJavaAutoDirPick');
+    const autoFill = $('#fxJavaAutoFill');
+    if (autoCheck) autoCheck.addEventListener('click', refreshJavaAutofill);
+    if (autoPick) autoPick.addEventListener('click', () => { pickJavaAutoDir(); });
+    if (autoFill) autoFill.addEventListener('click', runJavaAutofill);
+    if (bmcl.onJavaAutofillProgress) {
+      bmcl.onJavaAutofillProgress((prog) => {
+        const box = $('#fxJavaAutoProgress');
+        const bar = $('#fxJavaAutoBar');
+        const text = $('#fxJavaAutoText');
+        if (box) box.classList.remove('hidden');
+        if (bar) bar.style.width = Math.max(2, Number(prog.percent) || 0) + '%';
+        if (text) {
+          text.textContent = prog.stage === 'prepare'
+            ? '正在准备 Java ' + prog.major + '（' + prog.index + '/' + prog.total + '）…'
+            : '正在下载 Java ' + prog.major + '（' + prog.index + '/' + prog.total + '）· ' +
+              (prog.done || 0) + '/' + (prog.total || 0) + ' 个文件（' + (prog.percent || 0) + '%）';
+        }
+      });
+    }
     $('#fxJavaRescan').addEventListener('click', async () => {
       const hint = $('#fxJavaHint');
       if (hint) hint.textContent = '正在重新扫描…';
