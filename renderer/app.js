@@ -130,6 +130,7 @@
   function applyTheme(theme) {
     const bmcl = theme === 'bmcl';
     document.body.classList.toggle('theme-bmcl', bmcl);
+    document.body.classList.toggle('theme-pcl', !bmcl);
     const dash = $('#bmclDashboard');
     if (dash) dash.classList.toggle('hidden', !bmcl);
     // 同步设置页里的单选

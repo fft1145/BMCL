@@ -47,7 +47,8 @@ const DEFAULTS = {
   // ===== 2.6.0 新增 =====
   language: 'auto',          // auto | zh-CN | zh-TW | zh-HK | en-US | en-GB | en-AU | ja-JP | de-DE
   versionSettings: {},       // 每个版本独立的内存 / Java / 玩家名 / 隔离方式
-  festivalMode: 'auto'       // auto | off | april | spring
+  festivalMode: 'auto',      // auto | off | april | spring
+  liquidGlass: false         // 可选：液态玻璃外观
 };
 
 const LANGUAGES = ['auto', 'zh-CN', 'zh-TW', 'zh-HK', 'en-US', 'en-GB', 'en-AU', 'ja-JP', 'de-DE'];
@@ -142,6 +143,7 @@ function normalize(input) {
   out.language = LANGUAGES.includes(out.language) ? out.language : 'auto';
   out.versionSettings = normalizeVersionSettings(out.versionSettings);
   out.festivalMode = ['auto', 'off', 'april', 'spring'].includes(out.festivalMode) ? out.festivalMode : 'auto';
+  out.liquidGlass = Boolean(out.liquidGlass);
   return out;
 }
 

@@ -15,7 +15,7 @@
 
 [Herunterladen](https://github.com/fft1145/BMCL/releases/latest) |
 [Offizielle Website](https://bmcl26.netlify.app) |
-[Quellarchiv](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.3.zip)
+[Quellarchiv](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.4.zip)
 
 [Problem melden](https://github.com/fft1145/BMCL/issues/new/choose) |
 [Änderungsprotokoll](https://github.com/fft1145/BMCL/releases)
@@ -53,7 +53,7 @@ Enthalten sind Vanilla- und Modpack-Downloads, Mod- und Loader-Installation, Kon
 |---|---|
 | [GitHub Releases](https://github.com/fft1145/BMCL/releases/latest) | Aktuelle portable `Better-MC-Launcher.exe`, entpacken und starten |
 | [Offizielle Website](https://bmcl26.netlify.app/#download) | Download-Seite mit Prüfsummen |
-| [Quellarchiv](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.3.zip) | Vollständiger Quellcode der aktuellen Version |
+| [Quellarchiv](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.4.zip) | Vollständiger Quellcode der aktuellen Version |
 
 BMCL ist portabel. Beim ersten Start wird ein eigenes Datenverzeichnis angelegt; dein vorhandenes `.minecraft` bleibt unberührt.
 

@@ -1,0 +1,243 @@
+/* ============================================================
+   Liquid Glass 材质（Apple WWDC 2025 风格）
+   只改视觉层：背景、边框、阴影、模糊与高光，不动任何布局。
+   加载顺序放在最后，覆盖两套主题与壁纸/自定义主题的底色。
+   ============================================================ */
+
+/* ---------- 材质参数 ---------- */
+html body.theme-pcl{
+  --lg-blur: 20px;
+  --lg-tint: linear-gradient(145deg, rgba(255,255,255,.74), rgba(255,255,255,.44));
+  --lg-tint-soft: linear-gradient(145deg, rgba(255,255,255,.62), rgba(255,255,255,.34));
+  --lg-side: linear-gradient(180deg, rgba(255,255,255,.62), rgba(235,243,255,.42));
+  --lg-border: rgba(255,255,255,.78);
+  --lg-ring: 0 0 0 1px rgba(120,170,255,.18), 0 0 0 2px rgba(255,150,205,.07);
+  --lg-inset: inset 0 1px 0 rgba(255,255,255,.92), inset 0 -1px 0 rgba(255,255,255,.28);
+  --lg-shadow: 0 18px 44px rgba(31,45,66,.16), 0 3px 10px rgba(31,45,66,.07);
+  --lg-btn: linear-gradient(180deg, rgba(255,255,255,.76), rgba(255,255,255,.38));
+  --lg-btn-border: rgba(255,255,255,.8);
+  --lg-accent: linear-gradient(180deg, rgba(90,158,247,.95), rgba(19,112,243,.88));
+  --lg-accent-shadow: 0 10px 24px rgba(19,112,243,.32);
+}
+
+html body.theme-bmcl{
+  --lg-blur: 24px;
+  --lg-tint: linear-gradient(145deg, rgba(40,47,56,.62), rgba(22,26,32,.48));
+  --lg-tint-soft: linear-gradient(145deg, rgba(40,47,56,.52), rgba(22,26,32,.38));
+  --lg-side: linear-gradient(180deg, rgba(26,31,38,.66), rgba(14,17,21,.5));
+  --lg-border: rgba(255,255,255,.14);
+  --lg-ring: 0 0 0 1px rgba(120,190,255,.10), 0 0 0 2px rgba(90,230,170,.05);
+  --lg-inset: inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(255,255,255,.04);
+  --lg-shadow: 0 22px 54px rgba(0,0,0,.56), 0 3px 12px rgba(0,0,0,.4);
+  --lg-btn: linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.03));
+  --lg-btn-border: rgba(255,255,255,.13);
+  --lg-accent: linear-gradient(180deg, rgba(92,190,65,.95), rgba(52,138,35,.9));
+  --lg-accent-shadow: 0 10px 26px rgba(60,133,39,.38);
+}
+
+/* ---------- 背景：给玻璃提供可折射的柔和光斑 ---------- */
+html body.theme-pcl{background:#eef3fa !important}
+html body.theme-bmcl{background:#0a0c0f !important}
+
+body::before{
+  content: "";
+  position: fixed;
+  inset: -25%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 42% at 18% 20%, rgba(116,178,255,.55), transparent 70%),
+    radial-gradient(34% 38% at 84% 16%, rgba(255,168,214,.42), transparent 72%),
+    radial-gradient(44% 48% at 74% 88%, rgba(146,255,214,.36), transparent 70%);
+  filter: blur(60px) saturate(115%);
+}
+html body.theme-bmcl::before{
+  background:
+    radial-gradient(38% 42% at 20% 18%, rgba(58,132,255,.24), transparent 70%),
+    radial-gradient(34% 38% at 84% 22%, rgba(60,200,150,.18), transparent 72%),
+    radial-gradient(44% 48% at 70% 88%, rgba(120,80,255,.20), transparent 70%);
+  opacity: .9;
+}
+body.fx-has-wall::before{display:none}
+
+html body .app{position:relative;z-index:1;background:transparent !important}
+html body .workspace,
+html body .page{background:transparent !important}
+
+/* 主内容区留空，让环境光透上来，玻璃卡片才有效果 */
+html body:is(.theme-pcl,.theme-bmcl) .launch-main,
+html body:is(.theme-pcl,.theme-bmcl) .dl-main,
+html body:is(.theme-pcl,.theme-bmcl) .set-main,
+html body:is(.theme-pcl,.theme-bmcl) .mg-main{background:transparent !important}
+
+/* ---------- 标题栏：有色玻璃 ---------- */
+html body.theme-pcl .titlebar{
+  background:linear-gradient(180deg, rgba(34,126,244,.86), rgba(12,92,204,.8)) !important;
+  border-bottom:1px solid rgba(255,255,255,.28) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.16), 0 8px 22px rgba(12,80,180,.18);
+  backdrop-filter:blur(20px) saturate(170%);
+  -webkit-backdrop-filter:blur(20px) saturate(170%);
+}
+html body.theme-bmcl .titlebar{
+  background:linear-gradient(180deg, rgba(22,27,33,.72), rgba(12,15,19,.66)) !important;
+  border-bottom:1px solid rgba(255,255,255,.1) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.05), 0 10px 28px rgba(0,0,0,.4);
+  backdrop-filter:blur(24px) saturate(150%);
+  -webkit-backdrop-filter:blur(24px) saturate(150%);
+}
+
+/* ---------- 侧栏：薄玻璃板 ---------- */
+html body:is(.theme-pcl,.theme-bmcl) .launch-side,
+html body:is(.theme-pcl,.theme-bmcl) .dl-side,
+html body:is(.theme-pcl,.theme-bmcl) .set-side,
+html body:is(.theme-pcl,.theme-bmcl) .mg-side{
+  background:var(--lg-side) !important;
+  border-right:1px solid var(--lg-border) !important;
+  box-shadow:var(--lg-inset), 1px 0 0 rgba(255,255,255,.18);
+  backdrop-filter:blur(var(--lg-blur)) saturate(175%);
+  -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(175%);
+}
+
+/* ---------- 卡片：主玻璃面 ---------- */
+html body:is(.theme-pcl,.theme-bmcl) .card,
+html body:is(.theme-pcl,.theme-bmcl) .fx-card,
+html body:is(.theme-pcl,.theme-bmcl) .set-group,
+html body:is(.theme-pcl,.theme-bmcl) .ac-card{
+  background:var(--lg-tint) !important;
+  border:1px solid var(--lg-border) !important;
+  border-radius:20px !important;
+  box-shadow:var(--lg-shadow), var(--lg-ring), var(--lg-inset) !important;
+  backdrop-filter:blur(var(--lg-blur)) saturate(180%);
+  -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(180%);
+  transition:box-shadow .22s ease, border-color .22s ease;
+}
+html body:is(.theme-pcl,.theme-bmcl) .card:hover,
+html body:is(.theme-pcl,.theme-bmcl) .fx-card:hover{
+  border-color:rgba(255,255,255,.5);
+  box-shadow:var(--lg-shadow), var(--lg-ring),
+    inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.3) !important;
+}
+
+/* 公告卡保留一点暖色玻璃 */
+html body:is(.theme-pcl,.theme-bmcl) .notice-card{
+  background:linear-gradient(145deg, rgba(255,236,186,.64), rgba(255,255,255,.34)) !important;
+  border:1px solid rgba(255,255,255,.7) !important;
+  border-radius:20px !important;
+  box-shadow:var(--lg-shadow), var(--lg-inset) !important;
+  backdrop-filter:blur(var(--lg-blur)) saturate(170%);
+}
+html body.theme-bmcl .notice-card{
+  background:linear-gradient(145deg, rgba(60,50,18,.55), rgba(28,26,18,.45)) !important;
+  border-color:rgba(255,220,140,.18) !important;
+}
+
+/* ---------- 按钮：玻璃胶囊 ---------- */
+html body:is(.theme-pcl,.theme-bmcl) .btn,
+html body:is(.theme-pcl,.theme-bmcl) .fx-btn,
+html body:is(.theme-pcl,.theme-bmcl) .pa-btn,
+html body:is(.theme-pcl,.theme-bmcl) .set-cat,
+html body:is(.theme-pcl,.theme-bmcl) .fx-tab,
+html body:is(.theme-pcl,.theme-bmcl) .fx-icon-btn,
+html body:is(.theme-pcl,.theme-bmcl) .dl-bmcl-tab{
+  background:var(--lg-btn) !important;
+  border:1px solid var(--lg-btn-border) !important;
+  border-radius:14px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 4px 14px rgba(0,0,0,.06) !important;
+  color:var(--text) !important;
+  backdrop-filter:blur(12px) saturate(160%);
+  -webkit-backdrop-filter:blur(12px) saturate(160%);
+  transition:box-shadow .18s ease, background .18s ease, border-color .18s ease;
+}
+html body:is(.theme-pcl,.theme-bmcl) .btn:hover,
+html body:is(.theme-pcl,.theme-bmcl) .fx-btn:hover,
+html body:is(.theme-pcl,.theme-bmcl) .pa-btn:hover,
+html body:is(.theme-pcl,.theme-bmcl) .set-cat:hover{
+  border-color:rgba(255,255,255,.9) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85), 0 8px 20px rgba(31,45,66,.14) !important;
+}
+
+html body:is(.theme-pcl,.theme-bmcl) .btn-primary,
+html body:is(.theme-pcl,.theme-bmcl) .fx-btn-primary,
+html body:is(.theme-pcl,.theme-bmcl) .launch-btn{
+  background:var(--lg-accent) !important;
+  border:1px solid rgba(255,255,255,.42) !important;
+  border-radius:16px !important;
+  color:#fff !important;
+  box-shadow:var(--lg-accent-shadow),
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -1px 0 rgba(0,0,0,.18) !important;
+  text-shadow:0 1px 1px rgba(0,0,0,.18);
+}
+html body:is(.theme-pcl,.theme-bmcl) .btn-primary:hover,
+html body:is(.theme-pcl,.theme-bmcl) .fx-btn-primary:hover,
+html body:is(.theme-pcl,.theme-bmcl) .launch-btn:hover{
+  filter:brightness(1.06);
+  box-shadow:var(--lg-accent-shadow), 0 0 0 1px rgba(255,255,255,.35),
+    inset 0 1px 0 rgba(255,255,255,.75) !important;
+}
+
+/* ---------- 输入框：磨砂玻璃 ---------- */
+html body:is(.theme-pcl,.theme-bmcl) .input,
+html body:is(.theme-pcl,.theme-bmcl) .fx-input,
+html body:is(.theme-pcl,.theme-bmcl) textarea,
+html body:is(.theme-pcl,.theme-bmcl) select{
+  background:var(--lg-tint-soft) !important;
+  border:1px solid var(--lg-btn-border) !important;
+  border-radius:12px !important;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.4) !important;
+  backdrop-filter:blur(10px) saturate(150%);
+  -webkit-backdrop-filter:blur(10px) saturate(150%);
+}
+
+/* ---------- 选中态：保留主题色，只加玻璃高光 ---------- */
+html body:is(.theme-pcl,.theme-bmcl) .fx-tab.on,
+html body:is(.theme-pcl,.theme-bmcl) .dl-bmcl-tab.on,
+html body:is(.theme-pcl,.theme-bmcl) .set-cat.on{
+  background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(232,241,255,.62)) !important;
+  border-color:rgba(19,112,243,.32) !important;
+  color:var(--blue) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), 0 4px 14px rgba(19,112,243,.18) !important;
+}
+html body.theme-bmcl .fx-tab.on,
+html body.theme-bmcl .dl-bmcl-tab.on,
+html body.theme-bmcl .set-cat.on{
+  background:linear-gradient(180deg, rgba(72,160,54,.34), rgba(40,92,30,.28)) !important;
+  border-color:rgba(120,220,90,.36) !important;
+  color:#b8f19c !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 4px 14px rgba(0,0,0,.3) !important;
+}
+
+/* ---------- 浮层 / 提示 / 列表项 ---------- */
+html body:is(.theme-pcl,.theme-bmcl) .account-panel,
+html body:is(.theme-pcl,.theme-bmcl) .toast,
+html body:is(.theme-pcl,.theme-bmcl) .fx-java,
+html body:is(.theme-pcl,.theme-bmcl) .fx-dir,
+html body:is(.theme-pcl,.theme-bmcl) .fx-msg,
+html body:is(.theme-pcl,.theme-bmcl) .fx-ai-log{
+  background:var(--lg-tint) !important;
+  border:1px solid var(--lg-border) !important;
+  border-radius:16px !important;
+  box-shadow:var(--lg-shadow), var(--lg-inset) !important;
+  backdrop-filter:blur(18px) saturate(170%);
+  -webkit-backdrop-filter:blur(18px) saturate(170%);
+}
+
+html body:is(.theme-pcl,.theme-bmcl) .toast{
+  border-left:3px solid var(--blue) !important;
+  border-radius:14px !important;
+}
+
+/* 滚动条也做成细玻璃条 */
+html body.theme-bmcl ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+  border:2px solid transparent;
+  background-clip:padding-box;
+  border-radius:999px;
+}
+html body.theme-bmcl ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.3);background-clip:padding-box}
+html body.theme-pcl ::-webkit-scrollbar-thumb{
+  background:rgba(120,140,165,.45);
+  border:2px solid transparent;
+  background-clip:padding-box;
+  border-radius:999px;
+}
