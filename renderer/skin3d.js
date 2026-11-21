@@ -86,8 +86,9 @@
 
   // ---------- 方块几何 ----------
   // faces: [px,py,pz] 尺寸，uv 基点是贴图左上角
-  function box(w, h, d, ux, uy) {
-    const x = w / 2, y = h / 2, z = d / 2;
+  function box(w, h, d, ux, uy, pad) {
+    const p = pad || 0;
+    const x = w / 2 + p, y = h / 2 + p, z = d / 2 + p;
     const T = [ux + d, uy, w, d];
     const B = [ux + d + w, uy, w, d];
     const R = [ux, uy + d, d, h];
@@ -130,18 +131,25 @@
 
   function buildModel() {
     // 单位：像素 / 16，脚底 y=0
+    // 先画基础层，再画外层（帽子、外套、袖子、裤腿），和 LittleSkin 一致
     const parts = [
       { name: 'head', w: 8, h: 8, d: 8, x: 0, y: 28, z: 0, uv: [0, 0] },
       { name: 'body', w: 8, h: 12, d: 4, x: 0, y: 18, z: 0, uv: [16, 16] },
       { name: 'armR', w: 4, h: 12, d: 4, x: -6, y: 18, z: 0, uv: [40, 16] },
       { name: 'armL', w: 4, h: 12, d: 4, x: 6, y: 18, z: 0, uv: [32, 48] },
       { name: 'legR', w: 4, h: 12, d: 4, x: -2, y: 6, z: 0, uv: [0, 16] },
-      { name: 'legL', w: 4, h: 12, d: 4, x: 2, y: 6, z: 0, uv: [16, 48] }
+      { name: 'legL', w: 4, h: 12, d: 4, x: 2, y: 6, z: 0, uv: [16, 48] },
+      { name: 'hat', w: 8, h: 8, d: 8, x: 0, y: 28, z: 0, uv: [32, 0], pad: 0.5 },
+      { name: 'jacket', w: 8, h: 12, d: 4, x: 0, y: 18, z: 0, uv: [16, 32], pad: 0.5 },
+      { name: 'sleeveR', w: 4, h: 12, d: 4, x: -6, y: 18, z: 0, uv: [40, 32], pad: 0.5 },
+      { name: 'sleeveL', w: 4, h: 12, d: 4, x: 6, y: 18, z: 0, uv: [48, 48], pad: 0.5 },
+      { name: 'pantsR', w: 4, h: 12, d: 4, x: -2, y: 6, z: 0, uv: [0, 32], pad: 0.5 },
+      { name: 'pantsL', w: 4, h: 12, d: 4, x: 2, y: 6, z: 0, uv: [0, 48], pad: 0.5 }
     ];
     return parts.map((p) => ({
       name: p.name,
       x: p.x, y: p.y, z: p.z,
-      data: box(p.w, p.h, p.d, p.uv[0], p.uv[1])
+      data: box(p.w, p.h, p.d, p.uv[0], p.uv[1], p.pad)
     }));
   }
 

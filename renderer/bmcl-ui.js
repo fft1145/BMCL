@@ -201,6 +201,7 @@
     renderAccountList();
     updateUtilVersion();
     resizeModel();
+    window.dispatchEvent(new CustomEvent('bmcl:player-change', { detail: { name: name, logged: logged } }));
   }
 
   function renderAccountList() {
