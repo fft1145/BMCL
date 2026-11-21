@@ -29,8 +29,47 @@ const MIRROR_RULES = [
   [/^https:\/\/resources\.download\.minecraft\.net/, 'https://bmclapi2.bangbang93.com/assets']
 ];
 
+/** 把 BMCLAPI 地址还原为官方地址，供官方源备用回退时使用 */
+const REVERSE_RULES = [
+  [/^https:\/\/bmclapi2\.bangbang93\.com\/assets\//, 'https://resources.download.minecraft.net/'],
+  [/^https:\/\/bmclapi2\.bangbang93\.com\/v1\/objects\//, 'https://piston-data.mojang.com/v1/objects/'],
+  [/^https:\/\/bmclapi2\.bangbang93\.com\//, 'https://piston-meta.mojang.com/']
+];
+
 function getSource(key) {
   return SOURCES[key] || SOURCES.bmclapi;
+}
+
+function oppositeSource(key) {
+  return getSource(key).key === 'bmclapi' ? 'official' : 'bmclapi';
+}
+
+/** 返回「主源 + 备用源」的顺序数组，去重 */
+function candidateSources(key) {
+  const a = getSource(key).key;
+  const b = oppositeSource(a);
+  return a === b ? [a] : [a, b];
+}
+
+function rewriteUrlToOfficial(url) {
+  if (!url || typeof url !== 'string') return url;
+  for (const [pattern, replacement] of REVERSE_RULES) {
+    if (pattern.test(url)) return url.replace(pattern, replacement);
+  }
+  return url;
+}
+
+/** 给一个文件地址列出「主地址 + 镜像地址」，失败时挨个试 */
+function candidateUrls(url, sourceKey) {
+  const primary = url;
+  const alt = getSource(sourceKey).key === 'bmclapi'
+    ? rewriteUrlToOfficial(url)
+    : rewriteUrl(url, 'bmclapi');
+  const out = [];
+  for (const u of [primary, alt]) {
+    if (u && typeof u === 'string' && !out.includes(u)) out.push(u);
+  }
+  return out;
 }
 
 function rewriteUrl(url, sourceKey) {
@@ -67,28 +106,46 @@ function rewriteVersionJson(json, sourceKey) {
   return clone;
 }
 
-async function fetchManifest(options = {}) {
-  const sourceKey = options.source || 'bmclapi';
-  const source = getSource(sourceKey);
-  const fetchImpl = options.fetchImpl || globalThis.fetch;
-  const timeoutMs = options.timeoutMs || 15000;
+async function fetchWithTimeout(url, fetchImpl, timeoutMs) {
   if (typeof fetchImpl !== 'function') throw new Error('当前环境不支持 fetch');
   const controller = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   try {
-    const res = await fetchImpl(source.manifest, controller ? { signal: controller.signal } : {});
+    const res = await fetchImpl(url, controller ? { signal: controller.signal } : {});
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    if (!data || !Array.isArray(data.versions)) throw new Error('版本清单格式错误');
-    return {
-      source: source.key,
-      latest: data.latest || {},
-      versions: data.versions,
-      raw: data
-    };
+    return res;
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+async function fetchManifest(options = {}) {
+  const sources = candidateSources(options.source);
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  const timeoutMs = options.timeoutMs || 15000;
+  if (typeof fetchImpl !== 'function') throw new Error('当前环境不支持 fetch');
+  const errors = [];
+  for (let i = 0; i < sources.length; i++) {
+    const source = getSource(sources[i]);
+    try {
+      const res = await fetchWithTimeout(source.manifest, fetchImpl, timeoutMs);
+      const data = await res.json();
+      if (!data || !Array.isArray(data.versions)) throw new Error('版本清单格式错误');
+      return {
+        source: source.key,
+        usedFallback: i > 0,
+        latest: data.latest || {},
+        versions: data.versions,
+        raw: data
+      };
+    } catch (err) {
+      errors.push(source.label + '：' + ((err && err.message) ? err.message : String(err)));
+    }
+  }
+  throw new Error(
+    '获取版本清单失败，已尝试 ' + sources.map((k) => getSource(k).label).join('、') +
+    '。请检查网络或代理后重试：' + errors.join('；')
+  );
 }
 
 function findVersion(manifest, id) {
@@ -105,27 +162,41 @@ function latestVersionId(manifest, type) {
 }
 
 async function fetchVersionJson(version, options = {}) {
-  const sourceKey = options.source || 'bmclapi';
+  if (!version || !version.url) throw new Error('缺少版本下载地址');
+  const sources = candidateSources(options.source);
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const timeoutMs = options.timeoutMs || 20000;
-  if (!version || !version.url) throw new Error('缺少版本下载地址');
-  const url = rewriteUrl(version.url, sourceKey);
-  const controller = typeof AbortController === 'function' ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
-  try {
-    const res = await fetchImpl(url, controller ? { signal: controller.signal } : {});
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    return rewriteVersionJson(json, sourceKey);
-  } finally {
-    if (timer) clearTimeout(timer);
+  if (typeof fetchImpl !== 'function') throw new Error('当前环境不支持 fetch');
+  const errors = [];
+  for (let i = 0; i < sources.length; i++) {
+    const sourceKey = sources[i];
+    const url = rewriteUrl(version.url, sourceKey);
+    try {
+      const res = await fetchWithTimeout(url, fetchImpl, timeoutMs);
+      const json = await res.json();
+      return {
+        json: rewriteVersionJson(json, sourceKey),
+        source: sourceKey,
+        usedFallback: i > 0
+      };
+    } catch (err) {
+      errors.push(getSource(sourceKey).label + '：' + ((err && err.message) ? err.message : String(err)));
+    }
   }
+  throw new Error(
+    '下载版本描述文件失败，已尝试 ' + sources.map((k) => getSource(k).label).join('、') +
+    '。请检查网络或代理后重试：' + errors.join('；')
+  );
 }
 
 module.exports = {
   SOURCES,
   getSource,
+  oppositeSource,
+  candidateSources,
   rewriteUrl,
+  rewriteUrlToOfficial,
+  candidateUrls,
   rewriteVersionJson,
   fetchManifest,
   fetchVersionJson,

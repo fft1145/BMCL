@@ -115,3 +115,34 @@ test('downloadFile 校验失败时报错', async () => {
     /校验失败/
   );
 });
+
+test('downloadFile 主地址失败时自动尝试备用地址', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bmcl-dl-alt-'));
+  const body = Buffer.from('ok');
+  const fetchImpl = async (url) => {
+    if (String(url).includes('piston-data')) throw new Error('fetch failed');
+    return {
+      ok: true,
+      status: 200,
+      arrayBuffer: async () => body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength)
+    };
+  };
+  const file = {
+    url: 'https://piston-data.mojang.com/v1/objects/abc/client.jar',
+    urls: [
+      'https://piston-data.mojang.com/v1/objects/abc/client.jar',
+      'https://bmclapi2.bangbang93.com/v1/objects/abc/client.jar'
+    ],
+    path: path.join(dir, 'client.jar')
+  };
+  const result = await installer.downloadFile(file, { fetchImpl });
+  assert.strictEqual(result.url, 'https://bmclapi2.bangbang93.com/v1/objects/abc/client.jar');
+  assert.strictEqual(fs.readFileSync(file.path, 'utf8'), 'ok');
+});
+
+test('buildDownloadPlan 为每个文件附带主/备镜像地址', () => {
+  const plan = installer.buildDownloadPlan(sample, options('linux'));
+  assert.ok(plan.files.every((f) => Array.isArray(f.urls) && f.urls.length >= 1));
+  const client = plan.files.find((f) => f.kind === 'client');
+  assert.ok(client.urls.includes('https://x/client.jar'));
+});

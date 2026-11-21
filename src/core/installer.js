@@ -10,7 +10,7 @@ const fsp = fs.promises;
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { detectContext, isAllowed } = require('./rules');
-const { getSource } = require('./version-manifest');
+const { getSource, candidateUrls } = require('./version-manifest');
 
 function ensureDir(dir) {
   return fsp.mkdir(dir, { recursive: true });
@@ -144,6 +144,7 @@ function buildDownloadPlan(versionJson, options = {}) {
     });
   }
 
+  for (const f of files) f.urls = candidateUrls(f.url, options.source);
   const totalBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
   return { files, natives, totalBytes, assetBase, assetIndexId: versionJson.assetIndex && versionJson.assetIndex.id, versionId };
 }
@@ -165,6 +166,7 @@ function buildAssetPlan(assetIndex, options = {}) {
       kind: 'asset'
     });
   }
+  for (const f of files) f.urls = candidateUrls(f.url, options.source);
   return { files, totalBytes: files.reduce((s, f) => s + (Number(f.size) || 0), 0) };
 }
 
@@ -179,23 +181,30 @@ async function downloadFile(file, options = {}) {
     }
   }
   if (typeof fetchImpl !== 'function') throw new Error('当前环境不支持 fetch');
+  const urls = Array.isArray(file.urls) && file.urls.length ? file.urls : [file.url];
   const timeoutMs = options.timeoutMs || 30000;
-  const controller = typeof AbortController === 'function' ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
-  try {
-    const res = await fetchImpl(file.url, controller ? { signal: controller.signal } : {});
-    if (!res.ok) throw new Error('下载失败 HTTP ' + res.status + ' · ' + file.url);
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (file.sha1 && sha1Buffer(buf) !== file.sha1) {
-      throw new Error('文件校验失败：' + path.basename(file.path));
+  const errors = [];
+  for (const url of urls) {
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    try {
+      const res = await fetchImpl(url, controller ? { signal: controller.signal } : {});
+      if (!res.ok) throw new Error('下载失败 HTTP ' + res.status + ' · ' + url);
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (file.sha1 && sha1Buffer(buf) !== file.sha1) {
+        throw new Error('文件校验失败：' + path.basename(file.path));
+      }
+      const tmp = file.path + '.part';
+      await fsp.writeFile(tmp, buf);
+      await fsp.rename(tmp, file.path);
+      return { skipped: false, bytes: buf.length, url };
+    } catch (err) {
+      errors.push(((err && err.message) ? err.message : String(err)) + '（' + url + '）');
+    } finally {
+      if (timer) clearTimeout(timer);
     }
-    const tmp = file.path + '.part';
-    await fsp.writeFile(tmp, buf);
-    await fsp.rename(tmp, file.path);
-    return { skipped: false, bytes: buf.length };
-  } finally {
-    if (timer) clearTimeout(timer);
   }
+  throw new Error(errors[errors.length - 1] || ('下载失败：' + file.url));
 }
 
 /** 并发下载，带失败重试 */

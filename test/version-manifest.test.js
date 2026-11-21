@@ -57,3 +57,59 @@ test('fetchManifest 在 HTTP 错误时抛出异常', async () => {
   const fetchImpl = async () => ({ ok: false, status: 503 });
   await assert.rejects(vm.fetchManifest({ fetchImpl }), /HTTP 503/);
 });
+
+test('fetchManifest 主源失败时自动回退备用源', async () => {
+  const payload = {
+    latest: { release: '1.20.4' },
+    versions: [{ id: '1.20.4', type: 'release', url: 'https://piston-meta.mojang.com/x.json' }]
+  };
+  const fetchImpl = async (url) => {
+    if (String(url).includes('bmclapi2')) throw new Error('fetch failed');
+    return { ok: true, status: 200, json: async () => payload };
+  };
+  const manifest = await vm.fetchManifest({ source: 'bmclapi', fetchImpl });
+  assert.strictEqual(manifest.source, 'official');
+  assert.strictEqual(manifest.usedFallback, true);
+});
+
+test('fetchVersionJson 返回 json 与实际使用的源，主源失败时回退', async () => {
+  const json = {
+    id: '1.20.4',
+    downloads: { client: { url: 'https://piston-data.mojang.com/v1/objects/abc/client.jar' } }
+  };
+  const version = { id: '1.20.4', url: 'https://piston-meta.mojang.com/v1/packages/x/1.20.4.json' };
+  const fetchImpl = async (url) => {
+    if (String(url).includes('bmclapi2')) throw new Error('fetch failed');
+    return { ok: true, status: 200, json: async () => json };
+  };
+  const r = await vm.fetchVersionJson(version, { source: 'bmclapi', fetchImpl });
+  assert.strictEqual(r.source, 'official');
+  assert.strictEqual(r.usedFallback, true);
+  assert.strictEqual(r.json.downloads.client.url, json.downloads.client.url);
+});
+
+test('candidateUrls 同时给出主地址与镜像地址', () => {
+  assert.deepStrictEqual(
+    vm.candidateUrls('https://piston-data.mojang.com/v1/objects/abc/client.jar', 'official'),
+    [
+      'https://piston-data.mojang.com/v1/objects/abc/client.jar',
+      'https://bmclapi2.bangbang93.com/v1/objects/abc/client.jar'
+    ]
+  );
+  assert.deepStrictEqual(
+    vm.candidateUrls('https://bmclapi2.bangbang93.com/v1/objects/abc/client.jar', 'bmclapi'),
+    [
+      'https://bmclapi2.bangbang93.com/v1/objects/abc/client.jar',
+      'https://piston-data.mojang.com/v1/objects/abc/client.jar'
+    ]
+  );
+  assert.deepStrictEqual(
+    vm.candidateUrls('https://bmclapi2.bangbang93.com/assets/ab/cdef', 'bmclapi'),
+    [
+      'https://bmclapi2.bangbang93.com/assets/ab/cdef',
+      'https://resources.download.minecraft.net/ab/cdef'
+    ]
+  );
+  // 不参与镜像的地址只保留一个，避免重复尝试
+  assert.strictEqual(vm.candidateUrls('https://libraries.minecraft.net/x.jar', 'official').length, 1);
+});

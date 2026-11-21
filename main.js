@@ -492,15 +492,35 @@ async function installFabric(gameVersion, loaderVersion) {
   return { versionId: id, loaderVersion: loader, files: plan.files.length };
 }
 
+function friendlyInstallError(err) {
+  const msg = (err && err.message) ? String(err.message) : String(err);
+  if (/fetch failed|ETIMEDOUT|ENOTFOUND|ECONNRESET|ECONNREFUSED|EAI_AGAIN|aborted|网络连接/i.test(msg)) {
+    return '网络连接失败（已自动尝试官方源与 BMCLAPI 镜像）。请检查网络或代理后重试：' + msg;
+  }
+  return msg;
+}
+
 async function installVersion(versionId) {
+  try {
+    return await _installVersion(versionId);
+  } catch (err) {
+    log('安装失败：' + ((err && err.stack) ? err.stack : err), 'error');
+    throw new Error(friendlyInstallError(err));
+  }
+}
+
+async function _installVersion(versionId) {
   const s = getSettings();
   const dirs = dataDirs();
   send('install:progress', { stage: '获取版本清单', done: 0, total: 0 });
   const manifest = await vm.fetchManifest({ source: s.source });
+  const manifestSource = manifest.source;
   const version = vm.findVersion(manifest, versionId);
   if (!version) throw new Error('版本清单中没有 ' + versionId);
   send('install:progress', { stage: '下载版本描述文件', done: 0, total: 0 });
-  const json = await vm.fetchVersionJson(version, { source: s.source });
+  const fetched = await vm.fetchVersionJson(version, { source: manifestSource });
+  const json = fetched.json;
+  const activeSource = fetched.source;
 
   const versionDir = path.join(dirs.versionsDir, versionId);
   await fsp.mkdir(versionDir, { recursive: true });
@@ -510,7 +530,7 @@ async function installVersion(versionId) {
     versionsDir: dirs.versionsDir,
     librariesDir: dirs.librariesDir,
     assetsDir: dirs.assetsDir,
-    source: s.source,
+    source: activeSource,
     versionId
   });
   send('install:progress', { stage: '下载核心文件', done: 0, total: plan.files.length });
@@ -519,7 +539,7 @@ async function installVersion(versionId) {
     onProgress: (p) => send('install:progress', { stage: '下载核心文件', done: p.done, total: p.total, failed: p.failed })
   });
   if (result.failed > 0) {
-    throw new Error('有 ' + result.failed + ' 个文件下载失败：' + (result.errors[0] || {}).message);
+    throw new Error('有 ' + result.failed + ' 个文件下载失败（已自动尝试官方源与 BMCLAPI 镜像）：' + (result.errors[0] || {}).message);
   }
 
   for (const native of plan.natives) {
@@ -533,7 +553,7 @@ async function installVersion(versionId) {
     const indexFile = path.join(dirs.assetsDir, 'indexes', json.assetIndex.id + '.json');
     if (fs.existsSync(indexFile)) {
       const index = JSON.parse(fs.readFileSync(indexFile, 'utf8'));
-      const assetPlan = installer.buildAssetPlan(index, { assetsDir: dirs.assetsDir, source: s.source });
+      const assetPlan = installer.buildAssetPlan(index, { assetsDir: dirs.assetsDir, source: activeSource });
       send('install:progress', { stage: '下载游戏资源 (' + assetPlan.files.length + ' 个)', done: 0, total: assetPlan.files.length });
       const assetResult = await installer.runPlan(assetPlan, {
         concurrency: 8,
