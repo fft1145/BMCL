@@ -1,20 +1,20 @@
 {
-  "version": "2.6.2",
-  "name": "BMCL 2.6.2",
-  "tag": "v2.6.2",
+  "version": "2.6.3",
+  "name": "BMCL 2.6.3",
+  "tag": "v2.6.3",
   "publishedAt": "2026-11-21",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.6.2\n- AI 公共 Key 改为从官网接口实时拉取（10 分钟缓存）：换 Key 不用再发新版本\n- 启动器不再内置 Key，公共 Key 拉取失败时会提示检查网络或填写自己的 Key\n- 自己的 Key 仍为选填，填写后优先使用，只保存在本机\n- 启动器版本号升至 2.6.2",
+  "notes": "2.6.3\n- 新增「自动补全 Java」：检查已安装版本缺少哪个 Java，自动下载 Mojang 官方运行时，可自行选择安装目录\n- 目录里已有同一大版本的 Java 会直接复用；不修改系统 PATH，也不替换电脑上已有的 Java\n- 补全时显示下载进度；缺少官方运行时（如 Java 22）会提示手动安装\n- 启动失败提示改为引导到「增强 → Java → 自动补全 Java」\n- 修复 BMCL 玩家模型过小：现在占满预览卡片约四分之三高度，拖拽旋转不再甩出画面\n- 启动器版本号升至 2.6.3",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.2/Better-MC-Launcher.exe",
-      "size": 74777651,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe",
+      "size": 74781408,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.2/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.2/Better-MC-Launcher.exe",
-        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.2/Better-MC-Launcher.exe",
-        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.2/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe",
+        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe",
+        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe"
       ]
     }
   ]
