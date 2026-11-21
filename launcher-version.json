@@ -1,20 +1,20 @@
 {
-  "version": "2.6.4",
-  "name": "BMCL 2.6.4",
-  "tag": "v2.6.4",
+  "version": "2.6.5",
+  "name": "BMCL 2.6.5",
+  "tag": "v2.6.5",
   "publishedAt": "2026-11-21",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.6.4\n- 全新 Liquid Glass 材质：卡片、侧栏、按钮、输入框、提示与浮层改为半透明玻璃，带背景模糊、边缘高光与细微色散\n- 标题栏改为有色玻璃；没有壁纸时自动生成柔和环境光，有壁纸时直接透出壁纸\n- 主内容区透明化，两套主题（PCL / BMCL）均已适配\n- 只改视觉层，布局与交互不变\n- 版本号升至 2.6.4",
+  "notes": "2.6.5\n- 修复「立即更新」报错「该版本没有可下载的更新包」\n- 兼容新旧两种更新调用方式\n- Liquid Glass 材质随启动器默认加载\n- 版本号升至 2.6.5",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe",
-      "size": 74782610,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.5/Better-MC-Launcher.exe",
+      "size": 74782892,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe",
-        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe",
-        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.5/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.5/Better-MC-Launcher.exe",
+        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.5/Better-MC-Launcher.exe",
+        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.5/Better-MC-Launcher.exe"
       ]
     }
   ]
