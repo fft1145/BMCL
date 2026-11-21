@@ -361,6 +361,19 @@ async function applyUpdateTree(sourceDir, appDir, options = {}) {
   return { updated: done, files: audit.files };
 }
 
+/**
+ * 兼容两种调用方式：
+ * 1. 旧版前端只把 release 传回来（此时 asset 在同级的检查结果里，已丢失）；
+ * 2. 新版前端把整份检查结果传回来（asset 与 release 同级）。
+ */
+function normalizeRelease(payload) {
+  if (!payload) return null;
+  const release = payload.release || payload;
+  if (!release) return null;
+  const asset = payload.asset || release.asset || findUpdateAsset(release.assets);
+  return Object.assign({}, release, { asset: asset || null });
+}
+
 module.exports = {
   REPO,
   UPDATE_ASSET_NAME,
@@ -373,6 +386,7 @@ module.exports = {
   parseRelease,
   parseManifest,
   findUpdateAsset,
+  normalizeRelease,
   assetUrls,
   downloadAsset,
   checkForUpdate,

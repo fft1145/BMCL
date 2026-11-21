@@ -1158,7 +1158,7 @@ function registerIpc() {
     currentVersion: APP_VERSION,
     preferMirror: Boolean(opts && opts.mirror)
   }));
-  ipcMain.handle('update:apply', (e, release) => applyUpdate(release));
+  ipcMain.handle('update:apply', (e, release) => applyUpdate(updater.normalizeRelease(release)));
   ipcMain.handle('java:probe', (e, javaPath) => javaCore.probeJava(javaPath || getSettings().javaPath || 'java'));
   ipcMain.handle('repair:scan', () => repairCore.scan(repairContext()));
   ipcMain.handle('repair:run', () => {

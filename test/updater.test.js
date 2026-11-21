@@ -249,3 +249,20 @@ test('checkDownloadAllowed：网络异常判定为被禁止，正常响应判定
   const allowed = await updater.checkDownloadAllowed({ fetchImpl: okFetch, urls: ['https://x'] });
   assert.strictEqual(allowed.allowed, true);
 });
+
+test('normalizeRelease：新旧两种前端传参都能找到更新包', () => {
+  const assets = [
+    { name: 'Better-MC-Launcher.exe', size: 100, url: 'https://example.com/a.exe' }
+  ];
+  // 旧版前端只传 release，asset 需要从 assets 里重新找回
+  const legacy = updater.normalizeRelease({ version: '2.6.4', assets });
+  assert.strictEqual(legacy.asset.name, 'Better-MC-Launcher.exe');
+
+  // 新版前端传整份检查结果，asset 与 release 同级
+  const result = { hasUpdate: true, asset: assets[0], release: { version: '2.6.4', assets: [] } };
+  const modern = updater.normalizeRelease(result);
+  assert.strictEqual(modern.version, '2.6.4');
+  assert.strictEqual(modern.asset.url, 'https://example.com/a.exe');
+
+  assert.strictEqual(updater.normalizeRelease(null), null);
+});

@@ -809,7 +809,7 @@
     if (box) box.classList.remove('hidden');
     setUpdateProgress({ stage: 'prepare', percent: 0, message: '准备下载…' });
     try {
-      const result = await bmcl.applyUpdate(state.pendingUpdate.release);
+      const result = await bmcl.applyUpdate(state.pendingUpdate);
       if (result.restarting) {
         setUpdateProgress({ stage: 'done', percent: 100, message: '更新完成，正在重启…' });
         toast('更新完成，启动器即将自动重启', 'ok');
