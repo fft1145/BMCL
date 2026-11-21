@@ -265,13 +265,13 @@
     if (model) {
       model.textContent = state.settings.aiApiKey
         ? (state.settings.aiModel || 'deepseek-chat')
-        : '内置 Key · deepseek-v4.1-flash';
+        : '公共 Key · 自动获取';
     }
     const keyHint = $('#fxAiHint');
     if (keyHint) {
       keyHint.textContent = state.settings.aiApiKey
-        ? '正在使用你自己的 API Key（' + state.settings.aiApiKey.slice(0, 6) + '…），只存在本机。清空输入框再点「保存 Key」可切回内置 Key。'
-        : '已内置可用的 DeepSeek Key，可直接提问；也可以填入自己的 Key 覆盖它（选填，只保存在本机）。';
+        ? '正在使用你自己的 API Key（' + state.settings.aiApiKey.slice(0, 6) + '…），只存在本机。清空输入框再点「保存 Key」可切回公共 Key。'
+        : '无需填写 Key：提问时会自动从官网拉取公共 Key（可随时更换，不用更新启动器）。也可以填入自己的 Key 覆盖它（选填，只保存在本机）。';
     }
   }
 

@@ -1265,7 +1265,7 @@
             <div class="fx-ai-log" id="fxAiLog">
               <div class="fx-msg bot">
                 <div class="fx-msg-role">BMCL 助手</div>
-                <div class="fx-msg-text">你好，我是内置的 DeepSeek 助手，已自带可用 Key，可以直接提问：模组冲突、崩溃原因、Java 版本、光影设置都可以。想用自己的 Key 也可以在下面填写（选填）。</div>
+                <div class="fx-msg-text">你好，我是内置的 DeepSeek 助手。无需填 Key，提问时会自动从官网拉取公共 Key：模组冲突、崩溃原因、Java 版本、光影设置都可以问。想用自己的 Key 也可以在下面填写（选填）。</div>
               </div>
             </div>
             <div class="fx-ai-input">
@@ -1277,11 +1277,11 @@
               </div>
             </div>
             <div class="fx-row">
-              <input class="fx-input" id="fxAiKey" type="password" placeholder="选填：自己的 API Key（留空使用内置 Key）" style="flex:1;max-width:340px">
+              <input class="fx-input" id="fxAiKey" type="password" placeholder="选填：自己的 API Key（留空自动使用公共 Key）" style="flex:1;max-width:340px">
               <button class="fx-btn" id="fxAiKeySave">保存 Key</button>
-              <span class="fx-hint" id="fxAiModel">内置 Key · deepseek-v4.1-flash</span>
+              <span class="fx-hint" id="fxAiModel">公共 Key · 自动获取</span>
             </div>
-            <p class="fx-hint" id="fxAiHint">已内置可用的 DeepSeek Key，可直接提问；也可以填入自己的 Key 覆盖它（选填，只保存在本机）。</p>
+            <p class="fx-hint" id="fxAiHint">无需填写 Key：提问时会自动从官网拉取公共 Key（可随时更换，不用更新启动器）。也可以填入自己的 Key 覆盖它（选填，只保存在本机）。</p>
           </div>
         </div>
 

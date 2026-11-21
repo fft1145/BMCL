@@ -2,18 +2,19 @@
 
 /**
  * DeepSeek AI 助手。
- * 启动器自带一份可用的内置 Key（只用于内置接口），玩家也可以换成自己的 Key，
- * Key 只保存在本地 settings.json，不上传任何地方。
+ * 启动器不内置 Key：没有填写自己的 Key 时，会先从官网接口拉取一份公共 Key
+ * （放在网站数据库里，可随时更换，不用发新版本），并在内存里缓存 10 分钟。
+ * 玩家自己的 Key 只保存在本地 settings.json。
  */
 
 const DEFAULT_BASE = 'https://api.deepseek.com';
 const DEFAULT_MODEL = 'deepseek-chat';
-// 内置 Key：留空填写自己的 Key 时使用，接口与模型必须配套
-const BUILTIN = {
-  apiKey: 'fftgzs-fgamecc-bmcl_2026-miyao-fft1145-deepseek--You_can-t_use_it_in_some_illegal_use',
-  baseUrl: 'https://wanwanzhou.top/v1',
-  model: 'deepseek-v4.1-flash'
-};
+// 公共 Key 的拉取地址（网站上的接口文件）
+const BUILTIN_URL = 'https://fft1145.github.io/bmcl-site/api/ai-key.json';
+const BUILTIN_TTL = 10 * 60 * 1000;
+let builtinCache = null;
+let builtinCacheAt = 0;
+let builtinCacheUrl = '';
 const SYSTEM_PROMPT = [
   '你是 BMCL 启动器内置的 Minecraft 技术助手。',
   '回答要简洁、可执行，优先给出具体步骤，不要长篇大论。',
@@ -29,18 +30,55 @@ function normalizeMessages(input) {
     .map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content.slice(0, 12000) }));
 }
 
-/** 有自定义 Key 用自定义的，没有就用内置 Key 与配套接口 */
-function resolveConfig(options = {}) {
+function normalizeBase(url) {
+  return /^https?:\/\//.test(url || '') ? String(url).replace(/\/+$/, '') : DEFAULT_BASE;
+}
+
+/** 从网站上拉公共 Key，带 10 分钟缓存；失败时回退到过期缓存 */
+async function fetchBuiltin(options = {}) {
+  const url = options.builtinUrl || BUILTIN_URL;
+  const now = Date.now();
+  if (builtinCache && builtinCacheUrl === url && now - builtinCacheAt < BUILTIN_TTL) {
+    return builtinCache;
+  }
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  if (typeof fetchImpl !== 'function') throw new Error('当前环境不支持 fetch');
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 8000) : null;
+  try {
+    const res = await fetchImpl(url, controller ? { signal: controller.signal } : {});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const apiKey = String((data && data.apiKey) || '').trim();
+    if (!apiKey) throw new Error('接口里没有 apiKey');
+    builtinCache = { apiKey, baseUrl: normalizeBase(data.baseUrl), model: data.model || DEFAULT_MODEL };
+    builtinCacheAt = now;
+    builtinCacheUrl = url;
+    return builtinCache;
+  } catch (err) {
+    if (builtinCache && builtinCacheUrl === url) return builtinCache;
+    throw new Error(
+      '拉取公共 AI Key 失败（' + ((err && err.message) ? err.message : String(err)) +
+      '），请检查网络，或在「实用 → AI 助手」填写自己的 Key'
+    );
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** 有自定义 Key 用自定义的，没有就从网站拉公共 Key */
+async function resolveConfig(options = {}) {
   const customKey = String(options.apiKey || '').trim();
   if (customKey) {
-    const base = /^https?:\/\//.test(options.baseUrl || '') ? options.baseUrl.replace(/\/+$/, '') : DEFAULT_BASE;
-    return { apiKey: customKey, baseUrl: base, model: options.model || DEFAULT_MODEL, builtin: false };
+    return { apiKey: customKey, baseUrl: normalizeBase(options.baseUrl), model: options.model || DEFAULT_MODEL, builtin: false };
   }
-  return { apiKey: BUILTIN.apiKey, baseUrl: BUILTIN.baseUrl, model: BUILTIN.model, builtin: true };
+  const remote = await fetchBuiltin(options);
+  return { apiKey: remote.apiKey, baseUrl: remote.baseUrl, model: remote.model, builtin: true };
 }
 
 async function chat(options = {}) {
-  const cfg = resolveConfig(options);
+  const cfg = await resolveConfig(options);
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
   const base = cfg.baseUrl;
   const model = cfg.model;
   const messages = normalizeMessages(options.messages);
@@ -50,7 +88,7 @@ async function chat(options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 90000);
   try {
-    const res = await fetch(base + '/chat/completions', {
+    const res = await fetchImpl(base + '/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -72,7 +110,7 @@ async function chat(options = {}) {
       const msg = (data.error && data.error.message) || ('AI 接口返回 HTTP ' + res.status);
       if (res.status === 401) {
         throw new Error(cfg.builtin
-          ? '内置 Key 已失效，请到「实用 → AI 助手」填写自己的 API Key'
+          ? '公共 Key 已失效，请到「实用 → AI 助手」填写自己的 API Key'
           : 'API Key 无效或已过期');
       }
       if (res.status === 402) throw new Error('DeepSeek 账户余额不足');
@@ -119,4 +157,18 @@ function buildCrashQuestion(diagnosis) {
   return lines.join('\n');
 }
 
-module.exports = { chat, buildCrashQuestion, resolveConfig, BUILTIN, SYSTEM_PROMPT };
+function resetBuiltinCache() {
+  builtinCache = null;
+  builtinCacheAt = 0;
+  builtinCacheUrl = '';
+}
+
+module.exports = {
+  chat,
+  buildCrashQuestion,
+  resolveConfig,
+  fetchBuiltin,
+  resetBuiltinCache,
+  BUILTIN_URL,
+  SYSTEM_PROMPT
+};
