@@ -260,17 +260,27 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  function refreshAiStatus() {
+    const model = $('#fxAiModel');
+    if (model) {
+      model.textContent = state.settings.aiApiKey
+        ? (state.settings.aiModel || 'deepseek-chat')
+        : '内置 Key · deepseek-v4.1-flash';
+    }
+    const keyHint = $('#fxAiHint');
+    if (keyHint) {
+      keyHint.textContent = state.settings.aiApiKey
+        ? '正在使用你自己的 API Key（' + state.settings.aiApiKey.slice(0, 6) + '…），只存在本机。清空输入框再点「保存 Key」可切回内置 Key。'
+        : '已内置可用的 DeepSeek Key，可直接提问；也可以填入自己的 Key 覆盖它（选填，只保存在本机）。';
+    }
+  }
+
   async function sendAi(text) {
     const content = String(text || '').trim();
     if (!content) return;
     const keyInput = $('#fxAiKey');
     if (keyInput && keyInput.value.trim() && !state.settings.aiApiKey) {
       await saveSettings({ aiApiKey: keyInput.value.trim() });
-    }
-    if (!state.settings.aiApiKey) {
-      toast('请先填写 DeepSeek API Key', 'error');
-      appendMsg('bot', '还没有填写 API Key。把 DeepSeek 的 Key 粘贴到下方输入框，点「保存 Key」就能用了。', 'err');
-      return;
     }
     appendMsg('user', content);
     state.aiHistory.push({ role: 'user', content });
@@ -295,10 +305,6 @@
   }
 
   async function analyzeCrashWithAi() {
-    if (!state.settings.aiApiKey) {
-      toast('请先填写 DeepSeek API Key', 'error');
-      return;
-    }
     appendMsg('user', '帮我分析这次崩溃');
     const thinking = document.createElement('div');
     thinking.className = 'fx-msg bot';
@@ -855,10 +861,10 @@
     $('#fxAiCrash').addEventListener('click', analyzeCrashWithAi);
     $('#fxAiKeySave').addEventListener('click', async () => {
       const value = $('#fxAiKey').value.trim();
-      if (!value) return;
       await saveSettings({ aiApiKey: value });
       $('#fxAiKey').value = '';
-      toast('API Key 已保存到本机', 'ok');
+      toast(value ? '已切换到你的 API Key' : '已清除自定义 Key，改用内置 Key', 'ok');
+      refreshAiStatus();
     });
 
     $('#fxMusicSearch').addEventListener('click', searchMusic);
@@ -996,14 +1002,7 @@
     bindEvents();
     applyAppearance();
     renderJava();
-    const model = $('#fxAiModel');
-    if (model) model.textContent = state.settings.aiModel || 'deepseek-chat';
-    const keyHint = $('#fxAiHint');
-    if (keyHint) {
-      keyHint.textContent = state.settings.aiApiKey
-        ? '已保存 API Key（' + state.settings.aiApiKey.slice(0, 6) + '…）。只存在本机。'
-        : 'API Key 只保存在本机 settings.json，不会上传。';
-    }
+    refreshAiStatus();
     setTimeout(refreshAvatar, 800);
     setTimeout(refreshAvatar, 4000);
     // 切换页面或登录状态变化后，重新用本地皮肤裁头像，覆盖默认网络头像

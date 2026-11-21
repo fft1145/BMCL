@@ -41,7 +41,7 @@ const DEFAULTS = {
   },
   musicVolume: 0.7,
   musicAutoplay: false,
-  aiApiKey: '',              // DeepSeek API Key
+  aiApiKey: '',              // 选填：自己的 DeepSeek API Key，留空使用内置 Key
   aiModel: 'deepseek-chat',
   aiBaseUrl: 'https://api.deepseek.com',
   // ===== 2.6.0 新增 =====

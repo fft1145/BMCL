@@ -2,11 +2,18 @@
 
 /**
  * DeepSeek AI 助手。
- * Key 由玩家在设置里自己填，只保存在本地 settings.json，不上传任何地方。
+ * 启动器自带一份可用的内置 Key（只用于内置接口），玩家也可以换成自己的 Key，
+ * Key 只保存在本地 settings.json，不上传任何地方。
  */
 
 const DEFAULT_BASE = 'https://api.deepseek.com';
 const DEFAULT_MODEL = 'deepseek-chat';
+// 内置 Key：留空填写自己的 Key 时使用，接口与模型必须配套
+const BUILTIN = {
+  apiKey: 'fftgzs-fgamecc-bmcl_2026-miyao-fft1145-deepseek--You_can-t_use_it_in_some_illegal_use',
+  baseUrl: 'https://wanwanzhou.top/v1',
+  model: 'deepseek-v4.1-flash'
+};
 const SYSTEM_PROMPT = [
   '你是 BMCL 启动器内置的 Minecraft 技术助手。',
   '回答要简洁、可执行，优先给出具体步骤，不要长篇大论。',
@@ -22,11 +29,20 @@ function normalizeMessages(input) {
     .map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content.slice(0, 12000) }));
 }
 
+/** 有自定义 Key 用自定义的，没有就用内置 Key 与配套接口 */
+function resolveConfig(options = {}) {
+  const customKey = String(options.apiKey || '').trim();
+  if (customKey) {
+    const base = /^https?:\/\//.test(options.baseUrl || '') ? options.baseUrl.replace(/\/+$/, '') : DEFAULT_BASE;
+    return { apiKey: customKey, baseUrl: base, model: options.model || DEFAULT_MODEL, builtin: false };
+  }
+  return { apiKey: BUILTIN.apiKey, baseUrl: BUILTIN.baseUrl, model: BUILTIN.model, builtin: true };
+}
+
 async function chat(options = {}) {
-  const apiKey = String(options.apiKey || '').trim();
-  if (!apiKey) throw new Error('还没有填 DeepSeek API Key，请到「设置 → AI 助手」填写');
-  const base = /^https?:\/\//.test(options.baseUrl || '') ? options.baseUrl.replace(/\/+$/, '') : DEFAULT_BASE;
-  const model = options.model || DEFAULT_MODEL;
+  const cfg = resolveConfig(options);
+  const base = cfg.baseUrl;
+  const model = cfg.model;
   const messages = normalizeMessages(options.messages);
   if (!messages.length) throw new Error('没有可发送的内容');
   const system = options.system ? String(options.system) : SYSTEM_PROMPT;
@@ -38,7 +54,7 @@ async function chat(options = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + apiKey
+        Authorization: 'Bearer ' + cfg.apiKey
       },
       body: JSON.stringify({
         model,
@@ -54,16 +70,26 @@ async function chat(options = {}) {
     try { data = JSON.parse(text); } catch (e) { /* 非 JSON 响应 */ }
     if (!res.ok) {
       const msg = (data.error && data.error.message) || ('AI 接口返回 HTTP ' + res.status);
-      if (res.status === 401) throw new Error('API Key 无效或已过期');
+      if (res.status === 401) {
+        throw new Error(cfg.builtin
+          ? '内置 Key 已失效，请到「实用 → AI 助手」填写自己的 API Key'
+          : 'API Key 无效或已过期');
+      }
       if (res.status === 402) throw new Error('DeepSeek 账户余额不足');
       if (res.status === 429) throw new Error('请求太频繁，稍后再试');
       throw new Error(msg);
     }
-    const reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    const choice = (data.choices && data.choices[0]) || {};
+    const message = choice.message || {};
+    const reply = message.content;
+    if ((!reply || !String(reply).trim()) && choice.finish_reason === 'length') {
+      throw new Error('AI 回答被截断，请把问题缩短后再试');
+    }
     if (!reply) throw new Error('AI 没有返回内容');
     return {
       reply: String(reply).trim(),
       model: data.model || model,
+      builtin: cfg.builtin,
       usage: data.usage || null
     };
   } catch (err) {
@@ -93,4 +119,4 @@ function buildCrashQuestion(diagnosis) {
   return lines.join('\n');
 }
 
-module.exports = { chat, buildCrashQuestion, SYSTEM_PROMPT };
+module.exports = { chat, buildCrashQuestion, resolveConfig, BUILTIN, SYSTEM_PROMPT };
