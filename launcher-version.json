@@ -1,20 +1,20 @@
 {
-  "version": "2.6.3",
-  "name": "BMCL 2.6.3",
-  "tag": "v2.6.3",
+  "version": "2.6.4",
+  "name": "BMCL 2.6.4",
+  "tag": "v2.6.4",
   "publishedAt": "2026-11-21",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.6.3\n- 新增「自动补全 Java」：检查已安装版本缺少哪个 Java，自动下载 Mojang 官方运行时，可自行选择安装目录\n- 目录里已有同一大版本的 Java 会直接复用；不修改系统 PATH，也不替换电脑上已有的 Java\n- 补全时显示下载进度；缺少官方运行时（如 Java 22）会提示手动安装\n- 启动失败提示改为引导到「增强 → Java → 自动补全 Java」\n- 修复 BMCL 玩家模型过小：现在占满预览卡片约四分之三高度，拖拽旋转不再甩出画面\n- 启动器版本号升至 2.6.3",
+  "notes": "2.6.4\n- 全新 Liquid Glass 材质：卡片、侧栏、按钮、输入框、提示与浮层改为半透明玻璃，带背景模糊、边缘高光与细微色散\n- 标题栏改为有色玻璃；没有壁纸时自动生成柔和环境光，有壁纸时直接透出壁纸\n- 主内容区透明化，两套主题（PCL / BMCL）均已适配\n- 只改视觉层，布局与交互不变\n- 版本号升至 2.6.4",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe",
-      "size": 74781408,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe",
+      "size": 74782610,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe",
-        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe",
-        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.3/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe",
+        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe",
+        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.4/Better-MC-Launcher.exe"
       ]
     }
   ]
