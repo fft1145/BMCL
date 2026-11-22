@@ -1,20 +1,20 @@
 {
-  "version": "2.6.6",
-  "name": "BMCL 2.6.6",
-  "tag": "v2.6.6",
-  "publishedAt": "2026-11-21",
+  "version": "2.6.7",
+  "name": "BMCL 2.6.7",
+  "tag": "v2.6.7",
+  "publishedAt": "2026-11-22",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.6.6\n- 撤销 Liquid Glass 毛玻璃界面，恢复原有界面\n- 保留 2.6.5 的自动更新修复\n- 保留 2.6.4 / 2.6.5 更新日志记录\n- 版本号升至 2.6.6",
+  "notes": "2.6.7\n- 导航栏按钮相对窗口居中，图标与文字水平垂直居中对齐\n- 字体改用 Windows 亚像素渲染，中文不再发灰发虚\n- 修复披风列表：改从账号 profile 读取，不再误报没有披风\n- 音乐收藏页提示：收藏仅保存在本机，更新版本后不会保留\n- 新增启动上报与 IP 封禁（需部署 server/admin-server.js 并配置 adminApi）\n- 版本号升至 2.6.7",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.6/Better-MC-Launcher.exe",
-      "size": 74779236,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.7/Better-MC-Launcher.exe",
+      "size": 74782325,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.6/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.6/Better-MC-Launcher.exe",
-        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.6/Better-MC-Launcher.exe",
-        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.6/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.7/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.7/Better-MC-Launcher.exe",
+        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.7/Better-MC-Launcher.exe",
+        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.7/Better-MC-Launcher.exe"
       ]
     }
   ],
