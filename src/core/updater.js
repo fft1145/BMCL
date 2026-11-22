@@ -126,6 +126,7 @@ function parseManifest(json, repo) {
     notes: json.notes || '',
     htmlUrl: json.pageUrl || `https://github.com/${repo || REPO}/releases`,
     publishedAt: json.publishedAt || '',
+    adminApi: String(json.adminApi || '').trim(),
     assets: Array.isArray(json.assets)
       ? json.assets.map((a) => ({
           name: a.name,

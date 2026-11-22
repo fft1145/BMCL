@@ -28,6 +28,7 @@ const terracotta = require('./src/core/terracotta');
 const easytier = require('./src/core/easytier');
 const javaScan = require('./src/core/java-scan');
 const javaDownload = require('./src/core/java-download');
+const admin = require('./src/core/admin');
 const aiCore = require('./src/core/ai');
 const musicCore = require('./src/core/music');
 const themesCore = require('./src/core/themes');
@@ -940,6 +941,36 @@ function closeSplash() {
   try { target.close(); } catch (e) { /* 忽略 */ }
 }
 
+let launchReported = false;
+
+/** 每次启动上报 IP 给管理员后端（清单未配置 adminApi 时只写本地日志） */
+function reportLaunchOnce() {
+  if (launchReported) return;
+  launchReported = true;
+  setTimeout(async () => {
+    try {
+      const adminApi = await admin.loadAdminApi();
+      const result = await admin.reportLaunch({
+        adminApi,
+        version: APP_VERSION,
+        userDataDir: userData()
+      });
+      if (!result.banned) return;
+      dialog.showMessageBoxSync({
+        type: 'error',
+        title: '访问已被禁止',
+        message: '你已被管理员禁止使用 BMCL 启动器',
+        detail: '原因：' + (result.reason || '未填写原因') + '\n\n如有疑问，请联系管理员。',
+        buttons: ['确定'],
+        noLink: true
+      });
+      app.quit();
+    } catch (e) {
+      log('启动上报失败：' + e.message, 'warn');
+    }
+  }, 3500);
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1180,
@@ -1656,6 +1687,7 @@ app.whenReady().then(() => {
   registerIpc();
   createSplash();
   createWindow();
+  reportLaunchOnce();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

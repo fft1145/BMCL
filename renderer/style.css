@@ -33,7 +33,10 @@ body{
   font-family:"Microsoft YaHei UI","Microsoft YaHei","Segoe UI","PingFang SC",system-ui,sans-serif;
   font-size:14px;line-height:1.6;
   background:var(--bg);color:var(--text);
-  -webkit-font-smoothing:antialiased;
+  color-scheme:light;
+  /* Windows 上用亚像素渲染，中文才不会发灰发虚 */
+  -webkit-font-smoothing:subpixel-antialiased;
+  text-rendering:optimizeLegibility;
   overflow:hidden;
 }
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
@@ -47,6 +50,7 @@ a{color:var(--blue-text);text-decoration:none}
 
 /* ===== 标题栏（PCL 蓝） ===== */
 .titlebar{
+  position:relative;
   height:46px;flex:0 0 46px;
   display:flex;align-items:center;gap:10px;
   padding:0 6px 0 14px;
@@ -69,12 +73,21 @@ a{color:var(--blue-text);text-decoration:none}
   background:rgba(255,255,255,.22);padding:1px 6px;border-radius:3px;
 }
 
-.tb-nav{flex:1;display:flex;justify-content:center;gap:4px;-webkit-app-region:no-drag}
+.tb-nav{
+  position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  max-width:calc(100% - 360px);
+  -webkit-app-region:no-drag;
+}
 .nav-btn{
-  display:flex;align-items:center;gap:7px;
+  display:flex;align-items:center;justify-content:center;gap:7px;
   padding:7px 20px;border-radius:999px;
-  color:#eaf4ff;font-size:13.5px;font-weight:600;
+  color:#eaf4ff;font-size:13.5px;font-weight:600;line-height:1;
+  text-align:center;white-space:nowrap;
   transition:background .15s,color .15s;
+}
+@media (max-width: 1100px){
+  .tb-nav{position:static;transform:none;flex:1;max-width:none}
 }
 .nav-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav-btn[data-page="launch"] svg{fill:currentColor;stroke:none}

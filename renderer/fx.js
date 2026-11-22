@@ -431,7 +431,7 @@
     state.tracks = items;
     if (!items.length) {
       listBox.innerHTML = state.musicView === 'favs'
-        ? '<p class="fx-hint" style="padding:12px">还没有收藏。在搜索结果里点 ★ 即可收藏。</p>'
+        ? '<p class="fx-hint" style="padding:12px">还没有收藏。在搜索结果里点 ★ 即可收藏。<br>注意：收藏只保存在本机，更新启动器版本后不会保留，请自行记录歌名。</p>'
         : '<p class="fx-hint" style="padding:12px">搜索后点击任意结果即可播放。音源直接取 B 站音频流，仅供个人收听。</p>';
       return;
     }
@@ -444,6 +444,10 @@
       '<button class="fx-track-fav' + (favSet.has(item.bvid) ? ' on' : '') + '" data-fav="' + esc(item.bvid) + '" title="收藏 / 取消收藏">★</button>' +
       '</div>'
     ).join('');
+    if (state.musicView === 'favs') {
+      listBox.insertAdjacentHTML('beforeend',
+        '<p class="fx-hint" style="padding:8px 12px">收藏只保存在本机，更新启动器版本后不会保留，请自行记录歌名。</p>');
+    }
     $$('.fx-track', listBox).forEach((node) => {
       node.addEventListener('click', () => playTrack(Number(node.dataset.index)));
     });

@@ -285,16 +285,13 @@ async function resetSkin(mcAccessToken, options = {}) {
 /** 读取账号拥有的披风列表（含当前启用状态） */
 async function listCapes(mcAccessToken, options = {}) {
   if (!mcAccessToken) throw new Error('请先登录正版账号');
-  const res = await fetchOf(options)(MC_PROFILE + '/capes', {
-    headers: { Authorization: 'Bearer ' + mcAccessToken }
-  });
-  const data = await readJson(res);
-  if (!res.ok) throw new Error(data.errorMessage || ('读取披风失败 HTTP ' + res.status));
-  const capes = Array.isArray(data.capes) ? data.capes : [];
-  return capes.map((cape) => ({
+  // Mojang 只在 profile 里返回披风（含 id / alias / url / state），
+  // 旧实现去请求 /profile/capes，多数账号会 404，才出现「明明有披风却说没有」。
+  const profile = await fetchProfile(mcAccessToken, options);
+  return (profile.capes || []).map((cape) => ({
     id: cape.id,
     alias: cape.alias || '',
-    url: cape.url || '',
+    url: String(cape.url || '').replace(/^http:\/\//i, 'https://'),
     active: cape.state === 'ACTIVE'
   }));
 }

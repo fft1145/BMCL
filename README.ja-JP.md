@@ -15,7 +15,7 @@
 
 [ダウンロード](https://github.com/fft1145/BMCL/releases/latest) |
 [公式サイト](https://bmcl26.netlify.app) |
-[ソースアーカイブ](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.6.zip)
+[ソースアーカイブ](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.7.zip)
 
 [不具合報告](https://github.com/fft1145/BMCL/issues/new/choose) |
 [更新履歴](https://github.com/fft1145/BMCL/releases)
@@ -53,7 +53,7 @@ BMCL（Better Minecraft Launcher）は、PCL2 の操作感を踏襲した完全�
 |---|---|
 | [GitHub Releases](https://github.com/fft1145/BMCL/releases/latest) | 最新のポータブル版 `Better-MC-Launcher.exe` |
 | [公式サイト](https://bmcl26.netlify.app/#download) | チェックサム付きのダウンロードページ |
-| [ソースアーカイブ](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.6.zip) | 現行バージョンの全ソース |
+| [ソースアーカイブ](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.7.zip) | 現行バージョンの全ソース |
 
 BMCL はインストール不要のポータブル版です。初回起動時に専用データフォルダーを初期化し、既存の `.minecraft` には触れません。
 
