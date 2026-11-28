@@ -1,20 +1,20 @@
 {
-  "version": "2.6.10",
-  "name": "BMCL 2.6.10",
-  "tag": "v2.6.10",
+  "version": "2.6.11",
+  "name": "BMCL 2.6.11",
+  "tag": "v2.6.11",
   "publishedAt": "2026-11-28",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.6.10\n- 修复 BMCL 左侧竖栏导航文字被挤成两行\n- 竖栏加宽到 66px，按钮标签强制单行居中\n- 版本号升至 2.6.10",
+  "notes": "2.6.11\n- 左侧竖栏统一图标在上、文字在下并水平居中\n- 修复文字偏到图标右侧\n- 版本号升至 2.6.11",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.10/Better-MC-Launcher.exe",
-      "size": 74785027,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.11/Better-MC-Launcher.exe",
+      "size": 74785995,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.10/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.10/Better-MC-Launcher.exe",
-        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.10/Better-MC-Launcher.exe",
-        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.10/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.11/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.11/Better-MC-Launcher.exe",
+        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.11/Better-MC-Launcher.exe",
+        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.11/Better-MC-Launcher.exe"
       ]
     }
   ],
