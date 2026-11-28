@@ -1215,6 +1215,34 @@ function registerIpc() {
 
   // ===== 账号 =====
   ipcMain.handle('account:list', () => accounts.listAccounts(userData()));
+  /** 取当前正版账号；令牌快过期时先自动刷新（与 PCL CE 的做法一致） */
+  async function freshMicrosoftAccount() {
+    let account = accounts.getActiveAccount(userData());
+    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    const expires = account.expiresAt ? Date.parse(account.expiresAt) : 0;
+    if (!expires || expires - Date.now() < 60 * 1000) {
+      try {
+        const fresh = await microsoft.refreshAccount(account);
+        account = accounts.upsertMicrosoftAccount(userData(), fresh);
+        log('正版账号令牌已自动刷新', 'info');
+      } catch (e) {
+        log('自动刷新正版账号失败：' + e.message, 'warn');
+      }
+    }
+    return account;
+  }
+
+  /** 遇到 401/403 时强制刷新一次令牌并重试 */
+  async function withMsTokenRetry(account, fn) {
+    try {
+      return await fn(account);
+    } catch (err) {
+      if (!/HTTP 40[13]|Unauthorized|未授权/i.test(err.message || '')) throw err;
+      const fresh = accounts.upsertMicrosoftAccount(userData(), await microsoft.refreshAccount(account));
+      log('正版令牌失效，已刷新后重试', 'info');
+      return fn(fresh);
+    }
+  }
   ipcMain.handle('account:active', () => accounts.getActiveAccount(userData()));
   ipcMain.handle('account:add', (e, name) => {
     const acc = accounts.addOfflineAccount(userData(), name);
@@ -1279,8 +1307,7 @@ function registerIpc() {
     return accounts.upsertMicrosoftAccount(userData(), fresh);
   });
   ipcMain.handle('account:skinUpload', async (e, variant) => {
-    const account = accounts.getActiveAccount(userData());
-    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    const account = await freshMicrosoftAccount();
     const picked = await dialog.showOpenDialog(win, {
       title: '选择皮肤 PNG（64×64 或 64×32）',
       filters: [{ name: '皮肤', extensions: ['png'] }],
@@ -1288,7 +1315,7 @@ function registerIpc() {
     });
     if (picked.canceled || !picked.filePaths.length) return null;
     const file = picked.filePaths[0];
-    await microsoft.uploadSkin(account.accessToken, account.uuid, file, variant);
+    await withMsTokenRetry(account, (acc) => microsoft.uploadSkin(acc.accessToken, acc.uuid, file, variant));
     const record = skinStore.add(userData(), file, {
       name: path.basename(file),
       variant,
@@ -1299,9 +1326,8 @@ function registerIpc() {
     return { ok: true, name: account.name, record };
   });
   ipcMain.handle('account:skinReset', async () => {
-    const account = accounts.getActiveAccount(userData());
-    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
-    await microsoft.resetSkin(account.accessToken);
+    const account = await freshMicrosoftAccount();
+    await withMsTokenRetry(account, (acc) => microsoft.resetSkin(acc.accessToken));
     return { ok: true };
   });
 
@@ -1601,11 +1627,10 @@ function registerIpc() {
     return { ok: true, item: record };
   });
   ipcMain.handle('skin:capes', async () => {
-    const account = accounts.getActiveAccount(userData());
-    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
+    const account = await freshMicrosoftAccount();
     let capes = [];
     try {
-      capes = await microsoft.listCapes(account.accessToken);
+      capes = await withMsTokenRetry(account, (acc) => microsoft.listCapes(acc.accessToken));
     } catch (err) {
       log('读取披风列表失败，改用登录时保存的披风：' + err.message, 'warn');
     }
@@ -1620,11 +1645,10 @@ function registerIpc() {
     return { capes, history: skinStore.listCapeRecords(userData()) };
   });
   ipcMain.handle('skin:setCape', async (e, capeId) => {
-    const account = accounts.getActiveAccount(userData());
-    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
-    const capes = await microsoft.listCapes(account.accessToken).catch(() => []);
+    const account = await freshMicrosoftAccount();
+    const capes = await withMsTokenRetry(account, (acc) => microsoft.listCapes(acc.accessToken)).catch(() => []);
     const target = capes.find((c) => c.id === capeId);
-    await microsoft.setCape(account.accessToken, String(capeId || ''));
+    await withMsTokenRetry(account, (acc) => microsoft.setCape(acc.accessToken, String(capeId || '')));
     skinStore.addCapeRecord(userData(), {
       capeId,
       alias: (target && target.alias) || '',
@@ -1634,9 +1658,8 @@ function registerIpc() {
     return { ok: true, active: capeId };
   });
   ipcMain.handle('skin:clearCape', async () => {
-    const account = accounts.getActiveAccount(userData());
-    if (!account || account.type !== 'microsoft') throw new Error('请先登录微软正版账号');
-    await microsoft.clearCape(account.accessToken);
+    const account = await freshMicrosoftAccount();
+    await withMsTokenRetry(account, (acc) => microsoft.clearCape(acc.accessToken));
     skinStore.addCapeRecord(userData(), { capeId: '', alias: '关闭披风', account: account.name });
     return { ok: true };
   });

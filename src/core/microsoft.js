@@ -240,6 +240,7 @@ async function completeLogin(oauth, options = {}) {
     tokenType: mc.tokenType,
     expiresAt: mc.expiresIn ? new Date(Date.now() + mc.expiresIn * 1000).toISOString() : '',
     skins: profile.skins,
+    capes: profile.capes || [],
     updatedAt: new Date().toISOString()
   };
 }

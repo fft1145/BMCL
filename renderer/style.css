@@ -73,11 +73,14 @@ a{color:var(--blue-text);text-decoration:none}
   background:rgba(255,255,255,.22);padding:1px 6px;border-radius:3px;
 }
 
-.tb-nav{
+/* 仅 PCL 经典模式的顶部导航居中；BMCL 模式是左侧竖栏，不能套用 */
+body:not(.theme-bmcl) .tb-nav{
   position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);
   display:flex;align-items:center;justify-content:center;gap:4px;
   max-width:calc(100% - 420px);
   z-index:2;
+  -webkit-app-region:no-drag;
+}
   -webkit-app-region:no-drag;
 }
 .nav-btn{
@@ -88,7 +91,7 @@ a{color:var(--blue-text);text-decoration:none}
   transition:background .15s,color .15s;
 }
 @media (max-width: 1100px){
-  .tb-nav{position:static;transform:none;flex:1;max-width:none}
+  body:not(.theme-bmcl) .tb-nav{position:static;transform:none;flex:1;max-width:none}
 }
 .nav-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav-btn[data-page="launch"] svg{fill:currentColor;stroke:none}
