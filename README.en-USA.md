@@ -19,7 +19,7 @@
 
 [Download](https://github.com/fft1145/BMCL/releases/latest) |
 [Official Website](https://bmcl26.netlify.app) |
-[Source Code](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.7.zip)
+[Source Code](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.8.zip)
 
 [Report an Issue](https://github.com/fft1145/BMCL/issues/new/choose) |
 [Release Notes](https://github.com/fft1145/BMCL/releases) |
@@ -64,7 +64,7 @@ It ships with vanilla and modpack downloads, mod and loader installation, accoun
 |---|---|
 | [GitHub Releases](https://github.com/fft1145/BMCL/releases/latest) | Latest portable `Better-MC-Launcher.exe`, unzip and run |
 | [Official Website](https://bmcl26.netlify.app/#download) | More stable download page in mainland China, with checksums |
-| [Source Code](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.7.zip) | Full source for the current version |
+| [Source Code](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.8.zip) | Full source for the current version |
 
 The launcher is portable and needs no installation. On first run it initializes its own data directory and never touches your existing `.minecraft`.
 

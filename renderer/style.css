@@ -59,7 +59,7 @@ a{color:var(--blue-text);text-decoration:none}
   color:#fff;user-select:none;
   -webkit-app-region:drag;
 }
-.tb-brand{display:flex;align-items:center;gap:8px;width:250px;min-width:220px}
+.tb-brand{display:flex;align-items:center;gap:8px;width:250px;min-width:220px;position:relative;z-index:2}
 .tb-logo{
   width:26px;height:26px;border-radius:5px;
   background:#fff;color:var(--blue-strong);
@@ -76,7 +76,8 @@ a{color:var(--blue-text);text-decoration:none}
 .tb-nav{
   position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);
   display:flex;align-items:center;justify-content:center;gap:4px;
-  max-width:calc(100% - 360px);
+  max-width:calc(100% - 420px);
+  z-index:2;
   -webkit-app-region:no-drag;
 }
 .nav-btn{
@@ -95,7 +96,7 @@ a{color:var(--blue-text);text-decoration:none}
 .nav-btn.active{background:#fff;color:#1a72c0;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .nav-btn.active:hover{background:#fff}
 
-.tb-window{display:flex;align-items:stretch;-webkit-app-region:no-drag}
+.tb-window{display:flex;align-items:stretch;margin-left:auto;position:relative;z-index:3;-webkit-app-region:no-drag}
 .win-btn{width:44px;height:46px;display:flex;align-items:center;justify-content:center;color:#eaf4ff}
 .win-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round}
 .win-btn:hover{background:rgba(255,255,255,.2)}
