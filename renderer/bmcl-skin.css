@@ -414,11 +414,17 @@ body.theme-bmcl .tb-nav{
 }
 body.theme-bmcl .workspace{margin-left:66px!important}
 body.theme-bmcl .tb-nav .nav-btn{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
   width:100%!important;
   padding:9px 2px!important;
   font-size:11px!important;
   line-height:1.25!important;
   letter-spacing:0!important;
+  text-align:center!important;
   white-space:nowrap!important;
   word-break:keep-all!important;
   overflow:hidden;
