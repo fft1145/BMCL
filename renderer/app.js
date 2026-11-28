@@ -49,8 +49,13 @@
   }
 
   function switchPage(name, sub) {
+    // BMCL 主题没有单独的「实用」入口，主页与启动页合并
+    const inBmcl = document.body.classList.contains('theme-bmcl');
+    if (inBmcl && name === 'launch') name = 'util';
+    if (!inBmcl && name === 'util') name = 'launch';
+    const isHome = (p) => p === 'launch' || p === 'util';
     document.querySelectorAll('.nav-btn').forEach((b) => {
-      const samePage = b.dataset.page === name;
+      const samePage = b.dataset.page === name || (isHome(b.dataset.page) && isHome(name));
       const sameSub = sub ? b.dataset.sub === sub : !b.dataset.sub;
       b.classList.toggle('active', samePage && sameSub);
     });

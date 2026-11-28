@@ -19,7 +19,7 @@
 
 [立即下載](https://github.com/fft1145/BMCL/releases/latest) |
 [官方網站](https://bmcl26.netlify.app) |
-[原始碼包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.11.zip)
+[原始碼包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.12.zip)
 
 [回報問題](https://github.com/fft1145/BMCL/issues/new/choose) |
 [更新日誌](https://github.com/fft1145/BMCL/releases) |
@@ -64,7 +64,7 @@ BMCL（Better Minecraft Launcher）是一個完全在本機執行的 Minecraft �
 |---|---|
 | [GitHub Releases](https://github.com/fft1145/BMCL/releases/latest) | 最新免安裝版 `Better-MC-Launcher.exe`，解壓即用 |
 | [官方網站](https://bmcl26.netlify.app/#download) | 國內存取較穩定的下載頁，附校驗資訊 |
-| [原始碼包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.11.zip) | 目前版本的完整原始碼，供自行建置 |
+| [原始碼包](https://github.com/fft1145/BMCL/archive/refs/tags/v2.6.12.zip) | 目前版本的完整原始碼，供自行建置 |
 
 啟動器為免安裝的可攜版，首次執行會在自己的資料目錄中初始化，不會改動你現有的 `.minecraft`。
 

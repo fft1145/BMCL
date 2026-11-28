@@ -430,7 +430,6 @@ body.theme-bmcl .tb-nav .nav-btn{
   overflow:hidden;
 }
 body.theme-bmcl .tb-nav .nav-btn span{
-  display:block;
   max-width:100%;
   white-space:nowrap!important;
   overflow:hidden;
