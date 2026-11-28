@@ -1,20 +1,20 @@
 {
-  "version": "2.6.8",
-  "name": "BMCL 2.6.8",
-  "tag": "v2.6.8",
+  "version": "2.6.9",
+  "name": "BMCL 2.6.9",
+  "tag": "v2.6.9",
   "publishedAt": "2026-11-28",
   "pageUrl": "https://bmcl26.netlify.app/#download",
-  "notes": "2.6.8\n- 修复 PCL 模式窗口按钮跑到左上角：最小化/最大化/关闭固定在标题栏右侧\n- 导航居中保留，不再压住窗口按钮\n- 版本号升至 2.6.8",
+  "notes": "2.6.9\n- 修复 BMCL 深色模式左侧竖排导航被裁掉一半\n- 披风切换自动刷新过期令牌并重试，登录资料补存披风列表\n- 皮肤上传/还原同样先刷新令牌\n- 版本号升至 2.6.9",
   "assets": [
     {
       "name": "fft1145-portable.exe",
-      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.8/Better-MC-Launcher.exe",
-      "size": 74782857,
+      "url": "https://github.com/fft1145/BMCL/releases/download/v2.6.9/Better-MC-Launcher.exe",
+      "size": 74781775,
       "mirrors": [
-        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.8/Better-MC-Launcher.exe",
-        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.8/Better-MC-Launcher.exe",
-        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.8/Better-MC-Launcher.exe",
-        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.8/Better-MC-Launcher.exe"
+        "https://gh-proxy.com/https://github.com/fft1145/BMCL/releases/download/v2.6.9/Better-MC-Launcher.exe",
+        "https://ghproxy.net/https://github.com/fft1145/BMCL/releases/download/v2.6.9/Better-MC-Launcher.exe",
+        "https://ghfast.top/https://github.com/fft1145/BMCL/releases/download/v2.6.9/Better-MC-Launcher.exe",
+        "https://github.moeyy.xyz/https://github.com/fft1145/BMCL/releases/download/v2.6.9/Better-MC-Launcher.exe"
       ]
     }
   ],
